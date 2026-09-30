@@ -10,12 +10,12 @@ from .views import (
 )
 
 router = DefaultRouter()
-router.register(r'metrics', PerformanceMetricViewSet, basename='metric')
-router.register(r'costs', CostAnalysisViewSet, basename='cost')
-router.register(r'optimizations', WorkflowOptimizationViewSet, basename='optimization')
-router.register(r'anomalies', AnomalyDetectionViewSet, basename='anomaly')
-router.register(r'predictions', PredictiveAnalyticsViewSet, basename='prediction')
+router.register(r"metrics", PerformanceMetricViewSet, basename="metric")
+router.register(r"costs", CostAnalysisViewSet, basename="cost")
+router.register(r"optimizations", WorkflowOptimizationViewSet, basename="optimization")
+router.register(r"anomalies", AnomalyDetectionViewSet, basename="anomaly")
+router.register(r"predictions", PredictiveAnalyticsViewSet, basename="prediction")
 
 urlpatterns = [
-    path('api/', include(router.urls)),
+    path("api/", include(router.urls)),
 ]

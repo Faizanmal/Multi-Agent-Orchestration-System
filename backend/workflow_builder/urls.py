@@ -8,10 +8,10 @@ from .views import (
 )
 
 router = DefaultRouter()
-router.register(r'templates', WorkflowTemplateViewSet, basename='template')
-router.register(r'workflows', VisualWorkflowViewSet, basename='workflow')
-router.register(r'executions', WorkflowExecutionViewSet, basename='execution')
+router.register(r"templates", WorkflowTemplateViewSet, basename="template")
+router.register(r"workflows", VisualWorkflowViewSet, basename="workflow")
+router.register(r"executions", WorkflowExecutionViewSet, basename="execution")
 
 urlpatterns = [
-    path('api/', include(router.urls)),
+    path("api/", include(router.urls)),
 ]

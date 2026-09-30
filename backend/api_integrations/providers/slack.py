@@ -1,4 +1,5 @@
 """Slack integration provider."""
+
 from typing import Any
 
 import requests
@@ -21,9 +22,21 @@ class SlackProvider(IntegrationProvider):
     @classmethod
     def tool_definitions(cls) -> list[dict[str, Any]]:
         return [
-            {"name": "slack.list_channels", "description": "List Slack channels", "parameters": {}},
-            {"name": "slack.post_message", "description": "Post a message to a channel", "parameters": {"channel": "string", "text": "string"}},
-            {"name": "slack.read_history", "description": "Read recent messages from a channel", "parameters": {"channel": "string", "limit": "int"}},
+            {
+                "name": "slack.list_channels",
+                "description": "List Slack channels",
+                "parameters": {},
+            },
+            {
+                "name": "slack.post_message",
+                "description": "Post a message to a channel",
+                "parameters": {"channel": "string", "text": "string"},
+            },
+            {
+                "name": "slack.read_history",
+                "description": "Read recent messages from a channel",
+                "parameters": {"channel": "string", "limit": "int"},
+            },
         ]
 
     @classmethod
@@ -36,7 +49,9 @@ class SlackProvider(IntegrationProvider):
     @classmethod
     def _api(cls, integration: APIIntegration, method: str, **kwargs) -> dict[str, Any]:
         url = f"https://slack.com/api/{method}"
-        resp = requests.post(url, headers=cls._headers(integration), json=kwargs, timeout=30)
+        resp = requests.post(
+            url, headers=cls._headers(integration), json=kwargs, timeout=30
+        )
         data = resp.json()
         if not data.get("ok"):
             raise ValueError(data.get("error", "Slack API error"))
@@ -55,12 +70,23 @@ class SlackProvider(IntegrationProvider):
             return {"status": "error", "message": str(e)}
 
     @classmethod
-    def execute_tool(cls, integration: APIIntegration, tool_name: str, params: dict[str, Any]) -> dict[str, Any]:
+    def execute_tool(
+        cls, integration: APIIntegration, tool_name: str, params: dict[str, Any]
+    ) -> dict[str, Any]:
         try:
             if tool_name == "slack.list_channels":
-                data = cls._api(integration, "conversations.list", types="public_channel,private_channel", limit=50)
+                data = cls._api(
+                    integration,
+                    "conversations.list",
+                    types="public_channel,private_channel",
+                    limit=50,
+                )
                 channels = [
-                    {"id": c["id"], "name": c["name"], "members": c.get("num_members", 0)}
+                    {
+                        "id": c["id"],
+                        "name": c["name"],
+                        "members": c.get("num_members", 0),
+                    }
                     for c in data.get("channels", [])
                 ]
                 return {"status": "success", "channels": channels}
@@ -70,13 +96,17 @@ class SlackProvider(IntegrationProvider):
                 text = params.get("text", "")
                 if not channel or not text:
                     return {"status": "error", "message": "channel and text required"}
-                data = cls._api(integration, "chat.postMessage", channel=channel, text=text)
+                data = cls._api(
+                    integration, "chat.postMessage", channel=channel, text=text
+                )
                 return {"status": "success", "ts": data.get("ts"), "channel": channel}
 
             if tool_name == "slack.read_history":
                 channel = params.get("channel", "")
                 limit = min(int(params.get("limit", 10)), 50)
-                data = cls._api(integration, "conversations.history", channel=channel, limit=limit)
+                data = cls._api(
+                    integration, "conversations.history", channel=channel, limit=limit
+                )
                 messages = [
                     {"user": m.get("user"), "text": m.get("text"), "ts": m.get("ts")}
                     for m in data.get("messages", [])

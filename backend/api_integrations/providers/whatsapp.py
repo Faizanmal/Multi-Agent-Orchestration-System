@@ -1,4 +1,5 @@
 """WhatsApp Cloud API (Meta) integration provider."""
+
 from typing import Any
 
 import requests
@@ -75,13 +76,19 @@ class WhatsAppProvider(IntegrationProvider):
             resp = requests.get(
                 f"{GRAPH_BASE}/{phone_id}",
                 headers=cls._headers(token),
-                params={"fields": "id,display_phone_number,verified_name,quality_rating"},
+                params={
+                    "fields": "id,display_phone_number,verified_name,quality_rating"
+                },
                 timeout=20,
             )
             if resp.status_code >= 400:
                 return {"status": "error", "message": resp.text[:300]}
             data = resp.json()
-            label = data.get("verified_name") or data.get("display_phone_number") or phone_id
+            label = (
+                data.get("verified_name")
+                or data.get("display_phone_number")
+                or phone_id
+            )
             return {
                 "status": "success",
                 "message": f"Connected to WhatsApp Business: {label}",
@@ -102,7 +109,9 @@ class WhatsAppProvider(IntegrationProvider):
                 resp = requests.get(
                     f"{GRAPH_BASE}/{phone_id}",
                     headers=headers,
-                    params={"fields": "id,display_phone_number,verified_name,quality_rating"},
+                    params={
+                        "fields": "id,display_phone_number,verified_name,quality_rating"
+                    },
                     timeout=20,
                 )
                 return {
@@ -132,7 +141,11 @@ class WhatsAppProvider(IntegrationProvider):
                 return {
                     "status": "success" if resp.ok else "error",
                     "result": data,
-                    "message": "" if resp.ok else data.get("error", {}).get("message", resp.text[:300]),
+                    "message": (
+                        ""
+                        if resp.ok
+                        else data.get("error", {}).get("message", resp.text[:300])
+                    ),
                 }
 
             if tool_name == "whatsapp.send_template":
@@ -140,7 +153,10 @@ class WhatsAppProvider(IntegrationProvider):
                 template_name = params.get("template_name", "")
                 language_code = params.get("language_code", "en_US")
                 if not to or not template_name:
-                    return {"status": "error", "message": "to and template_name required"}
+                    return {
+                        "status": "error",
+                        "message": "to and template_name required",
+                    }
                 payload = {
                     "messaging_product": "whatsapp",
                     "to": to,
@@ -160,7 +176,11 @@ class WhatsAppProvider(IntegrationProvider):
                 return {
                     "status": "success" if resp.ok else "error",
                     "result": data,
-                    "message": "" if resp.ok else data.get("error", {}).get("message", resp.text[:300]),
+                    "message": (
+                        ""
+                        if resp.ok
+                        else data.get("error", {}).get("message", resp.text[:300])
+                    ),
                 }
 
             return {"status": "error", "message": f"Unknown WhatsApp tool: {tool_name}"}

@@ -1,4 +1,5 @@
 """Trello integration provider."""
+
 from typing import Any
 
 import requests
@@ -21,9 +22,21 @@ class TrelloProvider(IntegrationProvider):
     @classmethod
     def tool_definitions(cls) -> list[dict[str, Any]]:
         return [
-            {"name": "trello.list_boards", "description": "List Trello boards", "parameters": {}},
-            {"name": "trello.list_cards", "description": "List cards on a board", "parameters": {"board_id": "string"}},
-            {"name": "trello.create_card", "description": "Create a card on a list", "parameters": {"list_id": "string", "name": "string", "desc": "string"}},
+            {
+                "name": "trello.list_boards",
+                "description": "List Trello boards",
+                "parameters": {},
+            },
+            {
+                "name": "trello.list_cards",
+                "description": "List cards on a board",
+                "parameters": {"board_id": "string"},
+            },
+            {
+                "name": "trello.create_card",
+                "description": "Create a card on a list",
+                "parameters": {"list_id": "string", "name": "string", "desc": "string"},
+            },
         ]
 
     @classmethod
@@ -39,22 +52,38 @@ class TrelloProvider(IntegrationProvider):
     def test_connection(cls, integration: APIIntegration) -> dict[str, Any]:
         try:
             params = cls._auth_params(integration)
-            resp = requests.get("https://api.trello.com/1/members/me", params=params, timeout=20)
+            resp = requests.get(
+                "https://api.trello.com/1/members/me", params=params, timeout=20
+            )
             if resp.status_code >= 400:
                 return {"status": "error", "message": resp.text[:200]}
             me = resp.json()
-            return {"status": "success", "message": f"Connected as {me.get('fullName') or me.get('username')}", "data": me}
+            return {
+                "status": "success",
+                "message": f"Connected as {me.get('fullName') or me.get('username')}",
+                "data": me,
+            }
         except Exception as e:  # noqa: BLE001
             return {"status": "error", "message": str(e)}
 
     @classmethod
-    def execute_tool(cls, integration: APIIntegration, tool_name: str, params: dict[str, Any]) -> dict[str, Any]:
+    def execute_tool(
+        cls, integration: APIIntegration, tool_name: str, params: dict[str, Any]
+    ) -> dict[str, Any]:
         try:
             auth = cls._auth_params(integration)
             if tool_name == "trello.list_boards":
-                resp = requests.get("https://api.trello.com/1/members/me/boards", params={**auth, "fields": "name,url,closed"}, timeout=20)
+                resp = requests.get(
+                    "https://api.trello.com/1/members/me/boards",
+                    params={**auth, "fields": "name,url,closed"},
+                    timeout=20,
+                )
                 boards = resp.json() if resp.ok else []
-                return {"status": "success" if resp.ok else "error", "boards": boards, "message": "" if resp.ok else resp.text[:200]}
+                return {
+                    "status": "success" if resp.ok else "error",
+                    "boards": boards,
+                    "message": "" if resp.ok else resp.text[:200],
+                }
 
             if tool_name == "trello.list_cards":
                 board_id = params.get("board_id")
@@ -65,7 +94,11 @@ class TrelloProvider(IntegrationProvider):
                     params={**auth, "fields": "name,desc,idList,url"},
                     timeout=20,
                 )
-                return {"status": "success" if resp.ok else "error", "cards": resp.json() if resp.ok else [], "message": "" if resp.ok else resp.text[:200]}
+                return {
+                    "status": "success" if resp.ok else "error",
+                    "cards": resp.json() if resp.ok else [],
+                    "message": "" if resp.ok else resp.text[:200],
+                }
 
             if tool_name == "trello.create_card":
                 list_id = params.get("list_id")
@@ -74,10 +107,19 @@ class TrelloProvider(IntegrationProvider):
                     return {"status": "error", "message": "list_id and name required"}
                 resp = requests.post(
                     "https://api.trello.com/1/cards",
-                    params={**auth, "idList": list_id, "name": name, "desc": params.get("desc", "")},
+                    params={
+                        **auth,
+                        "idList": list_id,
+                        "name": name,
+                        "desc": params.get("desc", ""),
+                    },
                     timeout=20,
                 )
-                return {"status": "success" if resp.ok else "error", "card": resp.json() if resp.ok else {}, "message": "" if resp.ok else resp.text[:200]}
+                return {
+                    "status": "success" if resp.ok else "error",
+                    "card": resp.json() if resp.ok else {},
+                    "message": "" if resp.ok else resp.text[:200],
+                }
 
             return {"status": "error", "message": f"Unknown Trello tool: {tool_name}"}
         except Exception as e:  # noqa: BLE001

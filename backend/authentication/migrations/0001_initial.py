@@ -16,153 +16,387 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('auth', '0012_alter_user_first_name_max_length'),
+        ("auth", "0012_alter_user_first_name_max_length"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='LoginAttempt',
+            name="LoginAttempt",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('email', models.EmailField(max_length=254)),
-                ('ip_address', models.GenericIPAddressField()),
-                ('success', models.BooleanField()),
-                ('failure_reason', models.CharField(blank=True, max_length=255, null=True)),
-                ('user_agent', models.TextField()),
-                ('timestamp', models.DateTimeField(auto_now_add=True)),
-                ('suspicious', models.BooleanField(default=False)),
-                ('blocked', models.BooleanField(default=False)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("email", models.EmailField(max_length=254)),
+                ("ip_address", models.GenericIPAddressField()),
+                ("success", models.BooleanField()),
+                (
+                    "failure_reason",
+                    models.CharField(blank=True, max_length=255, null=True),
+                ),
+                ("user_agent", models.TextField()),
+                ("timestamp", models.DateTimeField(auto_now_add=True)),
+                ("suspicious", models.BooleanField(default=False)),
+                ("blocked", models.BooleanField(default=False)),
             ],
         ),
         migrations.CreateModel(
-            name='UserRole',
+            name="UserRole",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=50, unique=True)),
-                ('description', models.TextField()),
-                ('permissions', models.JSONField(default=list)),
-                ('is_system_role', models.BooleanField(default=False)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("name", models.CharField(max_length=50, unique=True)),
+                ("description", models.TextField()),
+                ("permissions", models.JSONField(default=list)),
+                ("is_system_role", models.BooleanField(default=False)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
             ],
         ),
         migrations.CreateModel(
-            name='CustomUser',
+            name="CustomUser",
             fields=[
-                ('password', models.CharField(max_length=128, verbose_name='password')),
-                ('last_login', models.DateTimeField(blank=True, null=True, verbose_name='last login')),
-                ('is_superuser', models.BooleanField(default=False, help_text='Designates that this user has all permissions without explicitly assigning them.', verbose_name='superuser status')),
-                ('username', models.CharField(error_messages={'unique': 'A user with that username already exists.'}, help_text='Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only.', max_length=150, unique=True, validators=[django.contrib.auth.validators.UnicodeUsernameValidator()], verbose_name='username')),
-                ('first_name', models.CharField(blank=True, max_length=150, verbose_name='first name')),
-                ('last_name', models.CharField(blank=True, max_length=150, verbose_name='last name')),
-                ('is_staff', models.BooleanField(default=False, help_text='Designates whether the user can log into this admin site.', verbose_name='staff status')),
-                ('is_active', models.BooleanField(default=True, help_text='Designates whether this user should be treated as active. Unselect this instead of deleting accounts.', verbose_name='active')),
-                ('date_joined', models.DateTimeField(default=django.utils.timezone.now, verbose_name='date joined')),
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('avatar', models.URLField(blank=True, null=True)),
-                ('role', models.CharField(choices=[('admin', 'Admin'), ('user', 'User'), ('viewer', 'Viewer')], default='user', max_length=20)),
-                ('subscription_tier', models.CharField(choices=[('free', 'Free'), ('pro', 'Pro'), ('enterprise', 'Enterprise')], default='free', max_length=20)),
-                ('is_2fa_enabled', models.BooleanField(default=False)),
-                ('phone_number', models.CharField(blank=True, max_length=20, null=True)),
-                ('user_timezone', models.CharField(default='UTC', max_length=50)),
-                ('last_activity', models.DateTimeField(auto_now=True)),
-                ('email', models.EmailField(max_length=254, unique=True)),
-                ('profile_image', models.ImageField(blank=True, null=True, upload_to='profile_images/')),
-                ('date_of_birth', models.DateField(blank=True, null=True)),
-                ('bio', models.TextField(blank=True, max_length=500)),
-                ('location', models.CharField(blank=True, max_length=100)),
-                ('website', models.URLField(blank=True)),
-                ('last_password_change', models.DateTimeField(default=django.utils.timezone.now)),
-                ('password_reset_required', models.BooleanField(default=False)),
-                ('account_locked', models.BooleanField(default=False)),
-                ('failed_login_attempts', models.PositiveIntegerField(default=0)),
-                ('last_failed_login', models.DateTimeField(blank=True, null=True)),
-                ('email_notifications', models.BooleanField(default=True)),
-                ('push_notifications', models.BooleanField(default=True)),
-                ('marketing_emails', models.BooleanField(default=False)),
-                ('theme_preference', models.CharField(choices=[('light', 'Light'), ('dark', 'Dark'), ('auto', 'Auto')], default='auto', max_length=10)),
-                ('language', models.CharField(default='en', max_length=10)),
-                ('groups', models.ManyToManyField(blank=True, help_text='The groups this user belongs to. A user will get all permissions granted to each of their groups.', related_name='user_set', related_query_name='user', to='auth.group', verbose_name='groups')),
-                ('user_permissions', models.ManyToManyField(blank=True, help_text='Specific permissions for this user.', related_name='user_set', related_query_name='user', to='auth.permission', verbose_name='user permissions')),
+                ("password", models.CharField(max_length=128, verbose_name="password")),
+                (
+                    "last_login",
+                    models.DateTimeField(
+                        blank=True, null=True, verbose_name="last login"
+                    ),
+                ),
+                (
+                    "is_superuser",
+                    models.BooleanField(
+                        default=False,
+                        help_text="Designates that this user has all permissions without explicitly assigning them.",
+                        verbose_name="superuser status",
+                    ),
+                ),
+                (
+                    "username",
+                    models.CharField(
+                        error_messages={
+                            "unique": "A user with that username already exists."
+                        },
+                        help_text="Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only.",
+                        max_length=150,
+                        unique=True,
+                        validators=[
+                            django.contrib.auth.validators.UnicodeUsernameValidator()
+                        ],
+                        verbose_name="username",
+                    ),
+                ),
+                (
+                    "first_name",
+                    models.CharField(
+                        blank=True, max_length=150, verbose_name="first name"
+                    ),
+                ),
+                (
+                    "last_name",
+                    models.CharField(
+                        blank=True, max_length=150, verbose_name="last name"
+                    ),
+                ),
+                (
+                    "is_staff",
+                    models.BooleanField(
+                        default=False,
+                        help_text="Designates whether the user can log into this admin site.",
+                        verbose_name="staff status",
+                    ),
+                ),
+                (
+                    "is_active",
+                    models.BooleanField(
+                        default=True,
+                        help_text="Designates whether this user should be treated as active. Unselect this instead of deleting accounts.",
+                        verbose_name="active",
+                    ),
+                ),
+                (
+                    "date_joined",
+                    models.DateTimeField(
+                        default=django.utils.timezone.now, verbose_name="date joined"
+                    ),
+                ),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                ("avatar", models.URLField(blank=True, null=True)),
+                (
+                    "role",
+                    models.CharField(
+                        choices=[
+                            ("admin", "Admin"),
+                            ("user", "User"),
+                            ("viewer", "Viewer"),
+                        ],
+                        default="user",
+                        max_length=20,
+                    ),
+                ),
+                (
+                    "subscription_tier",
+                    models.CharField(
+                        choices=[
+                            ("free", "Free"),
+                            ("pro", "Pro"),
+                            ("enterprise", "Enterprise"),
+                        ],
+                        default="free",
+                        max_length=20,
+                    ),
+                ),
+                ("is_2fa_enabled", models.BooleanField(default=False)),
+                (
+                    "phone_number",
+                    models.CharField(blank=True, max_length=20, null=True),
+                ),
+                ("user_timezone", models.CharField(default="UTC", max_length=50)),
+                ("last_activity", models.DateTimeField(auto_now=True)),
+                ("email", models.EmailField(max_length=254, unique=True)),
+                (
+                    "profile_image",
+                    models.ImageField(
+                        blank=True, null=True, upload_to="profile_images/"
+                    ),
+                ),
+                ("date_of_birth", models.DateField(blank=True, null=True)),
+                ("bio", models.TextField(blank=True, max_length=500)),
+                ("location", models.CharField(blank=True, max_length=100)),
+                ("website", models.URLField(blank=True)),
+                (
+                    "last_password_change",
+                    models.DateTimeField(default=django.utils.timezone.now),
+                ),
+                ("password_reset_required", models.BooleanField(default=False)),
+                ("account_locked", models.BooleanField(default=False)),
+                ("failed_login_attempts", models.PositiveIntegerField(default=0)),
+                ("last_failed_login", models.DateTimeField(blank=True, null=True)),
+                ("email_notifications", models.BooleanField(default=True)),
+                ("push_notifications", models.BooleanField(default=True)),
+                ("marketing_emails", models.BooleanField(default=False)),
+                (
+                    "theme_preference",
+                    models.CharField(
+                        choices=[
+                            ("light", "Light"),
+                            ("dark", "Dark"),
+                            ("auto", "Auto"),
+                        ],
+                        default="auto",
+                        max_length=10,
+                    ),
+                ),
+                ("language", models.CharField(default="en", max_length=10)),
+                (
+                    "groups",
+                    models.ManyToManyField(
+                        blank=True,
+                        help_text="The groups this user belongs to. A user will get all permissions granted to each of their groups.",
+                        related_name="user_set",
+                        related_query_name="user",
+                        to="auth.group",
+                        verbose_name="groups",
+                    ),
+                ),
+                (
+                    "user_permissions",
+                    models.ManyToManyField(
+                        blank=True,
+                        help_text="Specific permissions for this user.",
+                        related_name="user_set",
+                        related_query_name="user",
+                        to="auth.permission",
+                        verbose_name="user permissions",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'user',
-                'verbose_name_plural': 'users',
-                'abstract': False,
+                "verbose_name": "user",
+                "verbose_name_plural": "users",
+                "abstract": False,
             },
             managers=[
-                ('objects', django.contrib.auth.models.UserManager()),
+                ("objects", django.contrib.auth.models.UserManager()),
             ],
         ),
         migrations.CreateModel(
-            name='APIKey',
+            name="APIKey",
             fields=[
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('name', models.CharField(max_length=255)),
-                ('key', models.CharField(max_length=255, unique=True)),
-                ('permissions', models.JSONField(default=list)),
-                ('is_active', models.BooleanField(default=True)),
-                ('last_used', models.DateTimeField(blank=True, null=True)),
-                ('expires_at', models.DateTimeField(blank=True, null=True)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('rate_limit', models.PositiveIntegerField(default=1000)),
-                ('usage_count', models.PositiveIntegerField(default=0)),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='api_keys', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                ("name", models.CharField(max_length=255)),
+                ("key", models.CharField(max_length=255, unique=True)),
+                ("permissions", models.JSONField(default=list)),
+                ("is_active", models.BooleanField(default=True)),
+                ("last_used", models.DateTimeField(blank=True, null=True)),
+                ("expires_at", models.DateTimeField(blank=True, null=True)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("rate_limit", models.PositiveIntegerField(default=1000)),
+                ("usage_count", models.PositiveIntegerField(default=0)),
+                (
+                    "user",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="api_keys",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='PasswordReset',
+            name="PasswordReset",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('token', models.CharField(max_length=255, unique=True)),
-                ('ip_address', models.GenericIPAddressField()),
-                ('used', models.BooleanField(default=False)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('expires_at', models.DateTimeField()),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("token", models.CharField(max_length=255, unique=True)),
+                ("ip_address", models.GenericIPAddressField()),
+                ("used", models.BooleanField(default=False)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("expires_at", models.DateTimeField()),
+                (
+                    "user",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='TwoFactorAuth',
+            name="TwoFactorAuth",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('secret_key', models.CharField(max_length=255)),
-                ('backup_codes', models.JSONField(default=list)),
-                ('is_enabled', models.BooleanField(default=False)),
-                ('last_used', models.DateTimeField(blank=True, null=True)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('user', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='two_factor', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("secret_key", models.CharField(max_length=255)),
+                ("backup_codes", models.JSONField(default=list)),
+                ("is_enabled", models.BooleanField(default=False)),
+                ("last_used", models.DateTimeField(blank=True, null=True)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                (
+                    "user",
+                    models.OneToOneField(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="two_factor",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='UserSession',
+            name="UserSession",
             fields=[
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('session_key', models.CharField(max_length=255, unique=True)),
-                ('ip_address', models.GenericIPAddressField()),
-                ('user_agent', models.TextField()),
-                ('location', models.CharField(blank=True, max_length=255, null=True)),
-                ('is_active', models.BooleanField(default=True)),
-                ('last_activity', models.DateTimeField(auto_now=True)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('expires_at', models.DateTimeField()),
-                ('device_info', models.JSONField(blank=True, default=dict)),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='sessions', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                ("session_key", models.CharField(max_length=255, unique=True)),
+                ("ip_address", models.GenericIPAddressField()),
+                ("user_agent", models.TextField()),
+                ("location", models.CharField(blank=True, max_length=255, null=True)),
+                ("is_active", models.BooleanField(default=True)),
+                ("last_activity", models.DateTimeField(auto_now=True)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("expires_at", models.DateTimeField()),
+                ("device_info", models.JSONField(blank=True, default=dict)),
+                (
+                    "user",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="sessions",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='UserRoleAssignment',
+            name="UserRoleAssignment",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('assigned_at', models.DateTimeField(auto_now_add=True)),
-                ('expires_at', models.DateTimeField(blank=True, null=True)),
-                ('is_active', models.BooleanField(default=True)),
-                ('assigned_by', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='role_assignments_made', to=settings.AUTH_USER_MODEL)),
-                ('role', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='authentication.userrole')),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='role_assignments', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("assigned_at", models.DateTimeField(auto_now_add=True)),
+                ("expires_at", models.DateTimeField(blank=True, null=True)),
+                ("is_active", models.BooleanField(default=True)),
+                (
+                    "assigned_by",
+                    models.ForeignKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="role_assignments_made",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "role",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="authentication.userrole",
+                    ),
+                ),
+                (
+                    "user",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="role_assignments",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'unique_together': {('user', 'role')},
+                "unique_together": {("user", "role")},
             },
         ),
     ]

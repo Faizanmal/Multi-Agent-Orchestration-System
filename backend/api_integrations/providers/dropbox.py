@@ -1,4 +1,5 @@
 """Dropbox API integration provider."""
+
 from typing import Any
 
 import requests
@@ -21,14 +22,32 @@ class DropboxProvider(IntegrationProvider):
     @classmethod
     def tool_definitions(cls) -> list[dict[str, Any]]:
         return [
-            {"name": "dropbox.list_folder", "description": "List files in a Dropbox folder", "parameters": {"path": "string"}},
-            {"name": "dropbox.search", "description": "Search Dropbox files by query", "parameters": {"query": "string"}},
-            {"name": "dropbox.download_text", "description": "Download a text file from Dropbox", "parameters": {"path": "string"}},
-            {"name": "dropbox.get_account", "description": "Get current Dropbox account info", "parameters": {}},
+            {
+                "name": "dropbox.list_folder",
+                "description": "List files in a Dropbox folder",
+                "parameters": {"path": "string"},
+            },
+            {
+                "name": "dropbox.search",
+                "description": "Search Dropbox files by query",
+                "parameters": {"query": "string"},
+            },
+            {
+                "name": "dropbox.download_text",
+                "description": "Download a text file from Dropbox",
+                "parameters": {"path": "string"},
+            },
+            {
+                "name": "dropbox.get_account",
+                "description": "Get current Dropbox account info",
+                "parameters": {},
+            },
         ]
 
     @classmethod
-    def _headers(cls, integration: APIIntegration, content_type: str = "application/json") -> dict[str, str]:
+    def _headers(
+        cls, integration: APIIntegration, content_type: str = "application/json"
+    ) -> dict[str, str]:
         token = cls._token(integration)
         if not token:
             raise ValueError("Dropbox access token required")
@@ -56,13 +75,21 @@ class DropboxProvider(IntegrationProvider):
             if resp.status_code >= 400:
                 return {"status": "error", "message": resp.text[:300]}
             data = resp.json()
-            name = (data.get("name") or {}).get("display_name") or data.get("email", "Dropbox user")
-            return {"status": "success", "message": f"Connected to Dropbox as {name}", "data": {"email": data.get("email")}}
+            name = (data.get("name") or {}).get("display_name") or data.get(
+                "email", "Dropbox user"
+            )
+            return {
+                "status": "success",
+                "message": f"Connected to Dropbox as {name}",
+                "data": {"email": data.get("email")},
+            }
         except Exception as e:  # noqa: BLE001
             return {"status": "error", "message": str(e)}
 
     @classmethod
-    def execute_tool(cls, integration: APIIntegration, tool_name: str, params: dict[str, Any]) -> dict[str, Any]:
+    def execute_tool(
+        cls, integration: APIIntegration, tool_name: str, params: dict[str, Any]
+    ) -> dict[str, Any]:
         try:
             token = cls._token(integration)
             auth = {"Authorization": f"Bearer {token}"}
@@ -92,7 +119,9 @@ class DropboxProvider(IntegrationProvider):
                 return {
                     "status": "success" if resp.ok else "error",
                     "entries": entries,
-                    "message": "" if resp.ok else data.get("error_summary", resp.text[:300]),
+                    "message": (
+                        "" if resp.ok else data.get("error_summary", resp.text[:300])
+                    ),
                 }
 
             if tool_name == "dropbox.search":
@@ -110,7 +139,9 @@ class DropboxProvider(IntegrationProvider):
                 return {
                     "status": "success" if resp.ok else "error",
                     "matches": matches,
-                    "message": "" if resp.ok else data.get("error_summary", resp.text[:300]),
+                    "message": (
+                        "" if resp.ok else data.get("error_summary", resp.text[:300])
+                    ),
                 }
 
             if tool_name == "dropbox.download_text":
@@ -118,6 +149,7 @@ class DropboxProvider(IntegrationProvider):
                 if not path:
                     return {"status": "error", "message": "path required"}
                 import json as _json
+
                 resp = requests.post(
                     "https://content.dropboxapi.com/2/files/download",
                     headers={
@@ -128,7 +160,12 @@ class DropboxProvider(IntegrationProvider):
                 )
                 if not resp.ok:
                     return {"status": "error", "message": resp.text[:300]}
-                return {"status": "success", "path": path, "content": resp.text[:50000], "message": ""}
+                return {
+                    "status": "success",
+                    "path": path,
+                    "content": resp.text[:50000],
+                    "message": "",
+                }
 
             return {"status": "error", "message": f"Unknown Dropbox tool: {tool_name}"}
         except Exception as e:  # noqa: BLE001

@@ -18,428 +18,1064 @@ class Migration(migrations.Migration):
 
     operations = [  # noqa: RUF012
         migrations.CreateModel(
-            name='Agent',
+            name="Agent",
             fields=[
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('name', models.CharField(max_length=100)),
-                ('type', models.CharField(choices=[('orchestrator', 'Orchestrator'), ('vision', 'Vision'), ('reasoning', 'Reasoning'), ('action', 'Action'), ('memory', 'Memory'), ('custom', 'Custom')], max_length=20)),
-                ('status', models.CharField(choices=[('idle', 'Idle'), ('active', 'Active'), ('processing', 'Processing'), ('error', 'Error'), ('offline', 'Offline')], default='idle', max_length=20)),
-                ('capabilities', models.JSONField(default=list)),
-                ('configuration', models.JSONField(default=dict)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('is_active', models.BooleanField(default=True)),
-                ('owner', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='agents', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                ("name", models.CharField(max_length=100)),
+                (
+                    "type",
+                    models.CharField(
+                        choices=[
+                            ("orchestrator", "Orchestrator"),
+                            ("vision", "Vision"),
+                            ("reasoning", "Reasoning"),
+                            ("action", "Action"),
+                            ("memory", "Memory"),
+                            ("custom", "Custom"),
+                        ],
+                        max_length=20,
+                    ),
+                ),
+                (
+                    "status",
+                    models.CharField(
+                        choices=[
+                            ("idle", "Idle"),
+                            ("active", "Active"),
+                            ("processing", "Processing"),
+                            ("error", "Error"),
+                            ("offline", "Offline"),
+                        ],
+                        default="idle",
+                        max_length=20,
+                    ),
+                ),
+                ("capabilities", models.JSONField(default=list)),
+                ("configuration", models.JSONField(default=dict)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                ("is_active", models.BooleanField(default=True)),
+                (
+                    "owner",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="agents",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'ordering': ['-created_at'],
+                "ordering": ["-created_at"],
             },
         ),
         migrations.CreateModel(
-            name='CollaborationSession',
+            name="CollaborationSession",
             fields=[
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('name', models.CharField(max_length=200)),
-                ('description', models.TextField(blank=True)),
-                ('is_public', models.BooleanField(default=False)),
-                ('is_active', models.BooleanField(default=True)),
-                ('max_members', models.PositiveIntegerField(default=50)),
-                ('session_data', models.JSONField(default=dict, help_text='Session-specific data and state')),
-                ('settings', models.JSONField(default=dict, help_text='Collaboration settings')),
-                ('workflow_id', models.CharField(blank=True, max_length=100, null=True)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('last_activity', models.DateTimeField(auto_now=True)),
-                ('owner', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='owned_sessions', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                ("name", models.CharField(max_length=200)),
+                ("description", models.TextField(blank=True)),
+                ("is_public", models.BooleanField(default=False)),
+                ("is_active", models.BooleanField(default=True)),
+                ("max_members", models.PositiveIntegerField(default=50)),
+                (
+                    "session_data",
+                    models.JSONField(
+                        default=dict, help_text="Session-specific data and state"
+                    ),
+                ),
+                (
+                    "settings",
+                    models.JSONField(default=dict, help_text="Collaboration settings"),
+                ),
+                (
+                    "workflow_id",
+                    models.CharField(blank=True, max_length=100, null=True),
+                ),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                ("last_activity", models.DateTimeField(auto_now=True)),
+                (
+                    "owner",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="owned_sessions",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'ordering': ['-last_activity'],
+                "ordering": ["-last_activity"],
             },
         ),
         migrations.CreateModel(
-            name='ChangeLog',
+            name="ChangeLog",
             fields=[
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('workflow_id', models.CharField(max_length=100)),
-                ('change_type', models.CharField(max_length=50)),
-                ('target_id', models.CharField(max_length=100)),
-                ('before_data', models.JSONField(default=dict, help_text='State before change')),
-                ('after_data', models.JSONField(default=dict, help_text='State after change')),
-                ('metadata', models.JSONField(default=dict, help_text='Additional change metadata')),
-                ('timestamp', models.DateTimeField(auto_now_add=True)),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
-                ('session', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='agents.collaborationsession')),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                ("workflow_id", models.CharField(max_length=100)),
+                ("change_type", models.CharField(max_length=50)),
+                ("target_id", models.CharField(max_length=100)),
+                (
+                    "before_data",
+                    models.JSONField(default=dict, help_text="State before change"),
+                ),
+                (
+                    "after_data",
+                    models.JSONField(default=dict, help_text="State after change"),
+                ),
+                (
+                    "metadata",
+                    models.JSONField(
+                        default=dict, help_text="Additional change metadata"
+                    ),
+                ),
+                ("timestamp", models.DateTimeField(auto_now_add=True)),
+                (
+                    "user",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "session",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="agents.collaborationsession",
+                    ),
+                ),
             ],
             options={
-                'ordering': ['-timestamp'],
+                "ordering": ["-timestamp"],
             },
         ),
         migrations.CreateModel(
-            name='ActivityLog',
+            name="ActivityLog",
             fields=[
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('action', models.CharField(max_length=50)),
-                ('details', models.JSONField(default=dict, help_text='Additional activity details')),
-                ('timestamp', models.DateTimeField(auto_now_add=True)),
-                ('user', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL)),
-                ('session', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='activities', to='agents.collaborationsession')),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                ("action", models.CharField(max_length=50)),
+                (
+                    "details",
+                    models.JSONField(
+                        default=dict, help_text="Additional activity details"
+                    ),
+                ),
+                ("timestamp", models.DateTimeField(auto_now_add=True)),
+                (
+                    "user",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "session",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="activities",
+                        to="agents.collaborationsession",
+                    ),
+                ),
             ],
             options={
-                'ordering': ['-timestamp'],
+                "ordering": ["-timestamp"],
             },
         ),
         migrations.CreateModel(
-            name='Comment',
+            name="Comment",
             fields=[
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('content', models.TextField()),
-                ('node_id', models.CharField(blank=True, help_text='ID of specific workflow node', max_length=100, null=True)),
-                ('resolved', models.BooleanField(default=False)),
-                ('resolved_at', models.DateTimeField(blank=True, null=True)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('author', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
-                ('resolved_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='resolved_comments', to=settings.AUTH_USER_MODEL)),
-                ('session', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='comments', to='agents.collaborationsession')),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                ("content", models.TextField()),
+                (
+                    "node_id",
+                    models.CharField(
+                        blank=True,
+                        help_text="ID of specific workflow node",
+                        max_length=100,
+                        null=True,
+                    ),
+                ),
+                ("resolved", models.BooleanField(default=False)),
+                ("resolved_at", models.DateTimeField(blank=True, null=True)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "author",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "resolved_by",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="resolved_comments",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "session",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="comments",
+                        to="agents.collaborationsession",
+                    ),
+                ),
             ],
             options={
-                'ordering': ['created_at'],
+                "ordering": ["created_at"],
             },
         ),
         migrations.CreateModel(
-            name='Notification',
+            name="Notification",
             fields=[
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('notification_type', models.CharField(choices=[('invitation', 'Invitation'), ('comment', 'Comment'), ('mention', 'Mention'), ('workflow_update', 'Workflow Update'), ('system', 'System')], max_length=20)),
-                ('title', models.CharField(max_length=200)),
-                ('message', models.TextField()),
-                ('data', models.JSONField(default=dict, help_text='Additional notification data')),
-                ('read', models.BooleanField(default=False)),
-                ('read_at', models.DateTimeField(blank=True, null=True)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('recipient', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='agent_notifications', to=settings.AUTH_USER_MODEL)),
-                ('sender', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='sent_notifications', to=settings.AUTH_USER_MODEL)),
-                ('session', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='agents.collaborationsession')),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                (
+                    "notification_type",
+                    models.CharField(
+                        choices=[
+                            ("invitation", "Invitation"),
+                            ("comment", "Comment"),
+                            ("mention", "Mention"),
+                            ("workflow_update", "Workflow Update"),
+                            ("system", "System"),
+                        ],
+                        max_length=20,
+                    ),
+                ),
+                ("title", models.CharField(max_length=200)),
+                ("message", models.TextField()),
+                (
+                    "data",
+                    models.JSONField(
+                        default=dict, help_text="Additional notification data"
+                    ),
+                ),
+                ("read", models.BooleanField(default=False)),
+                ("read_at", models.DateTimeField(blank=True, null=True)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                (
+                    "recipient",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="agent_notifications",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "sender",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="sent_notifications",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "session",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="agents.collaborationsession",
+                    ),
+                ),
             ],
             options={
-                'ordering': ['-created_at'],
+                "ordering": ["-created_at"],
             },
         ),
         migrations.CreateModel(
-            name='Session',
+            name="Session",
             fields=[
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('name', models.CharField(max_length=200)),
-                ('context', models.JSONField(default=dict)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('is_active', models.BooleanField(default=True)),
-                ('agents', models.ManyToManyField(related_name='sessions', to='agents.agent')),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='agent_sessions', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                ("name", models.CharField(max_length=200)),
+                ("context", models.JSONField(default=dict)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                ("is_active", models.BooleanField(default=True)),
+                (
+                    "agents",
+                    models.ManyToManyField(related_name="sessions", to="agents.agent"),
+                ),
+                (
+                    "user",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="agent_sessions",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'ordering': ['-updated_at'],
+                "ordering": ["-updated_at"],
             },
         ),
         migrations.CreateModel(
-            name='PerformanceMetric',
+            name="PerformanceMetric",
             fields=[
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('metric_name', models.CharField(max_length=100)),
-                ('metric_value', models.FloatField()),
-                ('timestamp', models.DateTimeField(auto_now_add=True)),
-                ('metadata', models.JSONField(default=dict)),
-                ('agent', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='metrics', to='agents.agent')),
-                ('session', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='agents.session')),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                ("metric_name", models.CharField(max_length=100)),
+                ("metric_value", models.FloatField()),
+                ("timestamp", models.DateTimeField(auto_now_add=True)),
+                ("metadata", models.JSONField(default=dict)),
+                (
+                    "agent",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="metrics",
+                        to="agents.agent",
+                    ),
+                ),
+                (
+                    "session",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="agents.session",
+                    ),
+                ),
             ],
             options={
-                'ordering': ['-timestamp'],
+                "ordering": ["-timestamp"],
             },
         ),
         migrations.CreateModel(
-            name='Message',
+            name="Message",
             fields=[
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('content', models.TextField()),
-                ('message_type', models.CharField(choices=[('text', 'Text'), ('image', 'Image'), ('audio', 'Audio'), ('video', 'Video'), ('file', 'File'), ('system', 'System')], default='text', max_length=20)),
-                ('metadata', models.JSONField(default=dict)),
-                ('file_attachment', models.FileField(blank=True, null=True, upload_to='attachments/')),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('processed_at', models.DateTimeField(blank=True, null=True)),
-                ('recipient_agent', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='received_messages', to='agents.agent')),
-                ('sender', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
-                ('sender_agent', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='agents.agent')),
-                ('session', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='messages', to='agents.session')),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                ("content", models.TextField()),
+                (
+                    "message_type",
+                    models.CharField(
+                        choices=[
+                            ("text", "Text"),
+                            ("image", "Image"),
+                            ("audio", "Audio"),
+                            ("video", "Video"),
+                            ("file", "File"),
+                            ("system", "System"),
+                        ],
+                        default="text",
+                        max_length=20,
+                    ),
+                ),
+                ("metadata", models.JSONField(default=dict)),
+                (
+                    "file_attachment",
+                    models.FileField(blank=True, null=True, upload_to="attachments/"),
+                ),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("processed_at", models.DateTimeField(blank=True, null=True)),
+                (
+                    "recipient_agent",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="received_messages",
+                        to="agents.agent",
+                    ),
+                ),
+                (
+                    "sender",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "sender_agent",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="agents.agent",
+                    ),
+                ),
+                (
+                    "session",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="messages",
+                        to="agents.session",
+                    ),
+                ),
             ],
             options={
-                'ordering': ['created_at'],
+                "ordering": ["created_at"],
             },
         ),
         migrations.CreateModel(
-            name='AgentMemory',
+            name="AgentMemory",
             fields=[
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('key', models.CharField(max_length=200)),
-                ('value', models.JSONField()),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('accessed_at', models.DateTimeField(auto_now=True)),
-                ('importance_score', models.FloatField(default=1.0)),
-                ('agent', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='memories', to='agents.agent')),
-                ('session', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='memories', to='agents.session')),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                ("key", models.CharField(max_length=200)),
+                ("value", models.JSONField()),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("accessed_at", models.DateTimeField(auto_now=True)),
+                ("importance_score", models.FloatField(default=1.0)),
+                (
+                    "agent",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="memories",
+                        to="agents.agent",
+                    ),
+                ),
+                (
+                    "session",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="memories",
+                        to="agents.session",
+                    ),
+                ),
             ],
             options={
-                'ordering': ['-importance_score', '-accessed_at'],
+                "ordering": ["-importance_score", "-accessed_at"],
             },
         ),
         migrations.CreateModel(
-            name='Task',
+            name="Task",
             fields=[
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('title', models.CharField(max_length=200)),
-                ('description', models.TextField()),
-                ('task_type', models.CharField(max_length=50)),
-                ('priority', models.CharField(choices=[('low', 'Low'), ('normal', 'Normal'), ('high', 'High'), ('urgent', 'Urgent')], default='normal', max_length=20)),
-                ('status', models.CharField(choices=[('pending', 'Pending'), ('in_progress', 'In Progress'), ('completed', 'Completed'), ('failed', 'Failed'), ('cancelled', 'Cancelled')], default='pending', max_length=20)),
-                ('requirements', models.JSONField(default=dict)),
-                ('input_data', models.JSONField(default=dict)),
-                ('output_data', models.JSONField(default=dict)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('started_at', models.DateTimeField(blank=True, null=True)),
-                ('completed_at', models.DateTimeField(blank=True, null=True)),
-                ('estimated_duration', models.IntegerField(blank=True, help_text='Estimated duration in seconds', null=True)),
-                ('actual_duration', models.IntegerField(blank=True, help_text='Actual duration in seconds', null=True)),
-                ('assigned_agent', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='assigned_tasks', to='agents.agent')),
-                ('created_by', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='created_tasks', to=settings.AUTH_USER_MODEL)),
-                ('session', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='tasks', to='agents.session')),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                ("title", models.CharField(max_length=200)),
+                ("description", models.TextField()),
+                ("task_type", models.CharField(max_length=50)),
+                (
+                    "priority",
+                    models.CharField(
+                        choices=[
+                            ("low", "Low"),
+                            ("normal", "Normal"),
+                            ("high", "High"),
+                            ("urgent", "Urgent"),
+                        ],
+                        default="normal",
+                        max_length=20,
+                    ),
+                ),
+                (
+                    "status",
+                    models.CharField(
+                        choices=[
+                            ("pending", "Pending"),
+                            ("in_progress", "In Progress"),
+                            ("completed", "Completed"),
+                            ("failed", "Failed"),
+                            ("cancelled", "Cancelled"),
+                        ],
+                        default="pending",
+                        max_length=20,
+                    ),
+                ),
+                ("requirements", models.JSONField(default=dict)),
+                ("input_data", models.JSONField(default=dict)),
+                ("output_data", models.JSONField(default=dict)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("started_at", models.DateTimeField(blank=True, null=True)),
+                ("completed_at", models.DateTimeField(blank=True, null=True)),
+                (
+                    "estimated_duration",
+                    models.IntegerField(
+                        blank=True, help_text="Estimated duration in seconds", null=True
+                    ),
+                ),
+                (
+                    "actual_duration",
+                    models.IntegerField(
+                        blank=True, help_text="Actual duration in seconds", null=True
+                    ),
+                ),
+                (
+                    "assigned_agent",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="assigned_tasks",
+                        to="agents.agent",
+                    ),
+                ),
+                (
+                    "created_by",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="created_tasks",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "session",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="tasks",
+                        to="agents.session",
+                    ),
+                ),
             ],
             options={
-                'ordering': ['-created_at'],
+                "ordering": ["-created_at"],
             },
         ),
         migrations.CreateModel(
-            name='TaskExecution',
+            name="TaskExecution",
             fields=[
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('execution_identifier', models.CharField(default='', help_text='Task execution identifier for tracking', max_length=100)),
-                ('task_type', models.CharField(max_length=50)),
-                ('start_time', models.DateTimeField()),
-                ('end_time', models.DateTimeField()),
-                ('execution_time', models.FloatField(help_text='Execution time in seconds')),
-                ('success', models.BooleanField()),
-                ('accuracy', models.FloatField(blank=True, help_text='Task accuracy score (0-1)', null=True)),
-                ('error_message', models.TextField(blank=True, null=True)),
-                ('resource_usage', models.JSONField(default=dict, help_text='CPU, memory, and other resource usage')),
-                ('metadata', models.JSONField(default=dict)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('agent', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='task_executions', to='agents.agent')),
-                ('task', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='executions', to='agents.task')),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                (
+                    "execution_identifier",
+                    models.CharField(
+                        default="",
+                        help_text="Task execution identifier for tracking",
+                        max_length=100,
+                    ),
+                ),
+                ("task_type", models.CharField(max_length=50)),
+                ("start_time", models.DateTimeField()),
+                ("end_time", models.DateTimeField()),
+                (
+                    "execution_time",
+                    models.FloatField(help_text="Execution time in seconds"),
+                ),
+                ("success", models.BooleanField()),
+                (
+                    "accuracy",
+                    models.FloatField(
+                        blank=True, help_text="Task accuracy score (0-1)", null=True
+                    ),
+                ),
+                ("error_message", models.TextField(blank=True, null=True)),
+                (
+                    "resource_usage",
+                    models.JSONField(
+                        default=dict, help_text="CPU, memory, and other resource usage"
+                    ),
+                ),
+                ("metadata", models.JSONField(default=dict)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                (
+                    "agent",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="task_executions",
+                        to="agents.agent",
+                    ),
+                ),
+                (
+                    "task",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="executions",
+                        to="agents.task",
+                    ),
+                ),
             ],
             options={
-                'ordering': ['-start_time'],
+                "ordering": ["-start_time"],
             },
         ),
         migrations.CreateModel(
-            name='TeamMember',
+            name="TeamMember",
             fields=[
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('role', models.CharField(choices=[('owner', 'Owner'), ('editor', 'Editor'), ('viewer', 'Viewer'), ('commenter', 'Commenter')], default='viewer', max_length=20)),
-                ('permissions', models.JSONField(default=list, help_text='List of specific permissions')),
-                ('status', models.CharField(choices=[('online', 'Online'), ('away', 'Away'), ('offline', 'Offline'), ('busy', 'Busy')], default='offline', max_length=20)),
-                ('last_active', models.DateTimeField(blank=True, null=True)),
-                ('cursor_position', models.JSONField(default=dict, help_text='Current cursor/selection position')),
-                ('joined_at', models.DateTimeField(auto_now_add=True)),
-                ('invited_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='invited_members', to=settings.AUTH_USER_MODEL)),
-                ('session', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='members', to='agents.collaborationsession')),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                (
+                    "role",
+                    models.CharField(
+                        choices=[
+                            ("owner", "Owner"),
+                            ("editor", "Editor"),
+                            ("viewer", "Viewer"),
+                            ("commenter", "Commenter"),
+                        ],
+                        default="viewer",
+                        max_length=20,
+                    ),
+                ),
+                (
+                    "permissions",
+                    models.JSONField(
+                        default=list, help_text="List of specific permissions"
+                    ),
+                ),
+                (
+                    "status",
+                    models.CharField(
+                        choices=[
+                            ("online", "Online"),
+                            ("away", "Away"),
+                            ("offline", "Offline"),
+                            ("busy", "Busy"),
+                        ],
+                        default="offline",
+                        max_length=20,
+                    ),
+                ),
+                ("last_active", models.DateTimeField(blank=True, null=True)),
+                (
+                    "cursor_position",
+                    models.JSONField(
+                        default=dict, help_text="Current cursor/selection position"
+                    ),
+                ),
+                ("joined_at", models.DateTimeField(auto_now_add=True)),
+                (
+                    "invited_by",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="invited_members",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "session",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="members",
+                        to="agents.collaborationsession",
+                    ),
+                ),
+                (
+                    "user",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'ordering': ['role', 'user__username'],
+                "ordering": ["role", "user__username"],
             },
         ),
         migrations.CreateModel(
-            name='WorkflowLock',
+            name="WorkflowLock",
             fields=[
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('workflow_id', models.CharField(max_length=100)),
-                ('node_id', models.CharField(blank=True, max_length=100, null=True)),
-                ('lock_type', models.CharField(default='edit', max_length=20)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('expires_at', models.DateTimeField()),
-                ('last_heartbeat', models.DateTimeField(auto_now=True)),
-                ('locked_by', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
-                ('session', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='agents.collaborationsession')),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                ("workflow_id", models.CharField(max_length=100)),
+                ("node_id", models.CharField(blank=True, max_length=100, null=True)),
+                ("lock_type", models.CharField(default="edit", max_length=20)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("expires_at", models.DateTimeField()),
+                ("last_heartbeat", models.DateTimeField(auto_now=True)),
+                (
+                    "locked_by",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "session",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="agents.collaborationsession",
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='WorkflowTemplate',
+            name="WorkflowTemplate",
             fields=[
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('name', models.CharField(max_length=200)),
-                ('description', models.TextField()),
-                ('category', models.CharField(max_length=100)),
-                ('tags', models.JSONField(default=list)),
-                ('workflow_definition', models.JSONField(help_text='JSON definition of the workflow steps')),
-                ('is_public', models.BooleanField(default=False)),
-                ('usage_count', models.IntegerField(default=0)),
-                ('average_rating', models.FloatField(default=0.0)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('created_by', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='workflow_templates', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                ("name", models.CharField(max_length=200)),
+                ("description", models.TextField()),
+                ("category", models.CharField(max_length=100)),
+                ("tags", models.JSONField(default=list)),
+                (
+                    "workflow_definition",
+                    models.JSONField(help_text="JSON definition of the workflow steps"),
+                ),
+                ("is_public", models.BooleanField(default=False)),
+                ("usage_count", models.IntegerField(default=0)),
+                ("average_rating", models.FloatField(default=0.0)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "created_by",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="workflow_templates",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'ordering': ['-usage_count', '-average_rating'],
+                "ordering": ["-usage_count", "-average_rating"],
             },
         ),
         migrations.CreateModel(
-            name='AgentSkill',
+            name="AgentSkill",
             fields=[
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('skill_name', models.CharField(max_length=100)),
-                ('proficiency_level', models.FloatField(help_text='Skill proficiency (0-1)')),
-                ('confidence_score', models.FloatField(help_text='Confidence in skill assessment (0-1)')),
-                ('last_used', models.DateTimeField(blank=True, null=True)),
-                ('usage_count', models.IntegerField(default=0)),
-                ('success_rate', models.FloatField(default=0.0)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('agent', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='skills', to='agents.agent')),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                ("skill_name", models.CharField(max_length=100)),
+                (
+                    "proficiency_level",
+                    models.FloatField(help_text="Skill proficiency (0-1)"),
+                ),
+                (
+                    "confidence_score",
+                    models.FloatField(help_text="Confidence in skill assessment (0-1)"),
+                ),
+                ("last_used", models.DateTimeField(blank=True, null=True)),
+                ("usage_count", models.IntegerField(default=0)),
+                ("success_rate", models.FloatField(default=0.0)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "agent",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="skills",
+                        to="agents.agent",
+                    ),
+                ),
             ],
             options={
-                'ordering': ['-proficiency_level'],
-                'indexes': [models.Index(fields=['agent', 'skill_name'], name='agents_agen_agent_i_db780f_idx'), models.Index(fields=['proficiency_level'], name='agents_agen_profici_850edd_idx')],
-                'unique_together': {('agent', 'skill_name')},
+                "ordering": ["-proficiency_level"],
+                "indexes": [
+                    models.Index(
+                        fields=["agent", "skill_name"],
+                        name="agents_agen_agent_i_db780f_idx",
+                    ),
+                    models.Index(
+                        fields=["proficiency_level"],
+                        name="agents_agen_profici_850edd_idx",
+                    ),
+                ],
+                "unique_together": {("agent", "skill_name")},
             },
         ),
         migrations.AddIndex(
-            model_name='collaborationsession',
-            index=models.Index(fields=['owner', 'is_active'], name='agents_coll_owner_i_9f0cbf_idx'),
+            model_name="collaborationsession",
+            index=models.Index(
+                fields=["owner", "is_active"], name="agents_coll_owner_i_9f0cbf_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='collaborationsession',
-            index=models.Index(fields=['is_public', 'is_active'], name='agents_coll_is_publ_ec84ef_idx'),
+            model_name="collaborationsession",
+            index=models.Index(
+                fields=["is_public", "is_active"], name="agents_coll_is_publ_ec84ef_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='changelog',
-            index=models.Index(fields=['session', 'timestamp'], name='agents_chan_session_841ff5_idx'),
+            model_name="changelog",
+            index=models.Index(
+                fields=["session", "timestamp"], name="agents_chan_session_841ff5_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='changelog',
-            index=models.Index(fields=['workflow_id', 'timestamp'], name='agents_chan_workflo_fc4ec0_idx'),
+            model_name="changelog",
+            index=models.Index(
+                fields=["workflow_id", "timestamp"],
+                name="agents_chan_workflo_fc4ec0_idx",
+            ),
         ),
         migrations.AddIndex(
-            model_name='changelog',
-            index=models.Index(fields=['user', 'timestamp'], name='agents_chan_user_id_339bab_idx'),
+            model_name="changelog",
+            index=models.Index(
+                fields=["user", "timestamp"], name="agents_chan_user_id_339bab_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='activitylog',
-            index=models.Index(fields=['session', 'timestamp'], name='agents_acti_session_c6ea47_idx'),
+            model_name="activitylog",
+            index=models.Index(
+                fields=["session", "timestamp"], name="agents_acti_session_c6ea47_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='activitylog',
-            index=models.Index(fields=['user', 'timestamp'], name='agents_acti_user_id_8edff3_idx'),
+            model_name="activitylog",
+            index=models.Index(
+                fields=["user", "timestamp"], name="agents_acti_user_id_8edff3_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='activitylog',
-            index=models.Index(fields=['action', 'timestamp'], name='agents_acti_action_5ad9ae_idx'),
+            model_name="activitylog",
+            index=models.Index(
+                fields=["action", "timestamp"], name="agents_acti_action_5ad9ae_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='comment',
-            index=models.Index(fields=['session', 'resolved'], name='agents_comm_session_11d539_idx'),
+            model_name="comment",
+            index=models.Index(
+                fields=["session", "resolved"], name="agents_comm_session_11d539_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='comment',
-            index=models.Index(fields=['node_id', 'created_at'], name='agents_comm_node_id_343742_idx'),
+            model_name="comment",
+            index=models.Index(
+                fields=["node_id", "created_at"], name="agents_comm_node_id_343742_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='comment',
-            index=models.Index(fields=['author', 'created_at'], name='agents_comm_author__7affd3_idx'),
+            model_name="comment",
+            index=models.Index(
+                fields=["author", "created_at"], name="agents_comm_author__7affd3_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='notification',
-            index=models.Index(fields=['recipient', 'read'], name='agents_noti_recipie_d5b962_idx'),
+            model_name="notification",
+            index=models.Index(
+                fields=["recipient", "read"], name="agents_noti_recipie_d5b962_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='notification',
-            index=models.Index(fields=['notification_type', 'created_at'], name='agents_noti_notific_7fae3f_idx'),
+            model_name="notification",
+            index=models.Index(
+                fields=["notification_type", "created_at"],
+                name="agents_noti_notific_7fae3f_idx",
+            ),
         ),
         migrations.AddIndex(
-            model_name='performancemetric',
-            index=models.Index(fields=['agent', 'metric_name'], name='agents_perf_agent_i_2fed77_idx'),
+            model_name="performancemetric",
+            index=models.Index(
+                fields=["agent", "metric_name"], name="agents_perf_agent_i_2fed77_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='performancemetric',
-            index=models.Index(fields=['timestamp'], name='agents_perf_timesta_40cb86_idx'),
+            model_name="performancemetric",
+            index=models.Index(
+                fields=["timestamp"], name="agents_perf_timesta_40cb86_idx"
+            ),
         ),
         migrations.AlterUniqueTogether(
-            name='agentmemory',
-            unique_together={('agent', 'session', 'key')},
+            name="agentmemory",
+            unique_together={("agent", "session", "key")},
         ),
         migrations.AddIndex(
-            model_name='task',
-            index=models.Index(fields=['status', 'priority'], name='agents_task_status_b4308a_idx'),
+            model_name="task",
+            index=models.Index(
+                fields=["status", "priority"], name="agents_task_status_b4308a_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='task',
-            index=models.Index(fields=['assigned_agent', 'status'], name='agents_task_assigne_ca98a4_idx'),
+            model_name="task",
+            index=models.Index(
+                fields=["assigned_agent", "status"],
+                name="agents_task_assigne_ca98a4_idx",
+            ),
         ),
         migrations.AddIndex(
-            model_name='task',
-            index=models.Index(fields=['task_type'], name='agents_task_task_ty_95bdde_idx'),
+            model_name="task",
+            index=models.Index(
+                fields=["task_type"], name="agents_task_task_ty_95bdde_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='task',
-            index=models.Index(fields=['created_at'], name='agents_task_created_d5064f_idx'),
+            model_name="task",
+            index=models.Index(
+                fields=["created_at"], name="agents_task_created_d5064f_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='taskexecution',
-            index=models.Index(fields=['agent', 'task_type'], name='agents_task_agent_i_bc9728_idx'),
+            model_name="taskexecution",
+            index=models.Index(
+                fields=["agent", "task_type"], name="agents_task_agent_i_bc9728_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='taskexecution',
-            index=models.Index(fields=['start_time'], name='agents_task_start_t_fe1eca_idx'),
+            model_name="taskexecution",
+            index=models.Index(
+                fields=["start_time"], name="agents_task_start_t_fe1eca_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='taskexecution',
-            index=models.Index(fields=['success'], name='agents_task_success_2c3ba8_idx'),
+            model_name="taskexecution",
+            index=models.Index(
+                fields=["success"], name="agents_task_success_2c3ba8_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='taskexecution',
-            index=models.Index(fields=['task_type', 'success'], name='agents_task_task_ty_fb6811_idx'),
+            model_name="taskexecution",
+            index=models.Index(
+                fields=["task_type", "success"], name="agents_task_task_ty_fb6811_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='teammember',
-            index=models.Index(fields=['session', 'status'], name='agents_team_session_c778e1_idx'),
+            model_name="teammember",
+            index=models.Index(
+                fields=["session", "status"], name="agents_team_session_c778e1_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='teammember',
-            index=models.Index(fields=['user', 'last_active'], name='agents_team_user_id_b1a7ee_idx'),
+            model_name="teammember",
+            index=models.Index(
+                fields=["user", "last_active"], name="agents_team_user_id_b1a7ee_idx"
+            ),
         ),
         migrations.AlterUniqueTogether(
-            name='teammember',
-            unique_together={('session', 'user')},
+            name="teammember",
+            unique_together={("session", "user")},
         ),
         migrations.AddIndex(
-            model_name='workflowlock',
-            index=models.Index(fields=['session', 'locked_by'], name='agents_work_session_d960a2_idx'),
+            model_name="workflowlock",
+            index=models.Index(
+                fields=["session", "locked_by"], name="agents_work_session_d960a2_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='workflowlock',
-            index=models.Index(fields=['expires_at'], name='agents_work_expires_748018_idx'),
+            model_name="workflowlock",
+            index=models.Index(
+                fields=["expires_at"], name="agents_work_expires_748018_idx"
+            ),
         ),
         migrations.AlterUniqueTogether(
-            name='workflowlock',
-            unique_together={('session', 'workflow_id', 'node_id')},
+            name="workflowlock",
+            unique_together={("session", "workflow_id", "node_id")},
         ),
         migrations.AddIndex(
-            model_name='workflowtemplate',
-            index=models.Index(fields=['category'], name='agents_work_categor_29871e_idx'),
+            model_name="workflowtemplate",
+            index=models.Index(
+                fields=["category"], name="agents_work_categor_29871e_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='workflowtemplate',
-            index=models.Index(fields=['is_public'], name='agents_work_is_publ_fbb09e_idx'),
+            model_name="workflowtemplate",
+            index=models.Index(
+                fields=["is_public"], name="agents_work_is_publ_fbb09e_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='workflowtemplate',
-            index=models.Index(fields=['usage_count'], name='agents_work_usage_c_20ac2c_idx'),
+            model_name="workflowtemplate",
+            index=models.Index(
+                fields=["usage_count"], name="agents_work_usage_c_20ac2c_idx"
+            ),
         ),
     ]

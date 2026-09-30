@@ -1,4 +1,5 @@
 """Integration provider registry and tool router."""
+
 from typing import Any
 
 from .models import APIIntegration
@@ -68,7 +69,9 @@ class IntegrationToolRegistry:
     """Resolve integrations to providers and execute tools for agents."""
 
     @classmethod
-    def get_provider(cls, integration: APIIntegration) -> type[IntegrationProvider] | None:
+    def get_provider(
+        cls, integration: APIIntegration
+    ) -> type[IntegrationProvider] | None:
         for provider in ALL_PROVIDERS:
             if provider.detect(integration):
                 return provider
@@ -94,12 +97,14 @@ class IntegrationToolRegistry:
             if not provider:
                 continue
             for tool in provider.tool_definitions():
-                tools.append({
-                    **tool,
-                    "integration_id": str(integration.id),
-                    "integration_name": integration.name,
-                    "provider": provider.provider_key,
-                })
+                tools.append(
+                    {
+                        **tool,
+                        "integration_id": str(integration.id),
+                        "integration_name": integration.name,
+                        "provider": provider.provider_key,
+                    }
+                )
         return tools
 
     @classmethod
@@ -107,12 +112,18 @@ class IntegrationToolRegistry:
         lines = []
         for tool in cls.all_tool_definitions(user):
             params = tool.get("parameters", {})
-            param_str = ", ".join(f"{k}: {v}" for k, v in params.items()) if params else "none"
-            lines.append(f"  {tool['name']}({param_str}) — {tool['description']} [{tool['integration_name']}]")
+            param_str = (
+                ", ".join(f"{k}: {v}" for k, v in params.items()) if params else "none"
+            )
+            lines.append(
+                f"  {tool['name']}({param_str}) — {tool['description']} [{tool['integration_name']}]"
+            )
         return "\n".join(lines) if lines else "  (no integrations connected)"
 
     @classmethod
-    def execute(cls, tool_name: str, params: dict[str, Any], user=None) -> dict[str, Any]:
+    def execute(
+        cls, tool_name: str, params: dict[str, Any], user=None
+    ) -> dict[str, Any]:
         """Execute a namespaced tool against the matching connected integration."""
         aliases = {"read_gmail": "gmail.read_inbox"}
         tool_name = aliases.get(tool_name, tool_name)
@@ -138,14 +149,20 @@ class IntegrationToolRegistry:
     def test_integration(cls, integration: APIIntegration) -> dict[str, Any]:
         provider = cls.get_provider(integration)
         if not provider:
-            return {"status": "error", "message": "No provider handler for this integration type"}
+            return {
+                "status": "error",
+                "message": "No provider handler for this integration type",
+            }
         return provider.test_connection(integration)
 
     @classmethod
     def detect_intent(cls, content: str) -> str | None:
         """Map user message to likely provider key."""
         c = content.lower()
-        if any(w in c for w in ("email", "gmail", "inbox", "mail")) and "outlook" not in c:
+        if (
+            any(w in c for w in ("email", "gmail", "inbox", "mail"))
+            and "outlook" not in c
+        ):
             return "gmail"
         if "outlook" in c:
             return "outlook"

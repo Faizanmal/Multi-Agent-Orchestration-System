@@ -5,14 +5,14 @@ import sys
 
 # Suppress TF/Keras imports in transformers & sentence-transformers before any
 # Django app code is loaded — prevents the Keras-3/tf-keras import crash.
-os.environ.setdefault('TRANSFORMERS_NO_TF', '1')
-os.environ.setdefault('USE_TF', '0')
-os.environ.setdefault('TF_CPP_MIN_LOG_LEVEL', '3')
+os.environ.setdefault("TRANSFORMERS_NO_TF", "1")
+os.environ.setdefault("USE_TF", "0")
+os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "3")
 
 
 def main():
     """Run administrative tasks."""
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'backend.settings')
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "backend.settings")
     try:
         from django.core.management import execute_from_command_line
     except ImportError as exc:
@@ -24,5 +24,5 @@ def main():
     execute_from_command_line(sys.argv)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

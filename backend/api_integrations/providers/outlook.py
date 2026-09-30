@@ -1,4 +1,5 @@
 """Microsoft Outlook (Graph Mail) integration provider."""
+
 from typing import Any
 
 from ..models import APIIntegration
@@ -20,9 +21,21 @@ class OutlookProvider(IntegrationProvider):
     @classmethod
     def tool_definitions(cls) -> list[dict[str, Any]]:
         return [
-            {"name": "outlook.list_messages", "description": "List recent Outlook inbox messages", "parameters": {"top": "int"}},
-            {"name": "outlook.search", "description": "Search Outlook messages", "parameters": {"query": "string", "top": "int"}},
-            {"name": "outlook.send_mail", "description": "Send an email via Outlook", "parameters": {"to": "string", "subject": "string", "body": "string"}},
+            {
+                "name": "outlook.list_messages",
+                "description": "List recent Outlook inbox messages",
+                "parameters": {"top": "int"},
+            },
+            {
+                "name": "outlook.search",
+                "description": "Search Outlook messages",
+                "parameters": {"query": "string", "top": "int"},
+            },
+            {
+                "name": "outlook.send_mail",
+                "description": "Send an email via Outlook",
+                "parameters": {"to": "string", "subject": "string", "body": "string"},
+            },
         ]
 
     @classmethod
@@ -30,7 +43,9 @@ class OutlookProvider(IntegrationProvider):
         return test_graph_me(cls, integration, "Outlook")
 
     @classmethod
-    def execute_tool(cls, integration: APIIntegration, tool_name: str, params: dict[str, Any]) -> dict[str, Any]:
+    def execute_tool(
+        cls, integration: APIIntegration, tool_name: str, params: dict[str, Any]
+    ) -> dict[str, Any]:
         try:
             token = graph_token(cls, integration)
             top = min(int(params.get("top", 10)), 50)
@@ -39,9 +54,16 @@ class OutlookProvider(IntegrationProvider):
                 ok, data, err = graph_get(
                     token,
                     "/me/mailFolders/Inbox/messages",
-                    {"$top": top, "$select": "id,subject,from,receivedDateTime,bodyPreview,isRead"},
+                    {
+                        "$top": top,
+                        "$select": "id,subject,from,receivedDateTime,bodyPreview,isRead",
+                    },
                 )
-                return {"status": "success" if ok else "error", "messages": data.get("value", []) if ok else [], "message": err}
+                return {
+                    "status": "success" if ok else "error",
+                    "messages": data.get("value", []) if ok else [],
+                    "message": err,
+                }
 
             if tool_name == "outlook.search":
                 query = params.get("query", "")
@@ -56,7 +78,11 @@ class OutlookProvider(IntegrationProvider):
                         "$select": "id,subject,from,receivedDateTime,bodyPreview",
                     },
                 )
-                return {"status": "success" if ok else "error", "messages": data.get("value", []) if ok else [], "message": err}
+                return {
+                    "status": "success" if ok else "error",
+                    "messages": data.get("value", []) if ok else [],
+                    "message": err,
+                }
 
             if tool_name == "outlook.send_mail":
                 to = params.get("to")

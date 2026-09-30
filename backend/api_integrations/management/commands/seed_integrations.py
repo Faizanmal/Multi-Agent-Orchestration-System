@@ -1,4 +1,5 @@
 """Seed APITemplate records for all supported integrations."""
+
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
 
@@ -207,7 +208,11 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         user, _ = User.objects.get_or_create(
             email="default@example.com",
-            defaults={"username": "default_user", "first_name": "Default", "last_name": "User"},
+            defaults={
+                "username": "default_user",
+                "first_name": "Default",
+                "last_name": "User",
+            },
         )
 
         for i, tpl in enumerate(TEMPLATES):
@@ -242,6 +247,8 @@ class Command(BaseCommand):
         for integration in APIIntegration.objects.filter(status="active"):
             agents = ensure_integration_agents(integration)
             if agents:
-                self.stdout.write(self.style.SUCCESS(
-                    f"Provisioned {len(agents)} agent(s) for {integration.name}"
-                ))
+                self.stdout.write(
+                    self.style.SUCCESS(
+                        f"Provisioned {len(agents)} agent(s) for {integration.name}"
+                    )
+                )

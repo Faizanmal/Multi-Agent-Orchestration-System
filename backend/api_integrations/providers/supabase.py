@@ -1,4 +1,5 @@
 """Supabase (Postgres REST) integration provider."""
+
 from typing import Any
 
 import requests
@@ -21,9 +22,26 @@ class SupabaseProvider(IntegrationProvider):
     @classmethod
     def tool_definitions(cls) -> list[dict[str, Any]]:
         return [
-            {"name": "supabase.list_rows", "description": "List rows from a table via PostgREST", "parameters": {"table": "string", "limit": "int", "select": "string"}},
-            {"name": "supabase.insert_row", "description": "Insert a JSON row into a table", "parameters": {"table": "string", "row": "object"}},
-            {"name": "supabase.query", "description": "Filter rows with a simple eq filter", "parameters": {"table": "string", "column": "string", "value": "string", "limit": "int"}},
+            {
+                "name": "supabase.list_rows",
+                "description": "List rows from a table via PostgREST",
+                "parameters": {"table": "string", "limit": "int", "select": "string"},
+            },
+            {
+                "name": "supabase.insert_row",
+                "description": "Insert a JSON row into a table",
+                "parameters": {"table": "string", "row": "object"},
+            },
+            {
+                "name": "supabase.query",
+                "description": "Filter rows with a simple eq filter",
+                "parameters": {
+                    "table": "string",
+                    "column": "string",
+                    "value": "string",
+                    "limit": "int",
+                },
+            },
         ]
 
     @classmethod
@@ -32,7 +50,11 @@ class SupabaseProvider(IntegrationProvider):
         base = (integration.endpoint or "").rstrip("/")
         if not base or "YOUR_PROJECT" in base:
             base = (auth.get("project_url") or "").rstrip("/")
-        key = auth.get("service_role_key") or auth.get("anon_key") or cls._token(integration)
+        key = (
+            auth.get("service_role_key")
+            or auth.get("anon_key")
+            or cls._token(integration)
+        )
         if not base:
             raise ValueError("Supabase project URL required as endpoint")
         if not key:
@@ -53,20 +75,32 @@ class SupabaseProvider(IntegrationProvider):
         try:
             base, key = cls._base_and_key(integration)
             # Hit REST root — 200 or 404 with JSON still means reachable + auth accepted often
-            resp = requests.get(f"{base}/rest/v1/", headers=cls._headers(key), timeout=20)
-            if resp.status_code in (200, 404) or resp.headers.get("content-type", "").startswith("application/openapi"):
-                return {"status": "success", "message": f"Connected to Supabase at {base}"}
+            resp = requests.get(
+                f"{base}/rest/v1/", headers=cls._headers(key), timeout=20
+            )
+            if resp.status_code in (200, 404) or resp.headers.get(
+                "content-type", ""
+            ).startswith("application/openapi"):
+                return {
+                    "status": "success",
+                    "message": f"Connected to Supabase at {base}",
+                }
             if resp.status_code == 401:
                 return {"status": "error", "message": "Invalid Supabase API key"}
             # Some projects return 200 on /rest/v1 with openapi
             if resp.ok:
-                return {"status": "success", "message": f"Connected to Supabase at {base}"}
+                return {
+                    "status": "success",
+                    "message": f"Connected to Supabase at {base}",
+                }
             return {"status": "error", "message": resp.text[:300]}
         except Exception as e:  # noqa: BLE001
             return {"status": "error", "message": str(e)}
 
     @classmethod
-    def execute_tool(cls, integration: APIIntegration, tool_name: str, params: dict[str, Any]) -> dict[str, Any]:
+    def execute_tool(
+        cls, integration: APIIntegration, tool_name: str, params: dict[str, Any]
+    ) -> dict[str, Any]:
         try:
             base, key = cls._base_and_key(integration)
             headers = cls._headers(key)
@@ -112,6 +146,7 @@ class SupabaseProvider(IntegrationProvider):
                 row = params.get("row") or params.get("data") or {}
                 if isinstance(row, str):
                     import json
+
                     row = json.loads(row)
                 resp = requests.post(
                     f"{base}/rest/v1/{table}",

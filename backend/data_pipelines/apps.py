@@ -2,5 +2,5 @@ from django.apps import AppConfig
 
 
 class DataPipelinesConfig(AppConfig):
-    default_auto_field = 'django.db.models.BigAutoField'
-    name = 'data_pipelines'
+    default_auto_field = "django.db.models.BigAutoField"
+    name = "data_pipelines"

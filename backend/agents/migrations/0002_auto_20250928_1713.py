@@ -7,8 +7,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [  # noqa: RUF012
-        ('agents', '0001_initial'),
+        ("agents", "0001_initial"),
     ]
 
-    operations = [  # noqa: RUF012
-    ]
+    operations = []  # noqa: RUF012

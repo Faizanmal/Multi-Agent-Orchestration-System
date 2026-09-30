@@ -1,4 +1,5 @@
 """Anthropic Claude integration provider."""
+
 from typing import Any
 
 import requests
@@ -42,15 +43,25 @@ class AnthropicProvider(IntegrationProvider):
     @classmethod
     def test_connection(cls, integration: APIIntegration) -> dict[str, Any]:
         try:
-            result = cls.execute_tool(integration, "anthropic.chat", {"prompt": "Reply with OK only.", "model": "claude-3-5-haiku-20241022"})
+            result = cls.execute_tool(
+                integration,
+                "anthropic.chat",
+                {"prompt": "Reply with OK only.", "model": "claude-3-5-haiku-20241022"},
+            )
             if result.get("status") == "success":
-                return {"status": "success", "message": "Anthropic API connected", "data": result}
+                return {
+                    "status": "success",
+                    "message": "Anthropic API connected",
+                    "data": result,
+                }
             return result
         except Exception as e:  # noqa: BLE001
             return {"status": "error", "message": str(e)}
 
     @classmethod
-    def execute_tool(cls, integration: APIIntegration, tool_name: str, params: dict[str, Any]) -> dict[str, Any]:
+    def execute_tool(
+        cls, integration: APIIntegration, tool_name: str, params: dict[str, Any]
+    ) -> dict[str, Any]:
         try:
             if tool_name == "anthropic.chat":
                 prompt = params.get("prompt", "Hello")
@@ -66,9 +77,14 @@ class AnthropicProvider(IntegrationProvider):
                     timeout=60,
                 )
                 if resp.status_code >= 400:
-                    raise ValueError(resp.json().get("error", {}).get("message", resp.text))
+                    raise ValueError(
+                        resp.json().get("error", {}).get("message", resp.text)
+                    )
                 content = resp.json()["content"][0]["text"]
                 return {"status": "success", "content": content, "model": model}
-            return {"status": "error", "message": f"Unknown Anthropic tool: {tool_name}"}
+            return {
+                "status": "error",
+                "message": f"Unknown Anthropic tool: {tool_name}",
+            }
         except Exception as e:  # noqa: BLE001
             return {"status": "error", "message": str(e)}

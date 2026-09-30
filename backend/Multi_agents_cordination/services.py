@@ -37,10 +37,10 @@ class CoordinationService:
 
     def execute_strategy(
         self,
-        session,            # agents.models.Session
-        strategy: str,      # CoordinationStrategy value
-        agents: list,       # list of agents.models.Agent
-        task: str,          # plain-text task description
+        session,  # agents.models.Session
+        strategy: str,  # CoordinationStrategy value
+        agents: list,  # list of agents.models.Agent
+        task: str,  # plain-text task description
         context: dict | None = None,
     ) -> dict[str, Any]:
         """
@@ -55,11 +55,13 @@ class CoordinationService:
 
         # Create an audit session record
         coord_session = self._create_coord_session(session, strategy, task, context)
-        return self._execute(coord_session, strategy, agents, task, context, start, chat_session=session)
+        return self._execute(
+            coord_session, strategy, agents, task, context, start, chat_session=session
+        )
 
     def execute_on_coordination_session(
         self,
-        coord_session,      # Multi_agents_cordination.AgentCoordinationSession
+        coord_session,  # Multi_agents_cordination.AgentCoordinationSession
         strategy: str,
         agents: list,
         task: str,
@@ -70,23 +72,40 @@ class CoordinationService:
         start = time.monotonic()
         if strategy:
             coord_session.strategy = strategy
-            coord_session.save(update_fields=['strategy'])
-        return self._execute(coord_session, strategy or coord_session.strategy, agents, task, context, start)
+            coord_session.save(update_fields=["strategy"])
+        return self._execute(
+            coord_session,
+            strategy or coord_session.strategy,
+            agents,
+            task,
+            context,
+            start,
+        )
 
-    def _execute(self, coord_session, strategy, agents, task, context, start, chat_session=None):
+    def _execute(
+        self, coord_session, strategy, agents, task, context, start, chat_session=None
+    ):
         try:
-            if strategy == 'sequential':
-                results, final_answer = self._run_sequential(coord_session, agents, task, context)
-            elif strategy == 'parallel':
-                results, final_answer = self._run_parallel(coord_session, agents, task, context)
-            elif strategy == 'hierarchical':
+            if strategy == "sequential":
+                results, final_answer = self._run_sequential(
+                    coord_session, agents, task, context
+                )
+            elif strategy == "parallel":
+                results, final_answer = self._run_parallel(
+                    coord_session, agents, task, context
+                )
+            elif strategy == "hierarchical":
                 results, final_answer = self._run_hierarchical(
                     coord_session, agents, task, context, chat_session
                 )
-            elif strategy == 'collaborative':
-                results, final_answer = self._run_collaborative(coord_session, agents, task, context)
-            elif strategy == 'competitive':
-                results, final_answer = self._run_competitive(coord_session, agents, task, context)
+            elif strategy == "collaborative":
+                results, final_answer = self._run_collaborative(
+                    coord_session, agents, task, context
+                )
+            elif strategy == "competitive":
+                results, final_answer = self._run_competitive(
+                    coord_session, agents, task, context
+                )
             else:
                 raise ValueError(f"Unknown strategy: {strategy}")
 
@@ -99,30 +118,40 @@ class CoordinationService:
             final_answer = f"Coordination failed: {e}"
 
         duration_ms = int((time.monotonic() - start) * 1000)
-        self._record_metric(coord_session, 'duration_ms', float(duration_ms))
-        self._record_metric(coord_session, 'agents_count', float(len(agents)))
+        self._record_metric(coord_session, "duration_ms", float(duration_ms))
+        self._record_metric(coord_session, "agents_count", float(len(agents)))
 
         # Persist final answer into session context for the UI
         try:
             coord_session.context = {
                 **(coord_session.context or {}),
-                'task': task[:500],
-                'final_answer': final_answer[:5000] if isinstance(final_answer, str) else str(final_answer)[:5000],
-                'results_keys': list(results.keys()) if isinstance(results, dict) else [],
+                "task": task[:500],
+                "final_answer": (
+                    final_answer[:5000]
+                    if isinstance(final_answer, str)
+                    else str(final_answer)[:5000]
+                ),
+                "results_keys": (
+                    list(results.keys()) if isinstance(results, dict) else []
+                ),
             }
-            coord_session.save(update_fields=['context', 'updated_at'])
+            coord_session.save(update_fields=["context", "updated_at"])
         except Exception:  # noqa: BLE001, S110
             pass
 
         return {
-            'strategy': strategy,
-            'task': task[:200],
-            'agents_involved': [a.name for a in agents],
-            'results': results,
-            'final_answer': final_answer,
-            'coordination_session_id': str(coord_session.id),
-            'duration_ms': duration_ms,
-            'status': 'completed' if 'failed' not in str(final_answer).lower()[:40] else 'failed',
+            "strategy": strategy,
+            "task": task[:200],
+            "agents_involved": [a.name for a in agents],
+            "results": results,
+            "final_answer": final_answer,
+            "coordination_session_id": str(coord_session.id),
+            "duration_ms": duration_ms,
+            "status": (
+                "completed"
+                if "failed" not in str(final_answer).lower()[:40]
+                else "failed"
+            ),
         }
 
     # ─────────────────────────────────────────────────────────────────────────
@@ -138,6 +167,7 @@ class CoordinationService:
     ):
         """Each agent processes the task in order; outputs chain into the next."""
         from agents.services.groq_service import GroqService
+
         groq = GroqService()
 
         results: dict[str, Any] = {}
@@ -156,13 +186,19 @@ class CoordinationService:
                 {"role": "user", "content": accumulated_context},
             ]
             response = groq.chat_completion(messages)
-            agent_output = response.get('content', '')
+            agent_output = response.get("content", "")
 
             results[agent.name] = agent_output
-            self._log_interaction(coord_session, agent, None, 'sequential_step', {
-                'input': accumulated_context[:300],
-                'output': agent_output[:300],
-            })
+            self._log_interaction(
+                coord_session,
+                agent,
+                None,
+                "sequential_step",
+                {
+                    "input": accumulated_context[:300],
+                    "output": agent_output[:300],
+                },
+            )
 
             # Pass this agent's output as input to the next
             accumulated_context = (
@@ -181,6 +217,7 @@ class CoordinationService:
     ):
         """All agents process the task simultaneously; results are merged."""
         from agents.services.groq_service import GroqService
+
         groq = GroqService()
 
         def run_agent(agent):
@@ -195,7 +232,7 @@ class CoordinationService:
                 {"role": "user", "content": task},
             ]
             response = groq.chat_completion(messages)
-            return agent, response.get('content', '')
+            return agent, response.get("content", "")
 
         results: dict[str, Any] = {}
         with ThreadPoolExecutor(max_workers=min(len(agents), 5)) as executor:
@@ -204,9 +241,15 @@ class CoordinationService:
                 try:
                     agent, output = future.result()
                     results[agent.name] = output
-                    self._log_interaction(coord_session, agent, None, 'parallel_result', {
-                        'output': output[:300],
-                    })
+                    self._log_interaction(
+                        coord_session,
+                        agent,
+                        None,
+                        "parallel_result",
+                        {
+                            "output": output[:300],
+                        },
+                    )
                 except Exception as e:  # noqa: BLE001
                     logger.warning(f"Parallel agent failed: {e}")
 
@@ -228,9 +271,10 @@ class CoordinationService:
         Orchestrator agent delegates sub-tasks to specialists, then synthesises.
         """
         from agents.services.groq_service import GroqService
+
         groq = GroqService()
 
-        orchestrator = next((a for a in agents if a.type == 'orchestrator'), agents[0])
+        orchestrator = next((a for a in agents if a.type == "orchestrator"), agents[0])
         specialists = [a for a in agents if a != orchestrator]
 
         # Step 1: Orchestrator creates a delegation plan
@@ -252,23 +296,26 @@ class CoordinationService:
             },
         ]
         plan_response = groq.chat_completion(plan_messages)
-        plan_text = plan_response.get('content', '[]')
+        plan_text = plan_response.get("content", "[]")
 
         delegation_plan = []
         try:
             import re
-            match = re.search(r'\[.*\]', plan_text, re.DOTALL)
+
+            match = re.search(r"\[.*\]", plan_text, re.DOTALL)
             delegation_plan = json.loads(match.group()) if match else []
         except Exception:  # noqa: BLE001
-            delegation_plan = [{'agent_name': a.name, 'sub_task': task} for a in specialists]
+            delegation_plan = [
+                {"agent_name": a.name, "sub_task": task} for a in specialists
+            ]
 
         # Step 2: Execute each delegation
         results: dict[str, Any] = {}
         specialist_map = {a.name: a for a in specialists}
 
         for item in delegation_plan:
-            agent_name = item.get('agent_name')
-            sub_task = item.get('sub_task', task)
+            agent_name = item.get("agent_name")
+            sub_task = item.get("sub_task", task)
             agent = specialist_map.get(agent_name)
             if agent is None:
                 continue
@@ -281,12 +328,18 @@ class CoordinationService:
                 {"role": "user", "content": sub_task},
             ]
             response = groq.chat_completion(messages)
-            output = response.get('content', '')
+            output = response.get("content", "")
             results[agent_name] = output
-            self._log_interaction(coord_session, orchestrator, agent, 'delegation', {
-                'sub_task': sub_task[:200],
-                'output': output[:300],
-            })
+            self._log_interaction(
+                coord_session,
+                orchestrator,
+                agent,
+                "delegation",
+                {
+                    "sub_task": sub_task[:200],
+                    "output": output[:300],
+                },
+            )
 
         # Step 3: Orchestrator synthesises
         synthesis_messages = [
@@ -303,7 +356,7 @@ class CoordinationService:
             },
         ]
         synthesis = groq.chat_completion(synthesis_messages)
-        final_answer = synthesis.get('content', '')
+        final_answer = synthesis.get("content", "")
 
         return results, final_answer
 
@@ -321,6 +374,7 @@ class CoordinationService:
         Round 2+: each agent critiques and improves the previous round's draft.
         """
         from agents.services.groq_service import GroqService
+
         groq = GroqService()
 
         results: dict[str, Any] = {}
@@ -348,17 +402,23 @@ class CoordinationService:
                     {"role": "user", "content": prompt},
                 ]
                 response = groq.chat_completion(messages)
-                output = response.get('content', '')
+                output = response.get("content", "")
                 round_outputs[agent.name] = output
-                self._log_interaction(coord_session, agent, None, f'collaborative_round_{round_num}', {
-                    'output': output[:300],
-                })
+                self._log_interaction(
+                    coord_session,
+                    agent,
+                    None,
+                    f"collaborative_round_{round_num}",
+                    {
+                        "output": output[:300],
+                    },
+                )
 
             # Merge round outputs into a new draft
             current_draft = "\n\n".join(
                 f"[{name}]: {out}" for name, out in round_outputs.items()
             )
-            results[f'round_{round_num}'] = round_outputs
+            results[f"round_{round_num}"] = round_outputs
 
         return results, current_draft
 
@@ -374,6 +434,7 @@ class CoordinationService:
         A judge LLM selects the best answer.
         """
         from agents.services.groq_service import GroqService
+
         groq = GroqService()
 
         # All agents answer independently
@@ -390,11 +451,17 @@ class CoordinationService:
                 {"role": "user", "content": task},
             ]
             response = groq.chat_completion(messages)
-            output = response.get('content', '')
+            output = response.get("content", "")
             results[agent.name] = output
-            self._log_interaction(coord_session, agent, None, 'competitive_entry', {
-                'output': output[:300],
-            })
+            self._log_interaction(
+                coord_session,
+                agent,
+                None,
+                "competitive_entry",
+                {
+                    "output": output[:300],
+                },
+            )
 
         # Judge selects winner
         judge_messages = [
@@ -403,32 +470,34 @@ class CoordinationService:
                 "content": (
                     "You are an impartial judge. Evaluate the following agent responses "
                     "and select the BEST one. Respond with JSON: "
-                    "{\"winner\": \"<agent_name>\", \"reason\": \"<brief reason>\"}"
+                    '{"winner": "<agent_name>", "reason": "<brief reason>"}'
                 ),
             },
             {
                 "role": "user",
                 "content": (
-                    f"Task: {task}\n\n"
-                    f"Responses:\n{json.dumps(results, indent=2)}"
+                    f"Task: {task}\n\n" f"Responses:\n{json.dumps(results, indent=2)}"
                 ),
             },
         ]
         judge_response = groq.chat_completion(judge_messages, temperature=0.1)
-        judge_text = judge_response.get('content', '')
+        judge_text = judge_response.get("content", "")
 
-        winner_name = next(iter(results.keys())) if results else ''
+        winner_name = next(iter(results.keys())) if results else ""
         try:
             import re
-            match = re.search(r'\{.*\}', judge_text, re.DOTALL)
+
+            match = re.search(r"\{.*\}", judge_text, re.DOTALL)
             if match:
                 verdict = json.loads(match.group())
-                winner_name = verdict.get('winner', winner_name)
+                winner_name = verdict.get("winner", winner_name)
         except Exception:  # noqa: BLE001, S110
             pass
 
-        final_answer = results.get(winner_name, next(iter(results.values())) if results else '')
-        self._record_metric(coord_session, 'competitive_winner', 0.0)
+        final_answer = results.get(
+            winner_name, next(iter(results.values())) if results else ""
+        )
+        self._record_metric(coord_session, "competitive_winner", 0.0)
 
         return results, f"[Winner: {winner_name}]\n\n{final_answer}"
 
@@ -438,11 +507,12 @@ class CoordinationService:
 
     def _create_coord_session(self, session, strategy: str, task: str, context: dict):
         from .models import AgentCoordinationSession
+
         return AgentCoordinationSession.objects.create(
             name=f"auto:{strategy}:{str(task)[:50]}",
             strategy=strategy,
             user=session.user,
-            config={'task': task[:500], 'session_id': str(session.id)},
+            config={"task": task[:500], "session_id": str(session.id)},
             context=context,
             is_active=True,
         )
@@ -451,8 +521,8 @@ class CoordinationService:
         try:
             coord_session.is_active = False
             coord_session.completed_at = datetime.now(tz=timezone.utc)
-            coord_session.context['success'] = success
-            coord_session.save(update_fields=['is_active', 'completed_at', 'context'])
+            coord_session.context["success"] = success
+            coord_session.save(update_fields=["is_active", "completed_at", "context"])
         except Exception as e:  # noqa: BLE001
             logger.debug(f"Could not close coordination session: {e}")
 
@@ -466,6 +536,7 @@ class CoordinationService:
     ):
         try:
             from .models import AgentInteraction
+
             AgentInteraction.objects.create(
                 coordination_session=coord_session,
                 source_agent_id=source_agent.id,
@@ -481,6 +552,7 @@ class CoordinationService:
     def _record_metric(self, coord_session, name: str, value: float):
         try:
             from .models import CoordinationMetric
+
             CoordinationMetric.objects.create(
                 coordination_session=coord_session,
                 metric_name=name,

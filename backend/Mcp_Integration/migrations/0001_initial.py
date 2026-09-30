@@ -18,137 +18,307 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name='MCPToolRegistry',
+            name="MCPToolRegistry",
             fields=[
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('registry_name', models.CharField(max_length=100, unique=True)),
-                ('description', models.TextField()),
-                ('version', models.CharField(max_length=20)),
-                ('tools_config', models.JSONField(default=dict, help_text='Configuration for all tools in registry')),
-                ('default_settings', models.JSONField(default=dict, help_text='Default settings for tools')),
-                ('is_active', models.BooleanField(default=True)),
-                ('last_sync', models.DateTimeField(blank=True, null=True)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                ("registry_name", models.CharField(max_length=100, unique=True)),
+                ("description", models.TextField()),
+                ("version", models.CharField(max_length=20)),
+                (
+                    "tools_config",
+                    models.JSONField(
+                        default=dict,
+                        help_text="Configuration for all tools in registry",
+                    ),
+                ),
+                (
+                    "default_settings",
+                    models.JSONField(
+                        default=dict, help_text="Default settings for tools"
+                    ),
+                ),
+                ("is_active", models.BooleanField(default=True)),
+                ("last_sync", models.DateTimeField(blank=True, null=True)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
             ],
             options={
-                'ordering': ['registry_name'],
+                "ordering": ["registry_name"],
             },
         ),
         migrations.CreateModel(
-            name='MCPTool',
+            name="MCPTool",
             fields=[
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('name', models.CharField(max_length=100, unique=True)),
-                ('description', models.TextField()),
-                ('category', models.CharField(default='general', max_length=50)),
-                ('version', models.CharField(default='1.0.0', max_length=20)),
-                ('parameters_schema', models.JSONField(default=dict, help_text='JSON schema for tool parameters')),
-                ('capabilities', models.JSONField(default=list, help_text='List of capabilities this tool provides')),
-                ('requirements', models.JSONField(default=dict, help_text='System requirements for this tool')),
-                ('is_active', models.BooleanField(default=True)),
-                ('is_public', models.BooleanField(default=True)),
-                ('is_system_tool', models.BooleanField(default=False)),
-                ('usage_count', models.PositiveIntegerField(default=0)),
-                ('success_rate', models.FloatField(default=1.0)),
-                ('average_execution_time', models.FloatField(default=0.0)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('created_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                ("name", models.CharField(max_length=100, unique=True)),
+                ("description", models.TextField()),
+                ("category", models.CharField(default="general", max_length=50)),
+                ("version", models.CharField(default="1.0.0", max_length=20)),
+                (
+                    "parameters_schema",
+                    models.JSONField(
+                        default=dict, help_text="JSON schema for tool parameters"
+                    ),
+                ),
+                (
+                    "capabilities",
+                    models.JSONField(
+                        default=list,
+                        help_text="List of capabilities this tool provides",
+                    ),
+                ),
+                (
+                    "requirements",
+                    models.JSONField(
+                        default=dict, help_text="System requirements for this tool"
+                    ),
+                ),
+                ("is_active", models.BooleanField(default=True)),
+                ("is_public", models.BooleanField(default=True)),
+                ("is_system_tool", models.BooleanField(default=False)),
+                ("usage_count", models.PositiveIntegerField(default=0)),
+                ("success_rate", models.FloatField(default=1.0)),
+                ("average_execution_time", models.FloatField(default=0.0)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "created_by",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'ordering': ['category', 'name'],
+                "ordering": ["category", "name"],
             },
         ),
         migrations.CreateModel(
-            name='MCPAgentToolBinding',
+            name="MCPAgentToolBinding",
             fields=[
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('agent_id', models.CharField(max_length=100)),
-                ('is_preferred', models.BooleanField(default=False)),
-                ('priority', models.IntegerField(default=0)),
-                ('custom_parameters', models.JSONField(default=dict, help_text='Agent-specific tool parameters')),
-                ('success_rate', models.FloatField(default=1.0)),
-                ('average_execution_time', models.FloatField(default=0.0)),
-                ('usage_count', models.PositiveIntegerField(default=0)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('tool', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='Mcp_Integration.mcptool')),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                ("agent_id", models.CharField(max_length=100)),
+                ("is_preferred", models.BooleanField(default=False)),
+                ("priority", models.IntegerField(default=0)),
+                (
+                    "custom_parameters",
+                    models.JSONField(
+                        default=dict, help_text="Agent-specific tool parameters"
+                    ),
+                ),
+                ("success_rate", models.FloatField(default=1.0)),
+                ("average_execution_time", models.FloatField(default=0.0)),
+                ("usage_count", models.PositiveIntegerField(default=0)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "tool",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="Mcp_Integration.mcptool",
+                    ),
+                ),
             ],
             options={
-                'ordering': ['-priority', 'tool__name'],
+                "ordering": ["-priority", "tool__name"],
             },
         ),
         migrations.CreateModel(
-            name='MCPToolExecution',
+            name="MCPToolExecution",
             fields=[
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('session_id', models.CharField(blank=True, max_length=100, null=True)),
-                ('parameters', models.JSONField(default=dict, help_text='Parameters passed to the tool')),
-                ('result', models.JSONField(default=dict, help_text='Tool execution result')),
-                ('error_message', models.TextField(blank=True)),
-                ('success', models.BooleanField(default=False)),
-                ('execution_time', models.FloatField(default=0.0, help_text='Execution time in seconds')),
-                ('memory_usage', models.FloatField(default=0.0, help_text='Memory usage in MB')),
-                ('agent_id', models.CharField(blank=True, max_length=100, null=True)),
-                ('context_used', models.JSONField(default=dict, help_text='Context data used in execution')),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('created_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL)),
-                ('tool', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='executions', to='Mcp_Integration.mcptool')),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                ("session_id", models.CharField(blank=True, max_length=100, null=True)),
+                (
+                    "parameters",
+                    models.JSONField(
+                        default=dict, help_text="Parameters passed to the tool"
+                    ),
+                ),
+                (
+                    "result",
+                    models.JSONField(default=dict, help_text="Tool execution result"),
+                ),
+                ("error_message", models.TextField(blank=True)),
+                ("success", models.BooleanField(default=False)),
+                (
+                    "execution_time",
+                    models.FloatField(
+                        default=0.0, help_text="Execution time in seconds"
+                    ),
+                ),
+                (
+                    "memory_usage",
+                    models.FloatField(default=0.0, help_text="Memory usage in MB"),
+                ),
+                ("agent_id", models.CharField(blank=True, max_length=100, null=True)),
+                (
+                    "context_used",
+                    models.JSONField(
+                        default=dict, help_text="Context data used in execution"
+                    ),
+                ),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                (
+                    "created_by",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "tool",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="executions",
+                        to="Mcp_Integration.mcptool",
+                    ),
+                ),
             ],
             options={
-                'ordering': ['-created_at'],
+                "ordering": ["-created_at"],
             },
         ),
         migrations.CreateModel(
-            name='MCPSession',
+            name="MCPSession",
             fields=[
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('name', models.CharField(max_length=200)),
-                ('enabled_tools', models.JSONField(default=list, help_text='List of enabled tool names')),
-                ('context_data', models.JSONField(default=dict, help_text='Session context and memory')),
-                ('configuration', models.JSONField(default=dict, help_text='Session-specific configuration')),
-                ('is_active', models.BooleanField(default=True)),
-                ('last_activity', models.DateTimeField(auto_now=True)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('created_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                ("name", models.CharField(max_length=200)),
+                (
+                    "enabled_tools",
+                    models.JSONField(
+                        default=list, help_text="List of enabled tool names"
+                    ),
+                ),
+                (
+                    "context_data",
+                    models.JSONField(
+                        default=dict, help_text="Session context and memory"
+                    ),
+                ),
+                (
+                    "configuration",
+                    models.JSONField(
+                        default=dict, help_text="Session-specific configuration"
+                    ),
+                ),
+                ("is_active", models.BooleanField(default=True)),
+                ("last_activity", models.DateTimeField(auto_now=True)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "created_by",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'ordering': ['-last_activity'],
-                'indexes': [models.Index(fields=['created_by', 'is_active'], name='Mcp_Integra_created_8b71c6_idx'), models.Index(fields=['last_activity'], name='Mcp_Integra_last_ac_3fc001_idx')],
+                "ordering": ["-last_activity"],
+                "indexes": [
+                    models.Index(
+                        fields=["created_by", "is_active"],
+                        name="Mcp_Integra_created_8b71c6_idx",
+                    ),
+                    models.Index(
+                        fields=["last_activity"], name="Mcp_Integra_last_ac_3fc001_idx"
+                    ),
+                ],
             },
         ),
         migrations.AddIndex(
-            model_name='mcptool',
-            index=models.Index(fields=['category', 'is_active'], name='Mcp_Integra_categor_ef5188_idx'),
+            model_name="mcptool",
+            index=models.Index(
+                fields=["category", "is_active"], name="Mcp_Integra_categor_ef5188_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='mcptool',
-            index=models.Index(fields=['is_public', 'is_active'], name='Mcp_Integra_is_publ_4029ce_idx'),
+            model_name="mcptool",
+            index=models.Index(
+                fields=["is_public", "is_active"], name="Mcp_Integra_is_publ_4029ce_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='mcpagenttoolbinding',
-            index=models.Index(fields=['agent_id', 'is_preferred'], name='Mcp_Integra_agent_i_322587_idx'),
+            model_name="mcpagenttoolbinding",
+            index=models.Index(
+                fields=["agent_id", "is_preferred"],
+                name="Mcp_Integra_agent_i_322587_idx",
+            ),
         ),
         migrations.AddIndex(
-            model_name='mcpagenttoolbinding',
-            index=models.Index(fields=['tool', 'success_rate'], name='Mcp_Integra_tool_id_1e1d0d_idx'),
+            model_name="mcpagenttoolbinding",
+            index=models.Index(
+                fields=["tool", "success_rate"], name="Mcp_Integra_tool_id_1e1d0d_idx"
+            ),
         ),
         migrations.AlterUniqueTogether(
-            name='mcpagenttoolbinding',
-            unique_together={('agent_id', 'tool')},
+            name="mcpagenttoolbinding",
+            unique_together={("agent_id", "tool")},
         ),
         migrations.AddIndex(
-            model_name='mcptoolexecution',
-            index=models.Index(fields=['tool', 'success'], name='Mcp_Integra_tool_id_c6fdb7_idx'),
+            model_name="mcptoolexecution",
+            index=models.Index(
+                fields=["tool", "success"], name="Mcp_Integra_tool_id_c6fdb7_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='mcptoolexecution',
-            index=models.Index(fields=['session_id', '-created_at'], name='Mcp_Integra_session_5c39f1_idx'),
+            model_name="mcptoolexecution",
+            index=models.Index(
+                fields=["session_id", "-created_at"],
+                name="Mcp_Integra_session_5c39f1_idx",
+            ),
         ),
         migrations.AddIndex(
-            model_name='mcptoolexecution',
-            index=models.Index(fields=['agent_id', '-created_at'], name='Mcp_Integra_agent_i_f97b9f_idx'),
+            model_name="mcptoolexecution",
+            index=models.Index(
+                fields=["agent_id", "-created_at"],
+                name="Mcp_Integra_agent_i_f97b9f_idx",
+            ),
         ),
     ]

@@ -1,4 +1,5 @@
 """Google Drive API integration provider."""
+
 from typing import Any
 
 import requests
@@ -16,15 +17,33 @@ class GoogleDriveProvider(IntegrationProvider):
     @classmethod
     def detect(cls, integration: APIIntegration) -> bool:
         text = f"{integration.name} {integration.description}".lower()
-        return "google drive" in text or "google_drive" in text or text.strip() == "drive"
+        return (
+            "google drive" in text or "google_drive" in text or text.strip() == "drive"
+        )
 
     @classmethod
     def tool_definitions(cls) -> list[dict[str, Any]]:
         return [
-            {"name": "google_drive.list_files", "description": "List recent Drive files", "parameters": {"page_size": "int", "query": "string"}},
-            {"name": "google_drive.get_file", "description": "Get file metadata by ID", "parameters": {"file_id": "string"}},
-            {"name": "google_drive.search", "description": "Search Drive files by name/query", "parameters": {"query": "string", "page_size": "int"}},
-            {"name": "google_drive.read_text", "description": "Export/download text content of a Google Doc or text file", "parameters": {"file_id": "string"}},
+            {
+                "name": "google_drive.list_files",
+                "description": "List recent Drive files",
+                "parameters": {"page_size": "int", "query": "string"},
+            },
+            {
+                "name": "google_drive.get_file",
+                "description": "Get file metadata by ID",
+                "parameters": {"file_id": "string"},
+            },
+            {
+                "name": "google_drive.search",
+                "description": "Search Drive files by name/query",
+                "parameters": {"query": "string", "page_size": "int"},
+            },
+            {
+                "name": "google_drive.read_text",
+                "description": "Export/download text content of a Google Doc or text file",
+                "parameters": {"file_id": "string"},
+            },
         ]
 
     @classmethod
@@ -48,18 +67,26 @@ class GoogleDriveProvider(IntegrationProvider):
                 return {"status": "error", "message": resp.text[:300]}
             data = resp.json()
             email = (data.get("user") or {}).get("emailAddress", "Drive user")
-            return {"status": "success", "message": f"Connected to Google Drive as {email}", "data": data.get("user")}
+            return {
+                "status": "success",
+                "message": f"Connected to Google Drive as {email}",
+                "data": data.get("user"),
+            }
         except Exception as e:  # noqa: BLE001
             return {"status": "error", "message": str(e)}
 
     @classmethod
-    def execute_tool(cls, integration: APIIntegration, tool_name: str, params: dict[str, Any]) -> dict[str, Any]:
+    def execute_tool(
+        cls, integration: APIIntegration, tool_name: str, params: dict[str, Any]
+    ) -> dict[str, Any]:
         try:
             headers = cls._headers(integration)
             page_size = min(int(params.get("page_size", 20)), 50)
 
             if tool_name in ("google_drive.list_files", "google_drive.search"):
-                q = params.get("query") or ("trashed=false" if tool_name == "google_drive.list_files" else None)
+                q = params.get("query") or (
+                    "trashed=false" if tool_name == "google_drive.list_files" else None
+                )
                 if tool_name == "google_drive.search" and params.get("query"):
                     q = f"name contains '{params['query']}' and trashed=false"
                 resp = requests.get(
@@ -76,7 +103,11 @@ class GoogleDriveProvider(IntegrationProvider):
                 return {
                     "status": "success" if resp.ok else "error",
                     "files": data.get("files", []) if resp.ok else [],
-                    "message": "" if resp.ok else data.get("error", {}).get("message", resp.text[:300]),
+                    "message": (
+                        ""
+                        if resp.ok
+                        else data.get("error", {}).get("message", resp.text[:300])
+                    ),
                 }
 
             if tool_name == "google_drive.get_file":
@@ -86,7 +117,9 @@ class GoogleDriveProvider(IntegrationProvider):
                 resp = requests.get(
                     f"https://www.googleapis.com/drive/v3/files/{file_id}",
                     headers=headers,
-                    params={"fields": "id,name,mimeType,modifiedTime,size,webViewLink,owners"},
+                    params={
+                        "fields": "id,name,mimeType,modifiedTime,size,webViewLink,owners"
+                    },
                     timeout=20,
                 )
                 return {
@@ -126,8 +159,16 @@ class GoogleDriveProvider(IntegrationProvider):
                 if not resp.ok:
                     return {"status": "error", "message": resp.text[:300]}
                 text = resp.text[:50000]
-                return {"status": "success", "name": meta.get("name"), "content": text, "message": ""}
+                return {
+                    "status": "success",
+                    "name": meta.get("name"),
+                    "content": text,
+                    "message": "",
+                }
 
-            return {"status": "error", "message": f"Unknown Google Drive tool: {tool_name}"}
+            return {
+                "status": "error",
+                "message": f"Unknown Google Drive tool: {tool_name}",
+            }
         except Exception as e:  # noqa: BLE001
             return {"status": "error", "message": str(e)}

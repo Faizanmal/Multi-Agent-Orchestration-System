@@ -1,4 +1,5 @@
 """Instagram Graph API (Meta) integration provider."""
+
 from typing import Any
 
 import requests
@@ -71,7 +72,9 @@ class InstagramProvider(IntegrationProvider):
             resp = requests.get(
                 f"{GRAPH_BASE}/{ig_user_id}",
                 headers=cls._headers(token),
-                params={"fields": "id,username,name,profile_picture_url,followers_count,media_count"},
+                params={
+                    "fields": "id,username,name,profile_picture_url,followers_count,media_count"
+                },
                 timeout=20,
             )
             if resp.status_code >= 400:
@@ -124,14 +127,21 @@ class InstagramProvider(IntegrationProvider):
                 return {
                     "status": "success" if resp.ok else "error",
                     "media": data.get("data", []) if resp.ok else [],
-                    "message": "" if resp.ok else data.get("error", {}).get("message", resp.text[:300]),
+                    "message": (
+                        ""
+                        if resp.ok
+                        else data.get("error", {}).get("message", resp.text[:300])
+                    ),
                 }
 
             if tool_name == "instagram.send_message":
                 recipient_id = params.get("recipient_id") or params.get("to")
                 text = params.get("text", "")
                 if not recipient_id or not text:
-                    return {"status": "error", "message": "recipient_id and text required"}
+                    return {
+                        "status": "error",
+                        "message": "recipient_id and text required",
+                    }
                 payload = {
                     "recipient": {"id": str(recipient_id)},
                     "message": {"text": text},
@@ -146,9 +156,16 @@ class InstagramProvider(IntegrationProvider):
                 return {
                     "status": "success" if resp.ok else "error",
                     "result": data,
-                    "message": "" if resp.ok else data.get("error", {}).get("message", resp.text[:300]),
+                    "message": (
+                        ""
+                        if resp.ok
+                        else data.get("error", {}).get("message", resp.text[:300])
+                    ),
                 }
 
-            return {"status": "error", "message": f"Unknown Instagram tool: {tool_name}"}
+            return {
+                "status": "error",
+                "message": f"Unknown Instagram tool: {tool_name}",
+            }
         except Exception as e:  # noqa: BLE001
             return {"status": "error", "message": str(e)}

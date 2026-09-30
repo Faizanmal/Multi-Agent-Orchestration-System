@@ -1,4 +1,5 @@
 """HubSpot CRM integration provider."""
+
 from typing import Any
 
 import requests
@@ -21,9 +22,25 @@ class HubSpotProvider(IntegrationProvider):
     @classmethod
     def tool_definitions(cls) -> list[dict[str, Any]]:
         return [
-            {"name": "hubspot.list_contacts", "description": "List HubSpot contacts", "parameters": {"limit": "int"}},
-            {"name": "hubspot.create_contact", "description": "Create a HubSpot contact", "parameters": {"email": "string", "firstname": "string", "lastname": "string"}},
-            {"name": "hubspot.search_contacts", "description": "Search contacts by email", "parameters": {"email": "string"}},
+            {
+                "name": "hubspot.list_contacts",
+                "description": "List HubSpot contacts",
+                "parameters": {"limit": "int"},
+            },
+            {
+                "name": "hubspot.create_contact",
+                "description": "Create a HubSpot contact",
+                "parameters": {
+                    "email": "string",
+                    "firstname": "string",
+                    "lastname": "string",
+                },
+            },
+            {
+                "name": "hubspot.search_contacts",
+                "description": "Search contacts by email",
+                "parameters": {"email": "string"},
+            },
         ]
 
     @classmethod
@@ -44,12 +61,18 @@ class HubSpotProvider(IntegrationProvider):
             )
             if resp.status_code >= 400:
                 return {"status": "error", "message": resp.text[:200]}
-            return {"status": "success", "message": "Connected to HubSpot CRM", "data": {"total": resp.json().get("total")}}
+            return {
+                "status": "success",
+                "message": "Connected to HubSpot CRM",
+                "data": {"total": resp.json().get("total")},
+            }
         except Exception as e:  # noqa: BLE001
             return {"status": "error", "message": str(e)}
 
     @classmethod
-    def execute_tool(cls, integration: APIIntegration, tool_name: str, params: dict[str, Any]) -> dict[str, Any]:
+    def execute_tool(
+        cls, integration: APIIntegration, tool_name: str, params: dict[str, Any]
+    ) -> dict[str, Any]:
         try:
             headers = cls._headers(integration)
             if tool_name == "hubspot.list_contacts":
@@ -60,7 +83,11 @@ class HubSpotProvider(IntegrationProvider):
                     params={"limit": limit, "properties": "email,firstname,lastname"},
                     timeout=20,
                 )
-                return {"status": "success" if resp.ok else "error", "contacts": resp.json().get("results", []) if resp.ok else [], "message": "" if resp.ok else resp.text[:200]}
+                return {
+                    "status": "success" if resp.ok else "error",
+                    "contacts": resp.json().get("results", []) if resp.ok else [],
+                    "message": "" if resp.ok else resp.text[:200],
+                }
 
             if tool_name == "hubspot.create_contact":
                 email = params.get("email")
@@ -76,7 +103,11 @@ class HubSpotProvider(IntegrationProvider):
                     json={"properties": props},
                     timeout=20,
                 )
-                return {"status": "success" if resp.ok else "error", "contact": resp.json() if resp.ok else {}, "message": "" if resp.ok else resp.text[:200]}
+                return {
+                    "status": "success" if resp.ok else "error",
+                    "contact": resp.json() if resp.ok else {},
+                    "message": "" if resp.ok else resp.text[:200],
+                }
 
             if tool_name == "hubspot.search_contacts":
                 email = params.get("email")
@@ -86,14 +117,26 @@ class HubSpotProvider(IntegrationProvider):
                     "https://api.hubapi.com/crm/v3/objects/contacts/search",
                     headers=headers,
                     json={
-                        "filterGroups": [{
-                            "filters": [{"propertyName": "email", "operator": "EQ", "value": email}]
-                        }],
+                        "filterGroups": [
+                            {
+                                "filters": [
+                                    {
+                                        "propertyName": "email",
+                                        "operator": "EQ",
+                                        "value": email,
+                                    }
+                                ]
+                            }
+                        ],
                         "properties": ["email", "firstname", "lastname"],
                     },
                     timeout=20,
                 )
-                return {"status": "success" if resp.ok else "error", "contacts": resp.json().get("results", []) if resp.ok else [], "message": "" if resp.ok else resp.text[:200]}
+                return {
+                    "status": "success" if resp.ok else "error",
+                    "contacts": resp.json().get("results", []) if resp.ok else [],
+                    "message": "" if resp.ok else resp.text[:200],
+                }
 
             return {"status": "error", "message": f"Unknown HubSpot tool: {tool_name}"}
         except Exception as e:  # noqa: BLE001

@@ -1,4 +1,5 @@
 """Google Calendar integration provider."""
+
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
@@ -22,9 +23,26 @@ class GoogleCalendarProvider(IntegrationProvider):
     @classmethod
     def tool_definitions(cls) -> list[dict[str, Any]]:
         return [
-            {"name": "calendar.list_calendars", "description": "List calendars", "parameters": {}},
-            {"name": "calendar.list_events", "description": "List upcoming events", "parameters": {"calendar_id": "string", "max_results": "int"}},
-            {"name": "calendar.create_event", "description": "Create a calendar event", "parameters": {"calendar_id": "string", "summary": "string", "start": "string", "end": "string"}},
+            {
+                "name": "calendar.list_calendars",
+                "description": "List calendars",
+                "parameters": {},
+            },
+            {
+                "name": "calendar.list_events",
+                "description": "List upcoming events",
+                "parameters": {"calendar_id": "string", "max_results": "int"},
+            },
+            {
+                "name": "calendar.create_event",
+                "description": "Create a calendar event",
+                "parameters": {
+                    "calendar_id": "string",
+                    "summary": "string",
+                    "start": "string",
+                    "end": "string",
+                },
+            },
         ]
 
     @classmethod
@@ -45,12 +63,18 @@ class GoogleCalendarProvider(IntegrationProvider):
             )
             if resp.status_code >= 400:
                 return {"status": "error", "message": resp.text[:200]}
-            return {"status": "success", "message": "Connected to Google Calendar", "data": {"count": len(resp.json().get("items", []))}}
+            return {
+                "status": "success",
+                "message": "Connected to Google Calendar",
+                "data": {"count": len(resp.json().get("items", []))},
+            }
         except Exception as e:  # noqa: BLE001
             return {"status": "error", "message": str(e)}
 
     @classmethod
-    def execute_tool(cls, integration: APIIntegration, tool_name: str, params: dict[str, Any]) -> dict[str, Any]:
+    def execute_tool(
+        cls, integration: APIIntegration, tool_name: str, params: dict[str, Any]
+    ) -> dict[str, Any]:
         try:
             headers = cls._headers(integration)
             if tool_name == "calendar.list_calendars":
@@ -60,8 +84,19 @@ class GoogleCalendarProvider(IntegrationProvider):
                     timeout=20,
                 )
                 items = resp.json().get("items", []) if resp.ok else []
-                calendars = [{"id": i.get("id"), "summary": i.get("summary"), "primary": i.get("primary")} for i in items]
-                return {"status": "success" if resp.ok else "error", "calendars": calendars, "message": "" if resp.ok else resp.text[:200]}
+                calendars = [
+                    {
+                        "id": i.get("id"),
+                        "summary": i.get("summary"),
+                        "primary": i.get("primary"),
+                    }
+                    for i in items
+                ]
+                return {
+                    "status": "success" if resp.ok else "error",
+                    "calendars": calendars,
+                    "message": "" if resp.ok else resp.text[:200],
+                }
 
             if tool_name == "calendar.list_events":
                 calendar_id = params.get("calendar_id") or "primary"
@@ -70,11 +105,20 @@ class GoogleCalendarProvider(IntegrationProvider):
                 resp = requests.get(
                     f"https://www.googleapis.com/calendar/v3/calendars/{calendar_id}/events",
                     headers=headers,
-                    params={"maxResults": max_results, "timeMin": now, "singleEvents": True, "orderBy": "startTime"},
+                    params={
+                        "maxResults": max_results,
+                        "timeMin": now,
+                        "singleEvents": True,
+                        "orderBy": "startTime",
+                    },
                     timeout=20,
                 )
                 events = resp.json().get("items", []) if resp.ok else []
-                return {"status": "success" if resp.ok else "error", "events": events, "message": "" if resp.ok else resp.text[:200]}
+                return {
+                    "status": "success" if resp.ok else "error",
+                    "events": events,
+                    "message": "" if resp.ok else resp.text[:200],
+                }
 
             if tool_name == "calendar.create_event":
                 calendar_id = params.get("calendar_id") or "primary"
@@ -99,7 +143,11 @@ class GoogleCalendarProvider(IntegrationProvider):
                     json=body,
                     timeout=20,
                 )
-                return {"status": "success" if resp.ok else "error", "event": resp.json() if resp.ok else {}, "message": "" if resp.ok else resp.text[:200]}
+                return {
+                    "status": "success" if resp.ok else "error",
+                    "event": resp.json() if resp.ok else {},
+                    "message": "" if resp.ok else resp.text[:200],
+                }
 
             return {"status": "error", "message": f"Unknown Calendar tool: {tool_name}"}
         except Exception as e:  # noqa: BLE001

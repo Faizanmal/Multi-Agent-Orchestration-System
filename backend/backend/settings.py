@@ -19,9 +19,9 @@ from dotenv import load_dotenv
 
 # Disable TensorFlow backend in transformers/sentence-transformers.
 # Must be set before any of those packages are imported.
-os.environ.setdefault('TRANSFORMERS_NO_TF', '1')
-os.environ.setdefault('USE_TF', '0')
-os.environ.setdefault('TF_CPP_MIN_LOG_LEVEL', '3')
+os.environ.setdefault("TRANSFORMERS_NO_TF", "1")
+os.environ.setdefault("USE_TF", "0")
+os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "3")
 
 # Load environment variables
 load_dotenv()
@@ -34,25 +34,36 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-_DEFAULT_DEV_SECRET = 'dev-only-insecure-secret-key-change-me-before-launch-50chars'
-SECRET_KEY = os.getenv('SECRET_KEY', _DEFAULT_DEV_SECRET)
+_DEFAULT_DEV_SECRET = "dev-only-insecure-secret-key-change-me-before-launch-50chars"
+SECRET_KEY = os.getenv("SECRET_KEY", _DEFAULT_DEV_SECRET)
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DEBUG', 'True').lower() in ('true', '1', 'yes')
+DEBUG = os.getenv("DEBUG", "True").lower() in ("true", "1", "yes")
 
-if not DEBUG and (not SECRET_KEY or SECRET_KEY == _DEFAULT_DEV_SECRET or 'change-me' in SECRET_KEY.lower() or 'insecure' in SECRET_KEY.lower()):
+if not DEBUG and (
+    not SECRET_KEY
+    or SECRET_KEY == _DEFAULT_DEV_SECRET
+    or "change-me" in SECRET_KEY.lower()
+    or "insecure" in SECRET_KEY.lower()
+):
     from django.core.exceptions import ImproperlyConfigured
+
     raise ImproperlyConfigured(
-        'Set a strong SECRET_KEY in the environment when DEBUG=False.'
+        "Set a strong SECRET_KEY in the environment when DEBUG=False."
     )
 
 ALLOWED_HOSTS = [
-    h.strip() for h in os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,0.0.0.0').split(',')
+    h.strip()
+    for h in os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1,0.0.0.0").split(",")
     if h.strip()
 ]
 
 # Security settings for deployment
-SECURE_SSL_REDIRECT = os.getenv('SECURE_SSL_REDIRECT', str(not DEBUG)).lower() in ('true', '1', 'yes')
+SECURE_SSL_REDIRECT = os.getenv("SECURE_SSL_REDIRECT", str(not DEBUG)).lower() in (
+    "true",
+    "1",
+    "yes",
+)
 SECURE_HSTS_SECONDS = 31536000 if not DEBUG else 0
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True
@@ -63,90 +74,90 @@ CSRF_COOKIE_SECURE = not DEBUG
 # Application definition
 
 INSTALLED_APPS = [
-    'daphne',  # Must be first so `runserver` uses ASGI (WebSockets)
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
-    'rest_framework',
-    'rest_framework_simplejwt',
-    'corsheaders',
-    'channels',
-    'agents',
-    'Mcp_Integration',
-    'models',
-    'Multi_agents_cordination',
-    'Multi_model_Intelligence',
-    'real_time_performance',
-    'use_case',
+    "daphne",  # Must be first so `runserver` uses ASGI (WebSockets)
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
+    "rest_framework",
+    "rest_framework_simplejwt",
+    "corsheaders",
+    "channels",
+    "agents",
+    "Mcp_Integration",
+    "models",
+    "Multi_agents_cordination",
+    "Multi_model_Intelligence",
+    "real_time_performance",
+    "use_case",
     # New enhanced apps
-    'authentication',
-    'api_integrations',
-    'reporting',
-    'notifications',
-    'data_pipelines',
+    "authentication",
+    "api_integrations",
+    "reporting",
+    "notifications",
+    "data_pipelines",
     # New feature modules
-    'agent_learning',
-    'plugin_system',
-    'webhooks',
-    'analytics',
-    'workflow_builder',
-    'integrations',
-    'feedback',
-    'billing',
+    "agent_learning",
+    "plugin_system",
+    "webhooks",
+    "analytics",
+    "workflow_builder",
+    "integrations",
+    "feedback",
+    "billing",
 ]
 
 # Add performance tracking middleware
 MIDDLEWARE = [
-    'corsheaders.middleware.CorsMiddleware',
-    'django.middleware.security.SecurityMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    "corsheaders.middleware.CorsMiddleware",
+    "django.middleware.security.SecurityMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
     # Performance tracking middleware
-    'agents.middleware.PerformanceTrackingMiddleware',
+    "agents.middleware.PerformanceTrackingMiddleware",
     # Request logging middleware
-    'agents.logging_middleware.RequestLoggingMiddleware',
-    'agents.logging_middleware.APIMetricsMiddleware',
-    'agents.logging_middleware.ErrorTrackingMiddleware',
+    "agents.logging_middleware.RequestLoggingMiddleware",
+    "agents.logging_middleware.APIMetricsMiddleware",
+    "agents.logging_middleware.ErrorTrackingMiddleware",
     # Authentication middleware
-    'authentication.middleware.JWTAuthenticationMiddleware',
-    'authentication.middleware.RateLimitMiddleware',
+    "authentication.middleware.JWTAuthenticationMiddleware",
+    "authentication.middleware.RateLimitMiddleware",
     # Enterprise security middleware
-    'authentication.security_middleware.RateLimitMiddleware',
-    'authentication.security_middleware.SecurityHeadersMiddleware',
-    'authentication.security_middleware.AuditLoggingMiddleware',
-    'authentication.security_middleware.RequestIDMiddleware',
+    "authentication.security_middleware.RateLimitMiddleware",
+    "authentication.security_middleware.SecurityHeadersMiddleware",
+    "authentication.security_middleware.AuditLoggingMiddleware",
+    "authentication.security_middleware.RequestIDMiddleware",
     # API versioning middleware
-    'backend.api_versioning.APIVersionMiddleware',
+    "backend.api_versioning.APIVersionMiddleware",
     # Billing quota middleware
-    'billing.middleware.QuotaEnforcementMiddleware',
+    "billing.middleware.QuotaEnforcementMiddleware",
 ]
 
-ROOT_URLCONF = 'backend.urls'
+ROOT_URLCONF = "backend.urls"
 
 TEMPLATES = [
     {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.debug',
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [],
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.debug",
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
             ],
         },
     },
 ]
 
-WSGI_APPLICATION = 'backend.wsgi.application'
+WSGI_APPLICATION = "backend.wsgi.application"
 
 
 # Database
@@ -155,56 +166,56 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 
 
 def _build_databases():
-    database_url = (os.getenv('DATABASE_URL') or '').strip()
-    if database_url.startswith('sqlite://'):
+    database_url = (os.getenv("DATABASE_URL") or "").strip()
+    if database_url.startswith("sqlite://"):
         parsed = urlparse(database_url)
-        sqlite_name = unquote(parsed.path.lstrip('/')) or 'db.sqlite3'
-        if sqlite_name != ':memory:':
+        sqlite_name = unquote(parsed.path.lstrip("/")) or "db.sqlite3"
+        if sqlite_name != ":memory:":
             sqlite_name = BASE_DIR / sqlite_name
         return {
-            'default': {
-                'ENGINE': 'django.db.backends.sqlite3',
-                'NAME': sqlite_name,
+            "default": {
+                "ENGINE": "django.db.backends.sqlite3",
+                "NAME": sqlite_name,
             }
         }
 
-    if database_url.startswith(('postgres://', 'postgresql://')):
+    if database_url.startswith(("postgres://", "postgresql://")):
         parsed = urlparse(database_url)
         return {
-            'default': {
-                'ENGINE': 'django.db.backends.postgresql',
-                'NAME': unquote(parsed.path.lstrip('/')) or 'multi_agent_db',
-                'USER': unquote(parsed.username or 'postgres'),
-                'PASSWORD': unquote(parsed.password or ''),
-                'HOST': parsed.hostname or 'localhost',
-                'PORT': str(parsed.port or 5432),
-                'CONN_MAX_AGE': int(os.getenv('DB_CONN_MAX_AGE', '60')),
-                'OPTIONS': {
-                    'connect_timeout': int(os.getenv('DB_CONNECT_TIMEOUT', '10')),
+            "default": {
+                "ENGINE": "django.db.backends.postgresql",
+                "NAME": unquote(parsed.path.lstrip("/")) or "multi_agent_db",
+                "USER": unquote(parsed.username or "postgres"),
+                "PASSWORD": unquote(parsed.password or ""),
+                "HOST": parsed.hostname or "localhost",
+                "PORT": str(parsed.port or 5432),
+                "CONN_MAX_AGE": int(os.getenv("DB_CONN_MAX_AGE", "60")),
+                "OPTIONS": {
+                    "connect_timeout": int(os.getenv("DB_CONNECT_TIMEOUT", "10")),
                 },
             }
         }
 
-    if os.getenv('POSTGRES_DB') or os.getenv('POSTGRES_HOST'):
+    if os.getenv("POSTGRES_DB") or os.getenv("POSTGRES_HOST"):
         return {
-            'default': {
-                'ENGINE': 'django.db.backends.postgresql',
-                'NAME': os.getenv('POSTGRES_DB', 'multi_agent_db'),
-                'USER': os.getenv('POSTGRES_USER', 'postgres'),
-                'PASSWORD': os.getenv('POSTGRES_PASSWORD', ''),
-                'HOST': os.getenv('POSTGRES_HOST', 'localhost'),
-                'PORT': os.getenv('POSTGRES_PORT', '5432'),
-                'CONN_MAX_AGE': int(os.getenv('DB_CONN_MAX_AGE', '60')),
-                'OPTIONS': {
-                    'connect_timeout': int(os.getenv('DB_CONNECT_TIMEOUT', '10')),
+            "default": {
+                "ENGINE": "django.db.backends.postgresql",
+                "NAME": os.getenv("POSTGRES_DB", "multi_agent_db"),
+                "USER": os.getenv("POSTGRES_USER", "postgres"),
+                "PASSWORD": os.getenv("POSTGRES_PASSWORD", ""),
+                "HOST": os.getenv("POSTGRES_HOST", "localhost"),
+                "PORT": os.getenv("POSTGRES_PORT", "5432"),
+                "CONN_MAX_AGE": int(os.getenv("DB_CONN_MAX_AGE", "60")),
+                "OPTIONS": {
+                    "connect_timeout": int(os.getenv("DB_CONNECT_TIMEOUT", "10")),
                 },
             }
         }
 
     return {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
         }
     }
 
@@ -212,7 +223,7 @@ def _build_databases():
 DATABASES = _build_databases()
 
 # Custom User Model
-AUTH_USER_MODEL = 'authentication.CustomUser'
+AUTH_USER_MODEL = "authentication.CustomUser"
 
 
 # Password validation
@@ -220,16 +231,16 @@ AUTH_USER_MODEL = 'authentication.CustomUser'
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
 ]
 
@@ -237,9 +248,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = "en-us"
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = "UTC"
 
 USE_I18N = True
 
@@ -249,16 +260,16 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
-STATIC_URL = 'static/'
-STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATIC_URL = "static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
 
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # CORS Settings
 CORS_ALLOWED_ORIGINS = [
@@ -281,62 +292,67 @@ if DEBUG:
 else:
     # Production: Use environment variable for allowed origins
     import os
-    CORS_ALLOWED_ORIGINS = os.getenv('CORS_ALLOWED_ORIGINS', '').split(',') if os.getenv('CORS_ALLOWED_ORIGINS') else []
+
+    CORS_ALLOWED_ORIGINS = (
+        os.getenv("CORS_ALLOWED_ORIGINS", "").split(",")
+        if os.getenv("CORS_ALLOWED_ORIGINS")
+        else []
+    )
     CORS_ALLOW_ALL_ORIGINS = False  # Always disable wildcard in production
 
 CORS_ALLOW_HEADERS = [
-    'accept',
-    'accept-encoding',
-    'authorization',
-    'content-type',
-    'dnt',
-    'origin',
-    'user-agent',
-    'x-csrftoken',
-    'x-requested-with',
+    "accept",
+    "accept-encoding",
+    "authorization",
+    "content-type",
+    "dnt",
+    "origin",
+    "user-agent",
+    "x-csrftoken",
+    "x-requested-with",
 ]
 
 # Django REST Framework
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        'authentication.jwt_auth.JWTAuthentication',
-        'rest_framework.authentication.SessionAuthentication',
-        'rest_framework.authentication.TokenAuthentication',
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "authentication.jwt_auth.JWTAuthentication",
+        "rest_framework.authentication.SessionAuthentication",
+        "rest_framework.authentication.TokenAuthentication",
     ],
     # Always require auth by default — public endpoints opt in with AllowAny.
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticated",
     ],
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 20,
-    'DEFAULT_RENDERER_CLASSES': [
-        'rest_framework.renderers.JSONRenderer',
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": 20,
+    "DEFAULT_RENDERER_CLASSES": [
+        "rest_framework.renderers.JSONRenderer",
     ],
-    'DEFAULT_PARSER_CLASSES': [
-        'rest_framework.parsers.JSONParser',
-        'rest_framework.parsers.MultiPartParser',
-        'rest_framework.parsers.FileUploadParser',
+    "DEFAULT_PARSER_CLASSES": [
+        "rest_framework.parsers.JSONParser",
+        "rest_framework.parsers.MultiPartParser",
+        "rest_framework.parsers.FileUploadParser",
     ],
-    'DEFAULT_THROTTLE_CLASSES': [
-        'rest_framework.throttling.AnonRateThrottle',
-        'rest_framework.throttling.UserRateThrottle',
+    "DEFAULT_THROTTLE_CLASSES": [
+        "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.UserRateThrottle",
     ],
-    'DEFAULT_THROTTLE_RATES': {
-        'anon': '100/hour',
-        'user': '1000/hour',
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": "100/hour",
+        "user": "1000/hour",
     },
-    'DEFAULT_VERSIONING_CLASS': 'backend.api_versioning.EnterpriseAPIVersioning',
-    'DEFAULT_VERSION': 'v1',
-    'ALLOWED_VERSIONS': ['v1', 'v2'],
+    "DEFAULT_VERSIONING_CLASS": "backend.api_versioning.EnterpriseAPIVersioning",
+    "DEFAULT_VERSION": "v1",
+    "ALLOWED_VERSIONS": ["v1", "v2"],
 }
 
 # Channels Configuration
-ASGI_APPLICATION = 'backend.asgi.application'
+ASGI_APPLICATION = "backend.asgi.application"
 
 # Use in-memory channel layer for development (no Redis required)
 CHANNEL_LAYERS = {
-    'default': {
-        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer",
     },
 }
 
@@ -351,69 +367,67 @@ CHANNEL_LAYERS = {
 # }
 
 # Redis Configuration
-REDIS_URL = 'redis://localhost:6379/0'
+REDIS_URL = "redis://localhost:6379/0"
 
 # Celery Configuration
-CELERY_BROKER_URL = 'redis://localhost:6379/1'
-CELERY_RESULT_BACKEND = 'redis://localhost:6379/1'
-CELERY_ACCEPT_CONTENT = ['json']
-CELERY_TASK_SERIALIZER = 'json'
-CELERY_RESULT_SERIALIZER = 'json'
+CELERY_BROKER_URL = "redis://localhost:6379/1"
+CELERY_RESULT_BACKEND = "redis://localhost:6379/1"
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
 CELERY_TIMEZONE = TIME_ZONE
 
 # API Keys
-GROQ_API_KEY = os.getenv('GROQ_API_KEY')
-OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
-AZURE_API_KEY = os.getenv('AZURE_API_KEY')
-STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY', 'sk_test_dummy')
-STRIPE_PUBLISHABLE_KEY = os.getenv('STRIPE_PUBLISHABLE_KEY', '')
-STRIPE_WEBHOOK_SECRET = os.getenv('STRIPE_WEBHOOK_SECRET', 'whsec_dummy')
-STRIPE_PRICE_PRO = os.getenv('STRIPE_PRICE_PRO', '')
-STRIPE_PRICE_ENTERPRISE = os.getenv('STRIPE_PRICE_ENTERPRISE', '')
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+AZURE_API_KEY = os.getenv("AZURE_API_KEY")
+STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY", "sk_test_dummy")
+STRIPE_PUBLISHABLE_KEY = os.getenv("STRIPE_PUBLISHABLE_KEY", "")
+STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET", "whsec_dummy")
+STRIPE_PRICE_PRO = os.getenv("STRIPE_PRICE_PRO", "")
+STRIPE_PRICE_ENTERPRISE = os.getenv("STRIPE_PRICE_ENTERPRISE", "")
 
 # ---------------------------------------------------------------------------
 # JWT configuration
 # ---------------------------------------------------------------------------
-JWT_SECRET = os.getenv('JWT_SECRET', SECRET_KEY)
-JWT_REFRESH_SECRET = os.getenv('JWT_REFRESH_SECRET', JWT_SECRET)
-JWT_ISSUER = os.getenv('JWT_ISSUER', 'multiagent-ai')
-JWT_AUDIENCE = os.getenv('JWT_AUDIENCE', 'multiagent-ai-client')
+JWT_SECRET = os.getenv("JWT_SECRET", SECRET_KEY)
+JWT_REFRESH_SECRET = os.getenv("JWT_REFRESH_SECRET", JWT_SECRET)
+JWT_ISSUER = os.getenv("JWT_ISSUER", "multiagent-ai")
+JWT_AUDIENCE = os.getenv("JWT_AUDIENCE", "multiagent-ai-client")
 
 # ---------------------------------------------------------------------------
 # Firebase configuration
 # ---------------------------------------------------------------------------
-FIREBASE_PROJECT_ID = os.getenv('FIREBASE_PROJECT_ID', '')
-FIREBASE_CLIENT_EMAIL = os.getenv('FIREBASE_CLIENT_EMAIL', '')
-FIREBASE_PRIVATE_KEY = os.getenv('FIREBASE_PRIVATE_KEY', '').replace('\\n', '\n')
-FIREBASE_PRIVATE_KEY_ID = os.getenv('FIREBASE_PRIVATE_KEY_ID', '')
-FIREBASE_API_KEY = os.getenv('FIREBASE_API_KEY', '')
+FIREBASE_PROJECT_ID = os.getenv("FIREBASE_PROJECT_ID", "")
+FIREBASE_CLIENT_EMAIL = os.getenv("FIREBASE_CLIENT_EMAIL", "")
+FIREBASE_PRIVATE_KEY = os.getenv("FIREBASE_PRIVATE_KEY", "").replace("\\n", "\n")
+FIREBASE_PRIVATE_KEY_ID = os.getenv("FIREBASE_PRIVATE_KEY_ID", "")
+FIREBASE_API_KEY = os.getenv("FIREBASE_API_KEY", "")
 FIREBASE_CHECK_REVOKED = not DEBUG  # Only check token revocation in production
 
 # ---------------------------------------------------------------------------
 # Google OAuth
 # ---------------------------------------------------------------------------
-GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID', '')
-GOOGLE_CLIENT_SECRET = os.getenv('GOOGLE_CLIENT_SECRET', '')
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
+GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "")
 GOOGLE_REDIRECT_URI = os.getenv(
-    'GOOGLE_REDIRECT_URI',
-    'http://localhost:8000/api/auth/google/callback/'
+    "GOOGLE_REDIRECT_URI", "http://localhost:8000/api/auth/google/callback/"
 )
 
 # ---------------------------------------------------------------------------
 # GitHub OAuth
 # ---------------------------------------------------------------------------
-GITHUB_CLIENT_ID = os.getenv('GITHUB_CLIENT_ID', '')
-GITHUB_CLIENT_SECRET = os.getenv('GITHUB_CLIENT_SECRET', '')
+GITHUB_CLIENT_ID = os.getenv("GITHUB_CLIENT_ID", "")
+GITHUB_CLIENT_SECRET = os.getenv("GITHUB_CLIENT_SECRET", "")
 GITHUB_REDIRECT_URI = os.getenv(
-    'GITHUB_REDIRECT_URI',
-    'http://localhost:8000/api/auth/github/callback/'
+    "GITHUB_REDIRECT_URI", "http://localhost:8000/api/auth/github/callback/"
 )
 
 # ---------------------------------------------------------------------------
 # Frontend / CORS
 # ---------------------------------------------------------------------------
-FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:3000')
-BACKEND_URL = os.getenv('BACKEND_URL', 'http://localhost:8000')
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
+BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8000")
 
 # File Upload Settings
 FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB
@@ -421,54 +435,54 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB
 
 # Logging Configuration
 LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'formatters': {
-        'verbose': {
-            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
-            'style': '{',
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {
+            "format": "{levelname} {asctime} {module} {process:d} {thread:d} {message}",
+            "style": "{",
         },
-        'simple': {
-            'format': '{levelname} {message}',
-            'style': '{',
-        },
-    },
-    'handlers': {
-        'file': {
-            'level': 'INFO',
-            'class': 'logging.FileHandler',
-            'filename': 'debug.log',
-            'formatter': 'verbose',
-        },
-        'console': {
-            'level': 'DEBUG',
-            'class': 'logging.StreamHandler',
-            'formatter': 'simple',
+        "simple": {
+            "format": "{levelname} {message}",
+            "style": "{",
         },
     },
-    'root': {
-        'handlers': ['console', 'file'],
-        'level': 'INFO',
-    },
-    'loggers': {
-        'django': {
-            'handlers': ['console', 'file'],
-            'level': 'INFO',
-            'propagate': False,
+    "handlers": {
+        "file": {
+            "level": "INFO",
+            "class": "logging.FileHandler",
+            "filename": "debug.log",
+            "formatter": "verbose",
         },
-        'agents': {
-            'handlers': ['console', 'file'],
-            'level': 'DEBUG',
-            'propagate': False,
+        "console": {
+            "level": "DEBUG",
+            "class": "logging.StreamHandler",
+            "formatter": "simple",
+        },
+    },
+    "root": {
+        "handlers": ["console", "file"],
+        "level": "INFO",
+    },
+    "loggers": {
+        "django": {
+            "handlers": ["console", "file"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "agents": {
+            "handlers": ["console", "file"],
+            "level": "DEBUG",
+            "propagate": False,
         },
     },
 }
 
 # Security Settings (Development)
 if DEBUG:
-    ALLOWED_HOSTS = ['*']
+    ALLOWED_HOSTS = ["*"]
 else:
-    ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+    ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
 
 # Session Configuration
 SESSION_COOKIE_AGE = 86400  # 24 hours
@@ -478,90 +492,90 @@ SESSION_SAVE_EVERY_REQUEST = True
 if DEBUG:
     # Use simple in-memory cache for development
     CACHES = {
-        'default': {
-            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
         }
     }
 else:
     # Use Redis cache for production
-    _redis_url = os.getenv('REDIS_URL', 'redis://127.0.0.1:6379/0')
+    _redis_url = os.getenv("REDIS_URL", "redis://127.0.0.1:6379/0")
     # Prefer DB 2 for cache if URL has no path db; keep full URL when provided
-    _cache_location = os.getenv('REDIS_CACHE_URL', _redis_url)
+    _cache_location = os.getenv("REDIS_CACHE_URL", _redis_url)
     CACHES = {
-        'default': {
-            'BACKEND': 'django_redis.cache.RedisCache',
-            'LOCATION': _cache_location,
-            'OPTIONS': {
-                'CLIENT_CLASS': 'django_redis.client.DefaultClient',
-            }
+        "default": {
+            "BACKEND": "django_redis.cache.RedisCache",
+            "LOCATION": _cache_location,
+            "OPTIONS": {
+                "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            },
         }
     }
 
 # Performance Monitoring Configuration
 PERFORMANCE_MONITORING = {
-    'ENABLED': True,
-    'TRACK_AGENT_PERFORMANCE': True,
-    'TRACK_TASK_EXECUTION': True,
-    'TRACK_API_RESPONSE_TIMES': True,
-    'LOG_LEVEL': 'INFO',
-    'METRICS_RETENTION_DAYS': 30,
+    "ENABLED": True,
+    "TRACK_AGENT_PERFORMANCE": True,
+    "TRACK_TASK_EXECUTION": True,
+    "TRACK_API_RESPONSE_TIMES": True,
+    "LOG_LEVEL": "INFO",
+    "METRICS_RETENTION_DAYS": 30,
 }
 
 # Enhanced Agent Configuration
 AGENT_CONFIG = {
-    'MAX_AGENTS': 10,
-    'DEFAULT_TIMEOUT': 30,
-    'REASONING_DEPTH': 5,
-    'MEMORY_BUFFER_SIZE': 1000,
-    'PERFORMANCE_TRACKING': True,
-    'AUTO_SCALING': True,
-    'LOAD_BALANCING': True,
+    "MAX_AGENTS": 10,
+    "DEFAULT_TIMEOUT": 30,
+    "REASONING_DEPTH": 5,
+    "MEMORY_BUFFER_SIZE": 1000,
+    "PERFORMANCE_TRACKING": True,
+    "AUTO_SCALING": True,
+    "LOAD_BALANCING": True,
 }
 
 # Groq Configuration with performance optimization
 GROQ_CONFIG = {
-    'MODEL': 'llama-3.3-70b-versatile',
-    'TEMPERATURE': 0.7,
-    'MAX_TOKENS': 2048,
-    'STREAM': True,
-    'OPTIMIZE_FOR_PERFORMANCE': True,
-    'CACHE_RESPONSES': True,
-    'CACHE_TTL': 300,  # 5 minutes
+    "MODEL": "llama-3.3-70b-versatile",
+    "TEMPERATURE": 0.7,
+    "MAX_TOKENS": 2048,
+    "STREAM": True,
+    "OPTIMIZE_FOR_PERFORMANCE": True,
+    "CACHE_RESPONSES": True,
+    "CACHE_TTL": 300,  # 5 minutes
 }
 
 # SimpleJWT Configuration (used only for legacy /token/refresh/ endpoint)
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': _td(minutes=15),
-    'REFRESH_TOKEN_LIFETIME': _td(days=30),
-    'ROTATE_REFRESH_TOKENS': True,
-    'BLACKLIST_AFTER_ROTATION': False,
-    'ALGORITHM': 'HS256',
-    'SIGNING_KEY': JWT_SECRET,
-    'AUTH_HEADER_TYPES': ('Bearer',),
+    "ACCESS_TOKEN_LIFETIME": _td(minutes=15),
+    "REFRESH_TOKEN_LIFETIME": _td(days=30),
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": False,
+    "ALGORITHM": "HS256",
+    "SIGNING_KEY": JWT_SECRET,
+    "AUTH_HEADER_TYPES": ("Bearer",),
 }
 
 # Authentication logging
-LOGGING['loggers']['authentication'] = {
-    'handlers': ['console', 'file'],
-    'level': 'INFO',
-    'propagate': False,
+LOGGING["loggers"]["authentication"] = {
+    "handlers": ["console", "file"],
+    "level": "INFO",
+    "propagate": False,
 }
-LOGGING['loggers']['authentication.audit'] = {
-    'handlers': ['console', 'file'],
-    'level': 'INFO',
-    'propagate': False,
+LOGGING["loggers"]["authentication.audit"] = {
+    "handlers": ["console", "file"],
+    "level": "INFO",
+    "propagate": False,
 }
 
 # MCP Configuration
 MCP_CONFIG = {
-    'ENABLED_TOOLS': [
-        'file_system',
-        'web_search',
-        'calculator',
-        'calendar',
-        'email',
-        'database',
+    "ENABLED_TOOLS": [
+        "file_system",
+        "web_search",
+        "calculator",
+        "calendar",
+        "email",
+        "database",
     ],
-    'TOOL_TIMEOUT': 60,
-    'MAX_CONCURRENT_TOOLS': 5,
+    "TOOL_TIMEOUT": 60,
+    "MAX_CONCURRENT_TOOLS": 5,
 }

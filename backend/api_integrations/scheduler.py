@@ -1,4 +1,5 @@
 """APScheduler background runner for scheduled automations."""
+
 import logging
 import os
 
@@ -10,7 +11,11 @@ def start_scheduler():
     global _scheduler
     if _scheduler is not None:
         return
-    if os.environ.get("DISABLE_AUTOMATION_SCHEDULER", "").lower() in ("1", "true", "yes"):
+    if os.environ.get("DISABLE_AUTOMATION_SCHEDULER", "").lower() in (
+        "1",
+        "true",
+        "yes",
+    ):
         return
 
     try:
@@ -26,14 +31,21 @@ def start_scheduler():
 
     def tick():
         from django.db import close_old_connections
+
         close_old_connections()
-        due = ScheduledAutomation.objects.filter(is_active=True, next_run_at__lte=timezone.now())
+        due = ScheduledAutomation.objects.filter(
+            is_active=True, next_run_at__lte=timezone.now()
+        )
         for automation in due:
-            logger.info(f"Running automation: {automation.name} ({automation.automation_type})")
+            logger.info(
+                f"Running automation: {automation.name} ({automation.automation_type})"
+            )
             run_automation(automation)
 
     _scheduler = BackgroundScheduler()
-    _scheduler.add_job(tick, "interval", minutes=1, id="automation_tick", replace_existing=True)
+    _scheduler.add_job(
+        tick, "interval", minutes=1, id="automation_tick", replace_existing=True
+    )
     _scheduler.start()
     logger.info("Automation scheduler started (1-minute tick)")
 

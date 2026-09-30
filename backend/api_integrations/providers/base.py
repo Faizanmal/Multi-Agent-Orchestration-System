@@ -1,4 +1,5 @@
 """Base class for third-party integration providers."""
+
 import time
 from abc import ABC, abstractmethod
 from typing import Any
@@ -82,12 +83,14 @@ class IntegrationProvider(ABC):
         if status == "success":
             prev = integration.avg_response_time or 0
             integration.avg_response_time = (
-                (prev * (integration.total_calls - 1) + response_time) / integration.total_calls
-            )
+                prev * (integration.total_calls - 1) + response_time
+            ) / integration.total_calls
             integration.success_rate = (
-                (integration.success_rate * (integration.total_calls - 1) + 100) / integration.total_calls
-            )
-        integration.save(update_fields=["total_calls", "avg_response_time", "success_rate"])
+                integration.success_rate * (integration.total_calls - 1) + 100
+            ) / integration.total_calls
+        integration.save(
+            update_fields=["total_calls", "avg_response_time", "success_rate"]
+        )
 
     @classmethod
     def timed_execute(
@@ -99,7 +102,9 @@ class IntegrationProvider(ABC):
             elapsed = (time.time() - start) * 1000
             status = "success" if result.get("status") == "success" else "error"
             cls.log_call(
-                integration, status, elapsed,
+                integration,
+                status,
+                elapsed,
                 response_data=result,
                 error_message=result.get("message", ""),
                 request_data={"tool": tool_name, "params": params},
@@ -108,7 +113,9 @@ class IntegrationProvider(ABC):
         except Exception as e:  # noqa: BLE001
             elapsed = (time.time() - start) * 1000
             cls.log_call(
-                integration, "error", elapsed,
+                integration,
+                "error",
+                elapsed,
                 error_message=str(e),
                 request_data={"tool": tool_name, "params": params},
             )

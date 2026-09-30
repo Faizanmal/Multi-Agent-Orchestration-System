@@ -1,4 +1,5 @@
 """Shared DRF permission helpers."""
+
 from django.conf import settings
 from rest_framework.permissions import AllowAny, IsAuthenticated
 

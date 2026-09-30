@@ -1,4 +1,5 @@
 """Integration services — agent provisioning and lifecycle."""
+
 import logging
 
 from agents.models import Agent, AgentStatus
@@ -28,7 +29,11 @@ def ensure_integration_agents(integration: APIIntegration) -> list[Agent]:
         defaults={
             "type": "custom",
             "status": AgentStatus.IDLE,
-            "capabilities": [f"{provider_key}.read", f"{provider_key}.analyze", f"{provider_key}.write"],
+            "capabilities": [
+                f"{provider_key}.read",
+                f"{provider_key}.analyze",
+                f"{provider_key}.write",
+            ],
             "configuration": {
                 "integration_id": str(integration.id),
                 "provider": provider_key,
@@ -73,5 +78,9 @@ def ensure_integration_agents(integration: APIIntegration) -> list[Agent]:
 def get_default_user():
     return User.objects.get_or_create(
         email="default@example.com",
-        defaults={"username": "default_user", "first_name": "Default", "last_name": "User"},
+        defaults={
+            "username": "default_user",
+            "first_name": "Default",
+            "last_name": "User",
+        },
     )[0]

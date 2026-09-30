@@ -1,4 +1,5 @@
 """Execute scheduled automations."""
+
 import json
 import logging
 from datetime import timedelta
@@ -13,10 +14,18 @@ logger = logging.getLogger(__name__)
 def _groq_summarize(prompt: str) -> str:
     try:
         from agents.services.groq_service import GroqService
-        resp = GroqService().chat_completion([
-            {"role": "system", "content": "You summarize data concisely for automation alerts."},
-            {"role": "user", "content": prompt},
-        ], max_tokens=800, temperature=0.3)
+
+        resp = GroqService().chat_completion(
+            [
+                {
+                    "role": "system",
+                    "content": "You summarize data concisely for automation alerts.",
+                },
+                {"role": "user", "content": prompt},
+            ],
+            max_tokens=800,
+            temperature=0.3,
+        )
         return resp.get("content", "No summary generated.")
     except Exception as e:  # noqa: BLE001
         logger.error(f"Groq summarize failed: {e}")
@@ -25,9 +34,14 @@ def _groq_summarize(prompt: str) -> str:
 
 def run_inbox_digest(automation, user) -> dict:
     max_emails = int(automation.config.get("max_emails", 10))
-    fetch = IntegrationToolRegistry.execute("gmail.read_inbox", {"max_results": max_emails}, user=user)
+    fetch = IntegrationToolRegistry.execute(
+        "gmail.read_inbox", {"max_results": max_emails}, user=user
+    )
     if fetch.get("status") != "success":
-        return {"status": "error", "message": fetch.get("message", "Gmail fetch failed")}
+        return {
+            "status": "error",
+            "message": fetch.get("message", "Gmail fetch failed"),
+        }
 
     emails = fetch.get("emails", [])
     summary = _groq_summarize(
@@ -48,7 +62,9 @@ def run_inbox_digest(automation, user) -> dict:
 
 def run_slack_alert(automation, user) -> dict:
     channel = automation.config.get("channel") or automation.config.get("slack_channel")
-    message = automation.config.get("message", "Scheduled alert from MultiAgent platform")
+    message = automation.config.get(
+        "message", "Scheduled alert from MultiAgent platform"
+    )
     if not channel:
         return {"status": "error", "message": "slack channel required in config"}
     result = IntegrationToolRegistry.execute(
@@ -70,16 +86,30 @@ def run_workflow(automation, user) -> dict:
     except VisualWorkflow.DoesNotExist:
         return {"status": "error", "message": "Workflow not found"}
 
-    execution = WorkflowExecution.objects.create(workflow=workflow, input_data=automation.config, status="running", started_at=timezone.now())
+    execution = WorkflowExecution.objects.create(
+        workflow=workflow,
+        input_data=automation.config,
+        status="running",
+        started_at=timezone.now(),
+    )
     from workflow_builder.views import VisualWorkflowViewSet
+
     viewset = VisualWorkflowViewSet()
     steps = viewset._convert_nodes_to_steps(workflow.nodes, workflow.edges)
-    definition = {"id": str(workflow.id), "name": workflow.name, "steps": steps, "variables": workflow.variables, "settings": workflow.settings}
+    definition = {
+        "id": str(workflow.id),
+        "name": workflow.name,
+        "steps": steps,
+        "variables": workflow.variables,
+        "settings": workflow.settings,
+    }
 
     engine = WorkflowEngine()
     loop = asyncio.new_event_loop()
     try:
-        result = loop.run_until_complete(engine.execute_workflow(definition, automation.config, str(user.id)))
+        result = loop.run_until_complete(
+            engine.execute_workflow(definition, automation.config, str(user.id))
+        )
     finally:
         loop.close()
 
@@ -88,11 +118,16 @@ def run_workflow(automation, user) -> dict:
     execution.output_data = result.get("results", {})
     execution.error_message = result.get("error", "")
     execution.save()
-    return {"status": "success" if result.get("success") else "error", "execution_id": str(execution.id), "result": result}
+    return {
+        "status": "success" if result.get("success") else "error",
+        "execution_id": str(execution.id),
+        "result": result,
+    }
 
 
 def run_integration_check(automation, user) -> dict:
     from .models import APIIntegration
+
     results = []
     for integ in APIIntegration.objects.filter(created_by=user, status="active"):
         test = IntegrationToolRegistry.test_integration(integ)
@@ -103,11 +138,19 @@ def run_integration_check(automation, user) -> dict:
             "slack.post_message",
             {
                 "channel": automation.config["slack_channel"],
-                "text": f"⚠️ Integration health check: {len(failures)} failure(s)\n" + "\n".join(f"- {f['integration']}: {f.get('message')}" for f in failures),
+                "text": f"⚠️ Integration health check: {len(failures)} failure(s)\n"
+                + "\n".join(
+                    f"- {f['integration']}: {f.get('message')}" for f in failures
+                ),
             },
             user=user,
         )
-    return {"status": "success", "checked": len(results), "failures": len(failures), "details": results}
+    return {
+        "status": "success",
+        "checked": len(results),
+        "failures": len(failures),
+        "details": results,
+    }
 
 
 def run_automation(automation) -> dict:
@@ -120,7 +163,10 @@ def run_automation(automation) -> dict:
     }
     runner = runners.get(automation.automation_type)
     if not runner:
-        return {"status": "error", "message": f"Unknown automation type: {automation.automation_type}"}
+        return {
+            "status": "error",
+            "message": f"Unknown automation type: {automation.automation_type}",
+        }
     try:
         result = runner(automation, user)
         automation.last_result = result

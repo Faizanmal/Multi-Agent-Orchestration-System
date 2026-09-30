@@ -1,4 +1,5 @@
 """Shopify Admin API integration provider."""
+
 from typing import Any
 
 import requests
@@ -21,10 +22,26 @@ class ShopifyProvider(IntegrationProvider):
     @classmethod
     def tool_definitions(cls) -> list[dict[str, Any]]:
         return [
-            {"name": "shopify.list_orders", "description": "List recent Shopify orders", "parameters": {"limit": "int", "status": "string"}},
-            {"name": "shopify.list_products", "description": "List Shopify products", "parameters": {"limit": "int"}},
-            {"name": "shopify.get_order", "description": "Get a Shopify order by ID", "parameters": {"order_id": "string"}},
-            {"name": "shopify.shop", "description": "Get shop details", "parameters": {}},
+            {
+                "name": "shopify.list_orders",
+                "description": "List recent Shopify orders",
+                "parameters": {"limit": "int", "status": "string"},
+            },
+            {
+                "name": "shopify.list_products",
+                "description": "List Shopify products",
+                "parameters": {"limit": "int"},
+            },
+            {
+                "name": "shopify.get_order",
+                "description": "Get a Shopify order by ID",
+                "parameters": {"order_id": "string"},
+            },
+            {
+                "name": "shopify.shop",
+                "description": "Get shop details",
+                "parameters": {},
+            },
         ]
 
     @classmethod
@@ -55,7 +72,9 @@ class ShopifyProvider(IntegrationProvider):
     def test_connection(cls, integration: APIIntegration) -> dict[str, Any]:
         try:
             base, token = cls._base_and_token(integration)
-            resp = requests.get(f"{base}/shop.json", headers=cls._headers(token), timeout=20)
+            resp = requests.get(
+                f"{base}/shop.json", headers=cls._headers(token), timeout=20
+            )
             if resp.status_code >= 400:
                 return {"status": "error", "message": resp.text[:300]}
             shop = (resp.json() or {}).get("shop", {})
@@ -68,7 +87,9 @@ class ShopifyProvider(IntegrationProvider):
             return {"status": "error", "message": str(e)}
 
     @classmethod
-    def execute_tool(cls, integration: APIIntegration, tool_name: str, params: dict[str, Any]) -> dict[str, Any]:
+    def execute_tool(
+        cls, integration: APIIntegration, tool_name: str, params: dict[str, Any]
+    ) -> dict[str, Any]:
         try:
             base, token = cls._base_and_token(integration)
             headers = cls._headers(token)
@@ -98,7 +119,9 @@ class ShopifyProvider(IntegrationProvider):
 
             if tool_name == "shopify.list_orders":
                 q = {"limit": limit, "status": params.get("status", "any")}
-                resp = requests.get(f"{base}/orders.json", headers=headers, params=q, timeout=30)
+                resp = requests.get(
+                    f"{base}/orders.json", headers=headers, params=q, timeout=30
+                )
                 data = resp.json() if resp.content else {}
                 return {
                     "status": "success" if resp.ok else "error",
@@ -110,7 +133,9 @@ class ShopifyProvider(IntegrationProvider):
                 order_id = params.get("order_id")
                 if not order_id:
                     return {"status": "error", "message": "order_id required"}
-                resp = requests.get(f"{base}/orders/{order_id}.json", headers=headers, timeout=20)
+                resp = requests.get(
+                    f"{base}/orders/{order_id}.json", headers=headers, timeout=20
+                )
                 data = resp.json() if resp.content else {}
                 return {
                     "status": "success" if resp.ok else "error",
