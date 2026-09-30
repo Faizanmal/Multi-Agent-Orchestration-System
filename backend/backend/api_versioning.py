@@ -1,3 +1,5 @@
+from datetime import timezone
+
 """
 API Versioning System for Enterprise Applications
 Supports:
@@ -6,12 +8,13 @@ Supports:
 - Backward compatibility
 - Version negotiation
 """
-from rest_framework.versioning import URLPathVersioning
-from rest_framework.response import Response
-from rest_framework import status
-from functools import wraps
 import logging
 from datetime import datetime
+from functools import wraps
+
+from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.versioning import URLPathVersioning
 
 logger = logging.getLogger(__name__)
 
@@ -21,11 +24,11 @@ class EnterpriseAPIVersioning(URLPathVersioning):
     Custom API versioning with deprecation support
     """
     default_version = 'v1'
-    allowed_versions = ['v1', 'v2']
+    allowed_versions = ['v1', 'v2']  # noqa: RUF012
     version_param = 'version'
     
     # Deprecation schedule
-    DEPRECATED_VERSIONS = {
+    DEPRECATED_VERSIONS = {  # noqa: RUF012
         # 'v1': datetime(2025, 12, 31),  # Example: v1 deprecated on Dec 31, 2025
     }
     
@@ -36,7 +39,7 @@ class EnterpriseAPIVersioning(URLPathVersioning):
         # Check if version is deprecated
         if version in self.DEPRECATED_VERSIONS:
             deprecation_date = self.DEPRECATED_VERSIONS[version]
-            days_until_deprecated = (deprecation_date - datetime.now()).days
+            days_until_deprecated = (deprecation_date - datetime.now(timezone.utc)).days
             
             if days_until_deprecated <= 0:
                 logger.warning(f"API version {version} is deprecated")
@@ -78,7 +81,7 @@ def api_version(versions: list):
     return decorator
 
 
-def deprecated(sunset_date: str, alternative: str = None):
+def deprecated(sunset_date: str, alternative: str | None = None):
     """
     Decorator to mark endpoints as deprecated
     
@@ -222,14 +225,14 @@ class APIVersionRegistry:
         self.versions = {}
     
     def register_version(self, version: str, features: list, 
-                        deprecated: bool = False, sunset_date: str = None):
+                        deprecated: bool = False, sunset_date: str | None = None):
         """Register an API version"""
         self.versions[version] = {
             'version': version,
             'features': features,
             'deprecated': deprecated,
             'sunset_date': sunset_date,
-            'registered_at': datetime.utcnow().isoformat(),
+            'registered_at': datetime.now(timezone.utc).isoformat(),
         }
         
         logger.info(f"Registered API version: {version}")

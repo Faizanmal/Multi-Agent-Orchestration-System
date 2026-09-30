@@ -1,5 +1,5 @@
 """Trello integration provider."""
-from typing import Any, Dict, List
+from typing import Any
 
 import requests
 
@@ -19,7 +19,7 @@ class TrelloProvider(IntegrationProvider):
         return "trello" in text
 
     @classmethod
-    def tool_definitions(cls) -> List[Dict[str, Any]]:
+    def tool_definitions(cls) -> list[dict[str, Any]]:
         return [
             {"name": "trello.list_boards", "description": "List Trello boards", "parameters": {}},
             {"name": "trello.list_cards", "description": "List cards on a board", "parameters": {"board_id": "string"}},
@@ -27,7 +27,7 @@ class TrelloProvider(IntegrationProvider):
         ]
 
     @classmethod
-    def _auth_params(cls, integration: APIIntegration) -> Dict[str, str]:
+    def _auth_params(cls, integration: APIIntegration) -> dict[str, str]:
         auth = cls._auth(integration)
         key = auth.get("api_key") or auth.get("key") or ""
         token = auth.get("token") or auth.get("access_token") or ""
@@ -36,7 +36,7 @@ class TrelloProvider(IntegrationProvider):
         return {"key": str(key), "token": str(token)}
 
     @classmethod
-    def test_connection(cls, integration: APIIntegration) -> Dict[str, Any]:
+    def test_connection(cls, integration: APIIntegration) -> dict[str, Any]:
         try:
             params = cls._auth_params(integration)
             resp = requests.get("https://api.trello.com/1/members/me", params=params, timeout=20)
@@ -44,11 +44,11 @@ class TrelloProvider(IntegrationProvider):
                 return {"status": "error", "message": resp.text[:200]}
             me = resp.json()
             return {"status": "success", "message": f"Connected as {me.get('fullName') or me.get('username')}", "data": me}
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return {"status": "error", "message": str(e)}
 
     @classmethod
-    def execute_tool(cls, integration: APIIntegration, tool_name: str, params: Dict[str, Any]) -> Dict[str, Any]:
+    def execute_tool(cls, integration: APIIntegration, tool_name: str, params: dict[str, Any]) -> dict[str, Any]:
         try:
             auth = cls._auth_params(integration)
             if tool_name == "trello.list_boards":
@@ -80,5 +80,5 @@ class TrelloProvider(IntegrationProvider):
                 return {"status": "success" if resp.ok else "error", "card": resp.json() if resp.ok else {}, "message": "" if resp.ok else resp.text[:200]}
 
             return {"status": "error", "message": f"Unknown Trello tool: {tool_name}"}
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return {"status": "error", "message": str(e)}

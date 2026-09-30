@@ -162,7 +162,7 @@ const AIWorkflowAssistant: React.FC<AIWorkflowAssistantProps> = ({
       id: '1',
       type: 'assistant',
       message: 'Hello! I\'m your AI Workflow Assistant. I can help you optimize your workflows, generate new ones from natural language, and provide intelligent suggestions. What would you like to work on today?',
-      timestamp: Date.now() - 60000,
+      timestamp: new Date().getTime() - 60000,
       suggestions: [
         'Optimize my current workflow',
         'Generate a data processing workflow',
@@ -204,7 +204,7 @@ const AIWorkflowAssistant: React.FC<AIWorkflowAssistantProps> = ({
   }, [])
 
   useEffect(() => {
-    loadRecommendations()
+    setTimeout(() => { loadRecommendations() }, 0)
   }, [loadRecommendations])
 
   const handleSendMessage = async () => {

@@ -1,5 +1,5 @@
 """Microsoft Outlook (Graph Mail) integration provider."""
-from typing import Any, Dict, List
+from typing import Any
 
 from ..models import APIIntegration
 from .base import IntegrationProvider
@@ -18,7 +18,7 @@ class OutlookProvider(IntegrationProvider):
         return "outlook" in text or "microsoft mail" in text
 
     @classmethod
-    def tool_definitions(cls) -> List[Dict[str, Any]]:
+    def tool_definitions(cls) -> list[dict[str, Any]]:
         return [
             {"name": "outlook.list_messages", "description": "List recent Outlook inbox messages", "parameters": {"top": "int"}},
             {"name": "outlook.search", "description": "Search Outlook messages", "parameters": {"query": "string", "top": "int"}},
@@ -26,11 +26,11 @@ class OutlookProvider(IntegrationProvider):
         ]
 
     @classmethod
-    def test_connection(cls, integration: APIIntegration) -> Dict[str, Any]:
+    def test_connection(cls, integration: APIIntegration) -> dict[str, Any]:
         return test_graph_me(cls, integration, "Outlook")
 
     @classmethod
-    def execute_tool(cls, integration: APIIntegration, tool_name: str, params: Dict[str, Any]) -> Dict[str, Any]:
+    def execute_tool(cls, integration: APIIntegration, tool_name: str, params: dict[str, Any]) -> dict[str, Any]:
         try:
             token = graph_token(cls, integration)
             top = min(int(params.get("top", 10)), 50)
@@ -79,5 +79,5 @@ class OutlookProvider(IntegrationProvider):
                 return {"status": "error", "message": err or str(data)}
 
             return {"status": "error", "message": f"Unknown Outlook tool: {tool_name}"}
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return {"status": "error", "message": str(e)}

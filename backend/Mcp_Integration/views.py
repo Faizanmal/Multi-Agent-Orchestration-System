@@ -1,11 +1,12 @@
 # Model Context Protocol (MCP) Integration Views
 
-from rest_framework import viewsets, status
-from rest_framework.decorators import action
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.conf import settings
-from .models import MCPTool, MCPToolExecution, MCPSession
+from rest_framework import status, viewsets
+from rest_framework.decorators import action
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
+
+from .models import MCPSession, MCPTool, MCPToolExecution
 from .serializers import MCPToolSerializer
 from .services import MCPService, MCPToolRegistry
 
@@ -33,7 +34,7 @@ class MCPToolViewSet(viewsets.ModelViewSet):
                 'count': len(available_tools)
             })
             
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return Response(
                 {'error': str(e)}, 
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -72,7 +73,7 @@ class MCPToolViewSet(viewsets.ModelViewSet):
                 'success': execution.success
             })
             
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return Response(
                 {'error': str(e)}, 
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -105,7 +106,7 @@ class MCPToolViewSet(viewsets.ModelViewSet):
                 'total_tools': len(tools_config)
             })
             
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return Response(
                 {'error': str(e)}, 
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -139,7 +140,7 @@ class MCPSessionViewSet(viewsets.ViewSet):
                 'created_at': session.created_at.isoformat()
             })
             
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return Response(
                 {'error': str(e)}, 
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -181,7 +182,7 @@ class MCPSessionViewSet(viewsets.ViewSet):
                 {'error': 'Session not found'}, 
                 status=status.HTTP_404_NOT_FOUND
             )
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return Response(
                 {'error': str(e)}, 
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -222,7 +223,7 @@ class MCPAgentIntegrationViewSet(viewsets.ViewSet):
                 'task_type': task_type
             })
             
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return Response(
                 {'error': str(e)}, 
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -262,7 +263,7 @@ class MCPAgentIntegrationViewSet(viewsets.ViewSet):
                 'context_used': bool(agent_context)
             })
             
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return Response(
                 {'error': str(e)}, 
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR

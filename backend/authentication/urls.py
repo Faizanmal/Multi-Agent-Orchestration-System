@@ -8,35 +8,44 @@ Existing endpoints are preserved; enterprise endpoints are added below.
 from django.urls import path
 from rest_framework_simplejwt.views import TokenRefreshView
 
-# Legacy views (unchanged)
-from .views import (
-    UserRegistrationView, login_view, logout_view, UserProfileView,
-    change_password_view, forgot_password_view, reset_password_view,
-    APIKeyViewSet, delete_api_key_view, UserSessionListView
-)
-
 # Enterprise views
 from .enterprise_views import (
+    audit_log_view,
+    delete_account_view,
     enterprise_login_view,
     enterprise_register_view,
-    token_refresh_view,
-    logout_view as enterprise_logout_view,
-    logout_all_view,
     firebase_auth_view,
-    google_initiate_view,
-    google_callback_view,
-    github_initiate_view,
     github_callback_view,
-    link_google_view,
+    github_initiate_view,
+    google_callback_view,
+    google_initiate_view,
     link_github_view,
-    unlink_google_view,
-    unlink_github_view,
-    me_view,
-    update_profile_view,
-    delete_account_view,
+    link_google_view,
     list_sessions_view,
+    logout_all_view,
+    me_view,
     revoke_session_view,
-    audit_log_view,
+    token_refresh_view,
+    unlink_github_view,
+    unlink_google_view,
+    update_profile_view,
+)
+from .enterprise_views import (
+    logout_view as enterprise_logout_view,
+)
+
+# Legacy views (unchanged)
+from .views import (
+    APIKeyViewSet,
+    UserProfileView,
+    UserRegistrationView,
+    UserSessionListView,
+    change_password_view,
+    delete_api_key_view,
+    forgot_password_view,
+    login_view,
+    logout_view,
+    reset_password_view,
 )
 
 app_name = 'authentication'

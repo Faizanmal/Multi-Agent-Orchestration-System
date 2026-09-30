@@ -1,5 +1,5 @@
 """Google Drive API integration provider."""
-from typing import Any, Dict, List
+from typing import Any
 
 import requests
 
@@ -19,7 +19,7 @@ class GoogleDriveProvider(IntegrationProvider):
         return "google drive" in text or "google_drive" in text or text.strip() == "drive"
 
     @classmethod
-    def tool_definitions(cls) -> List[Dict[str, Any]]:
+    def tool_definitions(cls) -> list[dict[str, Any]]:
         return [
             {"name": "google_drive.list_files", "description": "List recent Drive files", "parameters": {"page_size": "int", "query": "string"}},
             {"name": "google_drive.get_file", "description": "Get file metadata by ID", "parameters": {"file_id": "string"}},
@@ -28,7 +28,7 @@ class GoogleDriveProvider(IntegrationProvider):
         ]
 
     @classmethod
-    def _headers(cls, integration: APIIntegration) -> Dict[str, str]:
+    def _headers(cls, integration: APIIntegration) -> dict[str, str]:
         auth = cls._auth(integration)
         token = auth.get("access_token") or cls._token(integration)
         if not token:
@@ -36,7 +36,7 @@ class GoogleDriveProvider(IntegrationProvider):
         return {"Authorization": f"Bearer {token}"}
 
     @classmethod
-    def test_connection(cls, integration: APIIntegration) -> Dict[str, Any]:
+    def test_connection(cls, integration: APIIntegration) -> dict[str, Any]:
         try:
             resp = requests.get(
                 "https://www.googleapis.com/drive/v3/about",
@@ -49,11 +49,11 @@ class GoogleDriveProvider(IntegrationProvider):
             data = resp.json()
             email = (data.get("user") or {}).get("emailAddress", "Drive user")
             return {"status": "success", "message": f"Connected to Google Drive as {email}", "data": data.get("user")}
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return {"status": "error", "message": str(e)}
 
     @classmethod
-    def execute_tool(cls, integration: APIIntegration, tool_name: str, params: Dict[str, Any]) -> Dict[str, Any]:
+    def execute_tool(cls, integration: APIIntegration, tool_name: str, params: dict[str, Any]) -> dict[str, Any]:
         try:
             headers = cls._headers(integration)
             page_size = min(int(params.get("page_size", 20)), 50)
@@ -129,5 +129,5 @@ class GoogleDriveProvider(IntegrationProvider):
                 return {"status": "success", "name": meta.get("name"), "content": text, "message": ""}
 
             return {"status": "error", "message": f"Unknown Google Drive tool: {tool_name}"}
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return {"status": "error", "message": str(e)}

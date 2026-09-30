@@ -1,22 +1,20 @@
-import logging
 import json
+import logging
 import re
-from typing import List, Dict, Any, Optional
-from datetime import datetime
+from datetime import datetime, timezone
+from typing import Any
+
+from django.conf import settings
 from langchain.agents import AgentExecutor, create_tool_calling_agent
-from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.messages import HumanMessage
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.tools import tool
 from langchain_groq import ChatGroq
-from django.conf import settings
 
 from .. import models
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from ..models import Message
-from .groq_service import GroqService
+from ..models import Message
 from .enhanced_agent_coordinator import EnhancedAgentCoordinator
+from .groq_service import GroqService
 
 logger = logging.getLogger(__name__)
 
@@ -79,7 +77,7 @@ def _invoke_agent_via_groq(agent_type: str, task: str, context: str = "") -> str
 # ─────────────────────────────────────────────────────────────────────────────
 
 @tool
-def send_message_to_agent(agent_id: str, content: str, task_id: Optional[str] = None) -> Dict[str, Any]:
+def send_message_to_agent(agent_id: str, content: str, task_id: str | None = None) -> dict[str, Any]:
     """
     Send a message to a specific agent and receive their actual response.
     The agent will process the content using its specialised Groq-powered LLM and return a real answer.
@@ -91,7 +89,7 @@ def send_message_to_agent(agent_id: str, content: str, task_id: Optional[str] = 
         try:
             agent = agent_models.Agent.objects.get(id=agent_id)
             agent_type = str(agent.type)
-        except Exception:
+        except Exception:  # noqa: BLE001
             agent_type = "orchestrator"
 
         # Actually invoke the agent
@@ -105,8 +103,8 @@ def send_message_to_agent(agent_id: str, content: str, task_id: Optional[str] = 
                 existing[f"agent_{agent_id}_response"] = agent_response
                 task.output_data = existing
                 task.save(update_fields=["output_data"])
-            except Exception:
-                pass
+            except Exception as e:  # noqa: BLE001
+                logger.warning(f"Failed to update task output data: {e}")
 
         return {
             "status": "success",
@@ -114,11 +112,11 @@ def send_message_to_agent(agent_id: str, content: str, task_id: Optional[str] = 
             "agent_type": agent_type,
             "response": agent_response,
         }
-    except Exception as e:
-        return {"status": "error", "error": f"Failed to communicate with agent: {str(e)}"}
+    except Exception as e:  # noqa: BLE001
+        return {"status": "error", "error": f"Failed to communicate with agent: {e!s}"}
 
 @tool
-def execute_agent_task(agent_type: str, task_description: str, context_json: str = "{}") -> Dict[str, Any]:
+def execute_agent_task(agent_type: str, task_description: str, context_json: str = "{}") -> dict[str, Any]:
     """
     Execute a task using a named specialist agent (orchestrator / vision / reasoning / action / memory).
     The agent is powered by Groq LLM and returns a REAL response — not a stub.
@@ -135,12 +133,12 @@ def execute_agent_task(agent_type: str, task_description: str, context_json: str
             "result": result,
             "task": task_description,
         }
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         return {"status": "error", "error": str(e), "agent_type": agent_type}
 
 
 @tool
-def search_memory(query: str, session_id: str = "", agent_id: str = "") -> Dict[str, Any]:
+def search_memory(query: str, session_id: str = "", agent_id: str = "") -> dict[str, Any]:
     """
     Search the persistent agent memory for context relevant to a query.
     Returns the top matching memory entries so the orchestrator can incorporate prior knowledge.
@@ -148,7 +146,7 @@ def search_memory(query: str, session_id: str = "", agent_id: str = "") -> Dict[
     try:
         from .. import models as agent_models
 
-        filters: Dict[str, Any] = {}
+        filters: dict[str, Any] = {}
         if session_id:
             filters["session_id"] = session_id
         if agent_id:
@@ -178,12 +176,12 @@ def search_memory(query: str, session_id: str = "", agent_id: str = "") -> Dict[
             for score, mem in scored[:5]
         ]
         return {"status": "success", "memories": results, "count": len(results)}
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         return {"status": "error", "error": str(e), "memories": []}
 
 
 @tool
-def store_insight(key: str, value: str, session_id: str = "", agent_id: str = "", importance: float = 0.7) -> Dict[str, Any]:
+def store_insight(key: str, value: str, session_id: str = "", agent_id: str = "", importance: float = 0.7) -> dict[str, Any]:
     """
     Store an important insight, finding, or intermediate result in agent memory.
     Use this to persist knowledge that should be referenced later in the conversation.
@@ -192,9 +190,9 @@ def store_insight(key: str, value: str, session_id: str = "", agent_id: str = ""
     try:
         from .. import models as agent_models
 
-        create_kwargs: Dict[str, Any] = {
+        create_kwargs: dict[str, Any] = {
             "key": key,
-            "value": {"content": value, "timestamp": datetime.now().isoformat()},
+            "value": {"content": value, "timestamp": datetime.now(timezone.utc).isoformat()},
             "importance_score": importance,
         }
         if session_id:
@@ -204,12 +202,12 @@ def store_insight(key: str, value: str, session_id: str = "", agent_id: str = ""
 
         memory = agent_models.AgentMemory.objects.create(**create_kwargs)
         return {"status": "success", "memory_id": str(memory.id), "key": key}
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         return {"status": "error", "error": str(e)}
 
 
 @tool
-def plan_task_decomposition(task_description: str, available_agents: str) -> Dict[str, Any]:
+def plan_task_decomposition(task_description: str, available_agents: str) -> dict[str, Any]:
     """
     Use LLM to decompose a complex task into ordered subtasks and assign each to the best agent.
     Returns a JSON plan with step, agent_type, subtask, and dependencies.
@@ -247,12 +245,12 @@ def plan_task_decomposition(task_description: str, available_agents: str) -> Dic
             plan = json.loads(match.group()) if match else {"plan": [], "reasoning": content}
 
         return {"status": "success", "decomposition": plan}
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         return {"status": "error", "error": str(e)}
 
 
 @tool
-def get_agent_status(agent_id: str) -> Dict[str, Any]:
+def get_agent_status(agent_id: str) -> dict[str, Any]:
     """Get the current status and capabilities of an agent"""
     try:
         try:
@@ -266,13 +264,13 @@ def get_agent_status(agent_id: str) -> Dict[str, Any]:
                 "capabilities": agent.capabilities or [],
                 "is_active": agent.is_active
             }
-        except Exception:
+        except Exception:  # noqa: BLE001
             return {"error": f"Agent with ID {agent_id} not found"}
-    except Exception:
+    except Exception:  # noqa: BLE001
         return {"error": f"Agent with ID {agent_id} not found"}
 
 @tool
-def update_task_status(task_id: str, status: str, output: Optional[str] = None) -> Dict[str, Any]:
+def update_task_status(task_id: str, status: str, output: str | None = None) -> dict[str, Any]:
     """Update the status of a task"""
     try:
         from .. import models as agent_models
@@ -284,13 +282,13 @@ def update_task_status(task_id: str, status: str, output: Optional[str] = None) 
         return {
             "task_id": str(task.id),
             "status": task.status,
-            "updated_at": task.updated_at.isoformat() if hasattr(task, 'updated_at') else datetime.now().isoformat()
+            "updated_at": task.updated_at.isoformat() if hasattr(task, 'updated_at') else datetime.now(timezone.utc).isoformat()
         }
-    except Exception:
+    except Exception:  # noqa: BLE001
         return {"error": f"Task with ID {task_id} not found"}
 
 @tool
-def create_subtask(parent_task_id: str, title: str, description: str, assigned_agent_id: str) -> Dict[str, Any]:
+def create_subtask(parent_task_id: str, title: str, description: str, assigned_agent_id: str) -> dict[str, Any]:
     """Create a subtask for a parent task"""
     try:
         from .. import models as agent_models
@@ -313,11 +311,11 @@ def create_subtask(parent_task_id: str, title: str, description: str, assigned_a
             "title": subtask.title,
             "status": subtask.status
         }
-    except Exception as e:
-        return {"error": f"Failed to create subtask: {str(e)}"}
+    except Exception as e:  # noqa: BLE001
+        return {"error": f"Failed to create subtask: {e!s}"}
 
 @tool
-def get_agent_performance(agent_id: str) -> Dict[str, Any]:
+def get_agent_performance(agent_id: str) -> dict[str, Any]:
     """Get performance metrics for an agent"""
     try:
         from .. import models as agent_models
@@ -337,11 +335,11 @@ def get_agent_performance(agent_id: str) -> Dict[str, Any]:
             "name": agent.name,
             "metrics": metrics_data
         }
-    except Exception as e:
-        return {"error": f"Failed to retrieve performance metrics: {str(e)}"}
+    except Exception as e:  # noqa: BLE001
+        return {"error": f"Failed to retrieve performance metrics: {e!s}"}
 
 @tool
-def assign_task_to_agent(task_id: str, agent_id: str) -> Dict[str, Any]:
+def assign_task_to_agent(task_id: str, agent_id: str) -> dict[str, Any]:
     """Assign a task to a specific agent"""
     try:
         from .. import models as agent_models
@@ -355,11 +353,11 @@ def assign_task_to_agent(task_id: str, agent_id: str) -> Dict[str, Any]:
             "assigned_agent": agent.name,
             "status": "assigned"
         }
-    except Exception as e:
-        return {"error": f"Failed to assign task: {str(e)}"}
+    except Exception as e:  # noqa: BLE001
+        return {"error": f"Failed to assign task: {e!s}"}
 
 @tool
-def get_task_details(task_id: str) -> Dict[str, Any]:
+def get_task_details(task_id: str) -> dict[str, Any]:
     """Get detailed information about a task"""
     try:
         from .. import models as agent_models
@@ -373,8 +371,8 @@ def get_task_details(task_id: str) -> Dict[str, Any]:
             "created_at": task.created_at.isoformat(),
             "input_data": task.input_data or {}
         }
-    except Exception as e:
-        return {"error": f"Failed to get task details: {str(e)}"}
+    except Exception as e:  # noqa: BLE001
+        return {"error": f"Failed to get task details: {e!s}"}
 
 class LangchainAgentCoordinator:
     """
@@ -406,7 +404,7 @@ class LangchainAgentCoordinator:
             get_task_details,
         ]
         
-    def process_message(self, message: 'models.Message') -> Dict[str, Any]:
+    def process_message(self, message: 'models.Message') -> dict[str, Any]:
         """
         Process incoming message using Langchain-based multi-agent coordination
         
@@ -445,7 +443,7 @@ class LangchainAgentCoordinator:
             'response': workflow_result
         }
     
-    def _build_conversation_history(self, message: 'models.Message') -> List[Dict[str, Any]]:
+    def _build_conversation_history(self, message: 'models.Message') -> list[dict[str, Any]]:
         """Build conversation history from previous messages"""
         try:
             from .. import models as agent_models
@@ -464,12 +462,12 @@ class LangchainAgentCoordinator:
                         HumanMessage(content=msg.content)
                     )
             return history
-        except Exception:
+        except Exception:  # noqa: BLE001
             return []
         
         return history
     
-    def _determine_relevant_agents(self, message: 'models.Message') -> List['models.Agent']:
+    def _determine_relevant_agents(self, message: 'models.Message') -> list['models.Agent']:
         """
         Use an LLM call to decide which specialist agents are needed for this message.
         Falls back to keyword-based selection if LLM is unavailable.
@@ -510,7 +508,7 @@ class LangchainAgentCoordinator:
             )
             content = response.get("content", "")
             match = re.search(r"\[.*?\]", content, re.DOTALL)
-            needed_types: List[str] = json.loads(match.group()) if match else ["orchestrator", "reasoning"]
+            needed_types: list[str] = json.loads(match.group()) if match else ["orchestrator", "reasoning"]
 
             relevant_agents = []
             for agent_type in needed_types:
@@ -527,7 +525,7 @@ class LangchainAgentCoordinator:
             logger.info(f"LLM selected agents: {[a.type for a in relevant_agents]}")
             return relevant_agents
 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.warning(f"LLM agent planning failed ({e}); falling back to keyword selection")
             return self.enhanced_coordinator._determine_relevant_agents_enhanced(message)
     
@@ -538,10 +536,10 @@ class LangchainAgentCoordinator:
     def _orchestrate_with_langchain(
         self, 
         message: 'models.Message', 
-        agents: List['models.Agent'], 
-        tasks: List['models.Task'],
-        conversation_history: List[Dict[str, Any]]
-    ) -> Dict[str, Any]:
+        agents: list['models.Agent'], 
+        tasks: list['models.Task'],
+        conversation_history: list[dict[str, Any]]
+    ) -> dict[str, Any]:
         """
         Orchestrate agent workflow using Langchain with defined roles and protocols
         
@@ -581,8 +579,8 @@ class LangchainAgentCoordinator:
                 return_intermediate_steps=True,     # capture tool calls + observations
                 early_stopping_method="generate",
             )
-        except Exception as e:
-            logger.error(f"Failed to create agent executor: {str(e)}")
+        except Exception as e:  # noqa: BLE001
+            logger.error(f"Failed to create agent executor: {e!s}")
             return self.enhanced_coordinator.process_message(message)
 
         # Build rich input so the LLM can plan before it acts
@@ -598,7 +596,7 @@ class LangchainAgentCoordinator:
             memory_summary = "\n".join(
                 f"  - [{m.key}]: {str(m.value)[:120]}" for m in recent_memories
             ) or "  (none yet)"
-        except Exception:
+        except Exception:  # noqa: BLE001
             memory_summary = "  (unavailable)"
 
         input_text = (
@@ -644,12 +642,12 @@ class LangchainAgentCoordinator:
                 "reasoning_steps": len(steps),
                 "tool_trace": tool_trace,
             }
-        except Exception as e:
-            logger.error(f"Langchain orchestration failed: {str(e)}")
+        except Exception as e:  # noqa: BLE001
+            logger.error(f"Langchain orchestration failed: {e!s}")
             # Fallback to enhanced coordinator
             return self.enhanced_coordinator.process_message(message)
     
-    def _create_orchestrator_prompt_with_roles(self, agents: List['models.Agent'], tasks: List['models.Task']) -> str:
+    def _create_orchestrator_prompt_with_roles(self, agents: list['models.Agent'], tasks: list['models.Task']) -> str:
         """Create a system prompt for the Langchain orchestrator with defined agent roles"""
         # Define agent roles and responsibilities
         agent_roles = {
@@ -742,7 +740,7 @@ class LangchainAgentCoordinator:
         Coordinate agents efficiently and ensure all relevant information is considered.
         """
     
-    def _resolve_conflicts(self, agent_responses: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def _resolve_conflicts(self, agent_responses: list[dict[str, Any]]) -> dict[str, Any]:
         """
         Resolve conflicts between agent responses using confidence scoring
         
@@ -775,8 +773,8 @@ class LangchainAgentCoordinator:
                     if recent_metrics:
                         avg_accuracy = sum(m.metric_value for m in recent_metrics) / len(recent_metrics)
                         confidence = (confidence + avg_accuracy) / 2
-                except Exception:
-                    pass  # Use original confidence if we can't get agent metrics
+                except Exception as e:  # noqa: BLE001
+                    logger.warning(f"Failed to update confidence from agent metrics: {e}")  # Use original confidence if we can't get agent metrics
             
             scored_responses.append({
                 "response": response,
@@ -793,7 +791,7 @@ class LangchainAgentCoordinator:
         # Otherwise, synthesize a combined response
         return self._synthesize_responses(scored_responses)
     
-    def _synthesize_responses(self, scored_responses: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def _synthesize_responses(self, scored_responses: list[dict[str, Any]]) -> dict[str, Any]:
         """
         Synthesize multiple agent responses into a coherent response
         
@@ -831,10 +829,10 @@ class LangchainAgentCoordinator:
             "sources": len(scored_responses)
         }
     
-    def _send_response_to_session(self, response: Dict[str, Any], original_message: Message):
+    def _send_response_to_session(self, response: dict[str, Any], original_message: Message):
         """Send response back to the session via WebSocket"""
         # Use the enhanced coordinator's method for consistency
         try:
             self.enhanced_coordinator._send_response_to_session(response, original_message)
-        except Exception as e:
-            logger.error(f"Failed to send response to session: {str(e)}")
+        except Exception as e:  # noqa: BLE001
+            logger.error(f"Failed to send response to session: {e!s}")

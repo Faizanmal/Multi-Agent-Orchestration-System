@@ -1,7 +1,11 @@
 from rest_framework import serializers
+
 from .models import (
-    WorkflowTemplate, VisualWorkflow, WorkflowNode,
-    WorkflowExecution, WorkflowVersion
+    VisualWorkflow,
+    WorkflowExecution,
+    WorkflowNode,
+    WorkflowTemplate,
+    WorkflowVersion,
 )
 
 
@@ -11,14 +15,14 @@ class WorkflowTemplateSerializer(serializers.ModelSerializer):
     class Meta:
         model = WorkflowTemplate
         fields = '__all__'
-        read_only_fields = ['id', 'usage_count', 'rating', 'created_at', 'updated_at']
+        read_only_fields = ('id', 'usage_count', 'rating', 'created_at', 'updated_at')
 
 
 class WorkflowNodeSerializer(serializers.ModelSerializer):
     class Meta:
         model = WorkflowNode
         fields = '__all__'
-        read_only_fields = ['id', 'created_at']
+        read_only_fields = ('id', 'created_at')
 
 
 class VisualWorkflowSerializer(serializers.ModelSerializer):
@@ -29,7 +33,7 @@ class VisualWorkflowSerializer(serializers.ModelSerializer):
     class Meta:
         model = VisualWorkflow
         fields = '__all__'
-        read_only_fields = ['id', 'user', 'execution_count', 'last_executed', 'created_at', 'updated_at']
+        read_only_fields = ('id', 'user', 'execution_count', 'last_executed', 'created_at', 'updated_at')
 
 
 class WorkflowExecutionSerializer(serializers.ModelSerializer):
@@ -38,7 +42,7 @@ class WorkflowExecutionSerializer(serializers.ModelSerializer):
     class Meta:
         model = WorkflowExecution
         fields = '__all__'
-        read_only_fields = ['id', 'created_at']
+        read_only_fields = ('id', 'created_at')
 
 
 class WorkflowVersionSerializer(serializers.ModelSerializer):
@@ -47,4 +51,4 @@ class WorkflowVersionSerializer(serializers.ModelSerializer):
     class Meta:
         model = WorkflowVersion
         fields = '__all__'
-        read_only_fields = ['id', 'created_at']
+        read_only_fields = ('id', 'created_at')

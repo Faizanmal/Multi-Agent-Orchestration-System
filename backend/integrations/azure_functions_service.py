@@ -1,14 +1,17 @@
+from datetime import timezone
+
 """
 Azure Functions Integration
 Serverless agent execution with Azure Functions
 """
 
 import logging
-import requests
-from typing import Dict, Any, Optional, List
-from django.conf import settings
 import os
 from datetime import datetime
+from typing import Any
+
+import requests
+from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +25,7 @@ class AzureFunctionsConfig:
     FUNCTION_APP_URL = f"https://{FUNCTION_APP_NAME}.azurewebsites.net" if FUNCTION_APP_NAME else None
     
     # Function definitions
-    FUNCTIONS = {
+    FUNCTIONS = {  # noqa: RUF012
         'agent_executor': {
             'path': '/api/ExecuteAgent',
             'method': 'POST',
@@ -70,10 +73,10 @@ class AzureFunctionsService:
     def execute_agent_function(
         self,
         agent_id: str,
-        task_data: Dict[str, Any],
+        task_data: dict[str, Any],
         function_name: str = 'agent_executor',
         async_execution: bool = False
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Execute agent task via Azure Function
         
@@ -104,7 +107,7 @@ class AzureFunctionsService:
             payload = {
                 'agent_id': agent_id,
                 'task_data': task_data,
-                'timestamp': datetime.utcnow().isoformat(),
+                'timestamp': datetime.now(timezone.utc).isoformat(),
                 'async': async_execution
             }
             
@@ -141,7 +144,7 @@ class AzureFunctionsService:
                 'success': False,
                 'error': str(e)
             }
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error(f"Function {function_name} execution error: {e}")
             return {
                 'success': False,
@@ -151,9 +154,9 @@ class AzureFunctionsService:
     def execute_workflow(
         self,
         workflow_id: str,
-        workflow_data: Dict[str, Any],
-        callback_url: Optional[str] = None
-    ) -> Dict[str, Any]:
+        workflow_data: dict[str, Any],
+        callback_url: str | None = None
+    ) -> dict[str, Any]:
         """
         Execute workflow via Azure Function
         
@@ -177,9 +180,9 @@ class AzureFunctionsService:
     
     def batch_analyze(
         self,
-        items: List[Dict[str, Any]],
+        items: list[dict[str, Any]],
         analysis_type: str = 'general'
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Batch analyze items via Azure Function
         
@@ -203,8 +206,8 @@ class AzureFunctionsService:
     def transform_data(
         self,
         data: Any,
-        transformation_rules: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        transformation_rules: dict[str, Any]
+    ) -> dict[str, Any]:
         """
         Transform data via Azure Function
         
@@ -224,7 +227,7 @@ class AzureFunctionsService:
             function_name='data_transformer'
         )
     
-    def get_function_status(self, execution_id: str) -> Dict[str, Any]:
+    def get_function_status(self, execution_id: str) -> dict[str, Any]:
         """
         Get status of async function execution
         
@@ -249,13 +252,13 @@ class AzureFunctionsService:
             
             return response.json()
             
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error(f"Failed to get function status: {e}")
             return {
                 'error': str(e)
             }
     
-    def list_functions(self) -> List[Dict[str, Any]]:
+    def list_functions(self) -> list[dict[str, Any]]:
         """List all available functions"""
         return [
             {

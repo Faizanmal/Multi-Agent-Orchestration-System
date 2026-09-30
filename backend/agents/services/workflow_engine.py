@@ -1,14 +1,15 @@
 # agents/services/workflow_engine.py
 
-import logging
 import asyncio
+import logging
+from collections.abc import Callable
 from datetime import datetime
-from typing import Dict, List, Optional, Any, Callable
-from django.utils import timezone
+from typing import Any
+
 from django.db import transaction
-from ..models import (
-    Agent, Task, TaskStatus, TaskPriority
-)
+from django.utils import timezone
+
+from ..models import Agent, Task, TaskPriority, TaskStatus
 from .agent_selector import SmartAgentSelector
 from .performance_tracker import PerformanceTracker
 
@@ -21,8 +22,8 @@ class WorkflowStep:
         self, 
         step_id: str, 
         step_type: str, 
-        config: Dict,
-        dependencies: List[str] = None
+        config: dict,
+        dependencies: list[str] | None = None
     ):
         self.step_id = step_id
         self.step_type = step_type
@@ -49,11 +50,11 @@ class WorkflowEngine:
     
     async def execute_workflow(
         self, 
-        workflow_definition: Dict, 
-        input_data: Dict, 
+        workflow_definition: dict, 
+        input_data: dict, 
         user_id: str, 
-        session_id: str = None
-    ) -> Dict:
+        session_id: str | None = None
+    ) -> dict:
         """
         Execute a complete workflow with dependency management and error handling.
         
@@ -67,7 +68,7 @@ class WorkflowEngine:
             Workflow execution result with status and outputs
         """
         
-        workflow_id = workflow_definition.get('id', f"workflow_{int(datetime.now().timestamp())}")
+        workflow_id = workflow_definition.get('id', f"workflow_{int(datetime.now(timezone.utc).timestamp())}")
         
         try:
             logger.info(f"Starting workflow execution: {workflow_id}")
@@ -109,7 +110,7 @@ class WorkflowEngine:
                 'total_steps': len(steps)
             }
             
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error(f"Error executing workflow {workflow_id}: {e}")
             return {
                 'workflow_id': workflow_id,
@@ -122,7 +123,7 @@ class WorkflowEngine:
             if workflow_id in self.running_workflows:
                 del self.running_workflows[workflow_id]
     
-    def _parse_workflow_steps(self, workflow_definition: Dict) -> Dict[str, WorkflowStep]:
+    def _parse_workflow_steps(self, workflow_definition: dict) -> dict[str, WorkflowStep]:
         """Parse workflow definition into executable steps."""
         
         steps = {}
@@ -139,7 +140,7 @@ class WorkflowEngine:
         
         return steps
     
-    async def _execute_workflow_steps(self, context: Dict) -> Dict:
+    async def _execute_workflow_steps(self, context: dict) -> dict:
         """Execute workflow steps with dependency management."""
         
         steps = context['steps']
@@ -188,7 +189,7 @@ class WorkflowEngine:
                         else:
                             logger.warning(f"Non-critical step {step_id} failed: {step.error}")
                 
-                except Exception as e:
+                except Exception as e:  # noqa: BLE001
                     step.status = 'failed'
                     step.error = str(e)
                     step.end_time = timezone.now()
@@ -198,19 +199,19 @@ class WorkflowEngine:
                     if step.config.get('critical', True):
                         return {
                             'success': False,
-                            'error': f"Step {step_id} failed: {str(e)}"
+                            'error': f"Step {step_id} failed: {e!s}"
                         }
             
             return {'success': True}
             
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error(f"Error in workflow execution: {e}")
             return {
                 'success': False,
                 'error': str(e)
             }
     
-    async def _execute_step(self, step: WorkflowStep, context: Dict) -> Dict:
+    async def _execute_step(self, step: WorkflowStep, context: dict) -> dict:
         """Execute a single workflow step."""
         
         executor = self.step_executors.get(step.step_type)
@@ -226,13 +227,13 @@ class WorkflowEngine:
                 'success': True,
                 'result': result
             }
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return {
                 'success': False,
                 'error': str(e)
             }
     
-    def _register_step_executors(self) -> Dict[str, Callable]:
+    def _register_step_executors(self) -> dict[str, Callable]:
         """Register step executors for different step types."""
         
         return {
@@ -246,7 +247,7 @@ class WorkflowEngine:
             'notification': self._execute_notification,
         }
     
-    async def _execute_agent_task(self, step: WorkflowStep, context: Dict) -> Any:
+    async def _execute_agent_task(self, step: WorkflowStep, context: dict) -> Any:
         """Execute a task using an agent."""
         
         config = step.config
@@ -262,7 +263,7 @@ class WorkflowEngine:
         )
         
         if not agent:
-            raise Exception(f"No suitable agent found for task type: {task_type}")
+            raise ValueError(f"No suitable agent found for task type: {task_type}")
         
         # Prepare input data
         input_data = self._prepare_step_input(step, context)
@@ -292,7 +293,7 @@ class WorkflowEngine:
             
             return task_result.get('output', {})
     
-    async def _execute_conditional(self, step: WorkflowStep, context: Dict) -> Any:
+    async def _execute_conditional(self, step: WorkflowStep, context: dict) -> Any:
         """Execute conditional logic step."""
         
         config = step.config
@@ -312,10 +313,10 @@ class WorkflowEngine:
                 'condition': condition,
                 'result': condition_result
             }
-        except Exception as e:
-            raise Exception(f"Error evaluating condition '{condition}': {e}")
+        except Exception as e:  # noqa: BLE001
+            raise ValueError(f"Error evaluating condition '{condition}': {e}")
     
-    async def _execute_parallel(self, step: WorkflowStep, context: Dict) -> Any:
+    async def _execute_parallel(self, step: WorkflowStep, context: dict) -> Any:
         """Execute multiple sub-steps in parallel."""
         
         config = step.config
@@ -339,12 +340,12 @@ class WorkflowEngine:
             try:
                 result = await task
                 results[step_id] = result
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 results[step_id] = {'success': False, 'error': str(e)}
         
         return results
     
-    async def _execute_data_transform(self, step: WorkflowStep, context: Dict) -> Any:
+    async def _execute_data_transform(self, step: WorkflowStep, context: dict) -> Any:
         """Execute data transformation step."""
         
         config = step.config
@@ -381,7 +382,7 @@ class WorkflowEngine:
         
         return result
     
-    async def _execute_api_call(self, step: WorkflowStep, context: Dict) -> Any:
+    async def _execute_api_call(self, step: WorkflowStep, context: dict) -> Any:
         """Execute external API call."""
         
         import aiohttp
@@ -404,7 +405,7 @@ class WorkflowEngine:
         
         return result
     
-    async def _execute_integration_call(self, step: WorkflowStep, context: Dict) -> Any:
+    async def _execute_integration_call(self, step: WorkflowStep, context: dict) -> Any:
         """Execute a connected integration tool via IntegrationToolRegistry."""
         from api_integrations.registry import IntegrationToolRegistry
         from django.contrib.auth import get_user_model
@@ -428,10 +429,10 @@ class WorkflowEngine:
             lambda: IntegrationToolRegistry.execute(tool_name, params, user=user),
         )
         if result.get('status') != 'success':
-            raise Exception(result.get('message', 'Integration call failed'))
+            raise RuntimeError(result.get('message', 'Integration call failed'))
         return result
 
-    async def _execute_delay(self, step: WorkflowStep, context: Dict) -> Any:
+    async def _execute_delay(self, step: WorkflowStep, context: dict) -> Any:
         """Execute delay/wait step."""
         
         config = step.config
@@ -444,7 +445,7 @@ class WorkflowEngine:
             'completed_at': timezone.now().isoformat()
         }
     
-    async def _execute_notification(self, step: WorkflowStep, context: Dict) -> Any:
+    async def _execute_notification(self, step: WorkflowStep, context: dict) -> Any:
         """Execute notification step via the real NotificationService."""
         from ..webhook_service import NotificationService
 
@@ -474,7 +475,7 @@ class WorkflowEngine:
                     ),
                 )
                 logger.info(f"Workflow notification sent to user {user_id}: {message}")
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 logger.warning(f"Notification delivery failed: {e}")
         else:
             logger.info(f"Workflow notification (no user): {message}")
@@ -486,7 +487,7 @@ class WorkflowEngine:
             'sent_at': timezone.now().isoformat(),
         }
     
-    def _prepare_step_input(self, step: WorkflowStep, context: Dict) -> Dict:
+    def _prepare_step_input(self, step: WorkflowStep, context: dict) -> dict:
         """Prepare input data for a step based on its configuration."""
         
         config = step.config
@@ -523,7 +524,7 @@ class WorkflowEngine:
         
         return step_input
     
-    def _build_dependency_graph(self, steps: Dict[str, WorkflowStep]) -> Dict[str, List[str]]:
+    def _build_dependency_graph(self, steps: dict[str, WorkflowStep]) -> dict[str, list[str]]:
         """Build dependency graph for topological sorting."""
         
         graph = {}
@@ -533,10 +534,10 @@ class WorkflowEngine:
         
         return graph
     
-    def _topological_sort(self, graph: Dict[str, List[str]]) -> List[str]:
+    def _topological_sort(self, graph: dict[str, list[str]]) -> list[str]:
         """Perform topological sort to determine execution order."""
         
-        from collections import deque, defaultdict
+        from collections import defaultdict, deque
         
         # Calculate in-degrees
         in_degree = defaultdict(int)
@@ -564,11 +565,11 @@ class WorkflowEngine:
         
         # Check for cycles
         if len(result) != len(graph):
-            raise Exception("Circular dependency detected in workflow")
+            raise ValueError("Circular dependency detected in workflow")
         
         return result
     
-    def _are_dependencies_satisfied(self, step: WorkflowStep, results: Dict) -> bool:
+    def _are_dependencies_satisfied(self, step: WorkflowStep, results: dict) -> bool:
         """Check if all step dependencies are satisfied."""
         
         for dep_id in step.dependencies:
@@ -577,7 +578,7 @@ class WorkflowEngine:
         
         return True
     
-    async def _execute_agent_task_via_groq(self, agent: Agent, task: Task) -> Dict:
+    async def _execute_agent_task_via_groq(self, agent: Agent, task: Task) -> dict:
         """
         Execute an agent task by calling the Groq API with the agent's role-specific
         system prompt. Runs the blocking Groq call in a thread-pool to avoid blocking
@@ -628,7 +629,7 @@ class WorkflowEngine:
             },
         }
     
-    def get_workflow_status(self, workflow_id: str) -> Optional[Dict]:
+    def get_workflow_status(self, workflow_id: str) -> dict | None:
         """Get current status of a running workflow."""
         
         return self.running_workflows.get(workflow_id)

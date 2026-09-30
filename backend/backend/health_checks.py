@@ -1,16 +1,17 @@
 """
 Health Check and System Status Endpoints
 """
+import os
+import time
+
+import psutil
+from django.conf import settings
+from django.core.cache import cache
+from django.db import connection
+from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
-from rest_framework import status
-from django.core.cache import cache
-from django.db import connection
-from django.conf import settings
-import time
-import psutil
-import os
 
 
 @api_view(['GET'])
@@ -34,7 +35,7 @@ def health_check(request):
             'status': 'up',
             'message': 'Database connection successful'
         }
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         health_status['status'] = 'unhealthy'
         health_status['checks']['database'] = {
             'status': 'down',
@@ -51,8 +52,8 @@ def health_check(request):
                 'message': 'Cache connection successful'
             }
         else:
-            raise Exception('Cache read/write failed')
-    except Exception as e:
+            raise Exception('Cache read/write failed')  # noqa: TRY002
+    except Exception as e:  # noqa: BLE001
         health_status['status'] = 'degraded'
         health_status['checks']['cache'] = {
             'status': 'down',
@@ -85,9 +86,7 @@ def health_check(request):
     }
     
     # Determine HTTP status code
-    if health_status['status'] == 'healthy':
-        http_status = status.HTTP_200_OK
-    elif health_status['status'] == 'degraded':
+    if health_status['status'] == 'healthy' or health_status['status'] == 'degraded':
         http_status = status.HTTP_200_OK
     else:
         http_status = status.HTTP_503_SERVICE_UNAVAILABLE
@@ -112,7 +111,7 @@ def readiness_check(request):
             'message': 'Application is ready'
         }, status=status.HTTP_200_OK)
     
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         return Response({
             'ready': False,
             'message': str(e)

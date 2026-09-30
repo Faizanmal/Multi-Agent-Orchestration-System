@@ -1,8 +1,8 @@
 # MCP Integration Services
 
 import time
-from typing import Dict, List, Optional, Any
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from typing import Any
 
 
 class MCPToolRegistry:
@@ -80,19 +80,19 @@ class MCPToolRegistry:
             }
         }
     
-    def get_available_tools(self) -> List[Dict]:
+    def get_available_tools(self) -> list[dict]:
         """Get list of all available tools."""
         return list(self.tools.values())
     
-    def get_tool(self, tool_name: str) -> Optional[Dict]:
+    def get_tool(self, tool_name: str) -> dict | None:
         """Get specific tool by name."""
         return self.tools.get(tool_name)
     
-    def get_tools_by_category(self, category: str) -> List[Dict]:
+    def get_tools_by_category(self, category: str) -> list[dict]:
         """Get tools filtered by category."""
         return [tool for tool in self.tools.values() if tool['category'] == category]
     
-    def get_tools_by_capability(self, capability: str) -> List[Dict]:
+    def get_tools_by_capability(self, capability: str) -> list[dict]:
         """Get tools that have a specific capability."""
         return [tool for tool in self.tools.values() if capability in tool['capabilities']]
 
@@ -104,7 +104,7 @@ class MCPService:
         self.registry = MCPToolRegistry()
         self.executor = ThreadPoolExecutor(max_workers=5)
     
-    def execute_tool(self, tool_name: str, parameters: Dict, session_id: Optional[str] = None) -> Dict:
+    def execute_tool(self, tool_name: str, parameters: dict, session_id: str | None = None) -> dict:
         """Execute a single MCP tool."""
         start_time = time.time()
         
@@ -138,7 +138,7 @@ class MCPService:
                 'session_id': session_id
             }
             
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return {
                 'success': False,
                 'error': str(e),
@@ -147,7 +147,7 @@ class MCPService:
                 'session_id': session_id
             }
     
-    def execute_tools_sequential(self, tools_config: List[Dict], session_id: Optional[str] = None) -> List[Dict]:
+    def execute_tools_sequential(self, tools_config: list[dict], session_id: str | None = None) -> list[dict]:
         """Execute multiple tools sequentially."""
         results = []
         
@@ -164,7 +164,7 @@ class MCPService:
         
         return results
     
-    def execute_tools_parallel(self, tools_config: List[Dict], session_id: Optional[str] = None) -> List[Dict]:
+    def execute_tools_parallel(self, tools_config: list[dict], session_id: str | None = None) -> list[dict]:
         """Execute multiple tools in parallel."""
         futures = []
         
@@ -180,7 +180,7 @@ class MCPService:
             try:
                 result = future.result()
                 results.append(result)
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 results.append({
                     'success': False,
                     'error': str(e),
@@ -189,7 +189,7 @@ class MCPService:
         
         return results
     
-    def recommend_tools_for_task(self, task_description: str, task_type: str, agent_capabilities: List[str]) -> List[Dict]:
+    def recommend_tools_for_task(self, task_description: str, task_type: str, agent_capabilities: list[str]) -> list[dict]:
         """Recommend tools based on task description and type."""
         recommendations = []
         
@@ -224,7 +224,7 @@ class MCPService:
         
         return recommendations[:5]  # Return top 5 recommendations
     
-    def execute_tool_with_context(self, tool_name: str, parameters: Dict, context: Dict) -> Dict:
+    def execute_tool_with_context(self, tool_name: str, parameters: dict, context: dict) -> dict:
         """Execute tool with additional context (agent memory, session data)."""
         # Enhance parameters with context
         enhanced_parameters = parameters.copy()
@@ -232,7 +232,7 @@ class MCPService:
         
         return self.execute_tool(tool_name, enhanced_parameters)
     
-    def _validate_parameters(self, parameters: Dict, schema: Dict) -> bool:
+    def _validate_parameters(self, parameters: dict, schema: dict) -> bool:
         """Basic parameter validation against schema."""
         # This is a simplified validation - in production, use jsonschema library
         for param_name, param_config in schema.items():
@@ -244,7 +244,7 @@ class MCPService:
         
         return True
     
-    def _execute_tool_implementation(self, tool_name: str, parameters: Dict) -> Any:
+    def _execute_tool_implementation(self, tool_name: str, parameters: dict) -> Any:
         """Execute the actual tool implementation."""
         
         if tool_name == 'calculator':
@@ -258,8 +258,8 @@ class MCPService:
                     'result': round(float(result), precision),
                     'expression': expression
                 }
-            except Exception as e:
-                return {'error': f'Calculation error: {str(e)}'}
+            except Exception as e:  # noqa: BLE001
+                return {'error': f'Calculation error: {e!s}'}
         
         elif tool_name == 'file_system':
             operation = parameters.get('operation')
@@ -270,8 +270,8 @@ class MCPService:
                 try:
                     files = os.listdir(path if path else '.')
                     return {'files': files, 'path': path}
-                except Exception as e:
-                    return {'error': f'File system error: {str(e)}'}
+                except Exception as e:  # noqa: BLE001
+                    return {'error': f'File system error: {e!s}'}
             
             return {'message': f'File system operation {operation} simulated', 'path': path}
         

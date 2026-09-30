@@ -6,7 +6,6 @@ Falls back to cache when DB is unavailable.
 """
 import logging
 from datetime import timedelta
-from typing import Optional, Tuple
 
 from django.core.cache import cache
 from django.utils import timezone
@@ -29,7 +28,7 @@ def _make_key(identifier: str, endpoint: str) -> str:
     return f'bf:{endpoint}:{identifier}'
 
 
-def check_brute_force(identifier: str, endpoint: str = 'default') -> Tuple[bool, Optional[int]]:
+def check_brute_force(identifier: str, endpoint: str = 'default') -> tuple[bool, int | None]:
     """
     Check whether an identifier (IP or email) is locked for this endpoint.
 
@@ -42,7 +41,7 @@ def check_brute_force(identifier: str, endpoint: str = 'default') -> Tuple[bool,
             remaining = int((record.locked_until - timezone.now()).total_seconds())
             return True, max(remaining, 1)
         return False, None
-    except Exception:
+    except Exception:  # noqa: BLE001
         # Fallback to cache
         cache_key = f'bf_lock:{endpoint}:{identifier}'
         ttl = cache.ttl(cache_key)
@@ -77,7 +76,7 @@ def record_failure(identifier: str, endpoint: str = 'default') -> int:
 
         record.save()
         return record.attempt_count
-    except Exception:
+    except Exception:  # noqa: BLE001
         # Cache fallback
         cache_key = f'bf_count:{endpoint}:{identifier}'
         count = (cache.get(cache_key) or 0) + 1
@@ -96,7 +95,7 @@ def clear_failure_record(identifier: str, endpoint: str = 'default') -> None:
         BruteForceRecord.objects.filter(key=db_key).update(
             attempt_count=0, locked_until=None
         )
-    except Exception:
+    except Exception:  # noqa: BLE001, S110
         pass
     cache.delete(f'bf_count:{endpoint}:{identifier}')
     cache.delete(f'bf_lock:{endpoint}:{identifier}')

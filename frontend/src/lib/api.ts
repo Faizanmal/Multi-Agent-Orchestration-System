@@ -436,7 +436,8 @@ class ApiClient {
           this.removeAuthToken();
           // Redirect to login if needed
           if (typeof window !== 'undefined') {
-            window.location.href = '/login';
+            // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+          window.location.href = '/login';
           }
         }
 

@@ -1,8 +1,10 @@
+from datetime import timezone
+
 """Gmail integration provider — real Gmail API."""
 import json
 import re
 from datetime import datetime, timedelta
-from typing import Any, Dict, List
+from typing import Any
 
 from ..models import APIIntegration
 from .base import IntegrationProvider
@@ -14,8 +16,8 @@ class GmailProvider(IntegrationProvider):
     default_endpoint = "https://gmail.googleapis.com/gmail/v1"
     auth_type = "oauth"
 
-    GMAIL_SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"]
-    WRITE_SCOPES = ["https://www.googleapis.com/auth/gmail.compose"]
+    GMAIL_SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"]  # noqa: RUF012
+    WRITE_SCOPES = ["https://www.googleapis.com/auth/gmail.compose"]  # noqa: RUF012
 
     @classmethod
     def detect(cls, integration: APIIntegration) -> bool:
@@ -23,7 +25,7 @@ class GmailProvider(IntegrationProvider):
         return "gmail" in text or "google mail" in text
 
     @classmethod
-    def tool_definitions(cls) -> List[Dict[str, Any]]:
+    def tool_definitions(cls) -> list[dict[str, Any]]:
         return [
             {
                 "name": "gmail.read_inbox",
@@ -48,11 +50,11 @@ class GmailProvider(IntegrationProvider):
         ]
 
     @classmethod
-    def _build_credentials(cls, auth_data: Dict[str, Any]):
-        from google.oauth2.credentials import Credentials
+    def _build_credentials(cls, auth_data: dict[str, Any]):
         from google.oauth2 import service_account
+        from google.oauth2.credentials import Credentials
 
-        candidates: List[Any] = []
+        candidates: list[Any] = []
         for field in ("oauth_token", "credentials", "token", "api_key", "bearer_token", "access_token"):
             val = auth_data.get(field)
             if val:
@@ -90,9 +92,9 @@ class GmailProvider(IntegrationProvider):
 
                 expiry = None
                 if creds_dict.get("expires_in"):
-                    expiry = datetime.now() + timedelta(seconds=int(creds_dict["expires_in"]))
+                    expiry = datetime.now(timezone.utc) + timedelta(seconds=int(creds_dict["expires_in"]))
                 return Credentials(token=access_token, scopes=scopes, expiry=expiry), None
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 last_error = str(e)
         return None, last_error
 
@@ -113,8 +115,8 @@ class GmailProvider(IntegrationProvider):
 
     @classmethod
     def _service(cls, integration: APIIntegration):
-        from googleapiclient.discovery import build
         from google.auth.transport.requests import Request
+        from googleapiclient.discovery import build
 
         creds, err = cls._build_credentials(cls._auth(integration))
         if not creds:
@@ -124,7 +126,7 @@ class GmailProvider(IntegrationProvider):
         return build("gmail", "v1", credentials=creds)
 
     @classmethod
-    def test_connection(cls, integration: APIIntegration) -> Dict[str, Any]:
+    def test_connection(cls, integration: APIIntegration) -> dict[str, Any]:
         try:
             service = cls._service(integration)
             profile = service.users().getProfile(userId="me").execute()
@@ -133,11 +135,11 @@ class GmailProvider(IntegrationProvider):
                 "message": f"Connected as {profile.get('emailAddress', 'unknown')}",
                 "data": {"email": profile.get("emailAddress"), "messages_total": profile.get("messagesTotal")},
             }
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return {"status": "error", "message": cls._format_error(e)}
 
     @classmethod
-    def _parse_message(cls, service, msg_id: str, full: bool = False) -> Dict[str, Any]:
+    def _parse_message(cls, service, msg_id: str, full: bool = False) -> dict[str, Any]:
         fmt = "full" if full else "metadata"
         meta_headers = ["Subject", "From", "To", "Date"] if not full else None
         msg_data = service.users().messages().get(
@@ -158,7 +160,7 @@ class GmailProvider(IntegrationProvider):
         return result
 
     @classmethod
-    def _extract_body(cls, payload: Dict) -> str:
+    def _extract_body(cls, payload: dict) -> str:
         import base64
         if payload.get("body", {}).get("data"):
             return base64.urlsafe_b64decode(payload["body"]["data"]).decode("utf-8", errors="replace")
@@ -172,7 +174,7 @@ class GmailProvider(IntegrationProvider):
         return ""
 
     @classmethod
-    def execute_tool(cls, integration: APIIntegration, tool_name: str, params: Dict[str, Any]) -> Dict[str, Any]:
+    def execute_tool(cls, integration: APIIntegration, tool_name: str, params: dict[str, Any]) -> dict[str, Any]:
         try:
             service = cls._service(integration)
             if tool_name in ("gmail.read_inbox", "read_gmail", "gmail.read"):
@@ -213,5 +215,5 @@ class GmailProvider(IntegrationProvider):
                 return {"status": "success", "draft_id": draft.get("id"), "message": "Draft created"}
 
             return {"status": "error", "message": f"Unknown Gmail tool: {tool_name}"}
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return {"status": "error", "message": cls._format_error(e)}

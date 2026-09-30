@@ -1,38 +1,49 @@
-from rest_framework import viewsets, status
-from rest_framework.decorators import action
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated, AllowAny
-from rest_framework.exceptions import ValidationError, NotFound
-from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
-from django.conf import settings
-from django.contrib.auth import get_user_model
-from django.shortcuts import get_object_or_404
-from django.utils import timezone
-from django.db.models import Q
-from channels.layers import get_channel_layer
-from asgiref.sync import async_to_sync
 import json
 import logging
-import uuid
 import time
+import uuid
 from datetime import datetime, timedelta
 
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
+from django.conf import settings
+from django.contrib.auth import get_user_model
+from django.db.models import Q
+from django.shortcuts import get_object_or_404
+from django.utils import timezone
+from rest_framework import status, viewsets
+from rest_framework.decorators import action
+from rest_framework.exceptions import NotFound, ValidationError
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
+
 from .models import (
-    Agent, Session, Task, Message, AgentMemory, 
-    PerformanceMetric, AgentStatus, TaskStatus,
-    WorkflowTemplate
+    Agent,
+    AgentMemory,
+    AgentStatus,
+    Message,
+    PerformanceMetric,
+    Session,
+    Task,
+    TaskStatus,
+    WorkflowTemplate,
 )
 from .serializers import (
-    AgentSerializer, SessionSerializer, TaskSerializer,
-    MessageSerializer, AgentMemorySerializer, PerformanceMetricSerializer
+    AgentMemorySerializer,
+    AgentSerializer,
+    MessageSerializer,
+    PerformanceMetricSerializer,
+    SessionSerializer,
+    TaskSerializer,
 )
 from .services.agent_coordinator import AgentCoordinator
-from .services.groq_service import GroqService
 from .services.agent_selector import SmartAgentSelector
+from .services.analytics_dashboard import AnalyticsDashboard
+from .services.groq_service import GroqService
+from .services.multimodal_processor import MultiModalProcessor
 from .services.performance_tracker import PerformanceTracker
 from .services.workflow_engine import WorkflowEngine
-from .services.multimodal_processor import MultiModalProcessor
-from .services.analytics_dashboard import AnalyticsDashboard
 
 # Get the custom user model
 User = get_user_model()
@@ -97,6 +108,8 @@ class AgentViewSet(viewsets.ModelViewSet):
     lookup_url_kwarg = 'id'
     
     def get_queryset(self):
+        if self.request.user.is_anonymous:
+            return Agent.objects.none()
         if settings.DEBUG:
             return Agent.objects.all()
         return Agent.objects.filter(owner=self.request.user)
@@ -115,7 +128,7 @@ class AgentViewSet(viewsets.ModelViewSet):
             print(f"  lookup_field attr: {self.lookup_field}")
             print(f"  kwargs keys: {list(self.kwargs.keys())}")
             print(f"  raw pk value: {pk}")
-            print(f"  pk repr: {repr(pk)} length={len(str(pk))} type={type(pk)}")
+            print(f"  pk repr: {pk!r} length={len(str(pk))} type={type(pk)}")
         if not pk:
             raise NotFound("No primary key provided")
         base_qs = Agent.objects.all()
@@ -123,7 +136,7 @@ class AgentViewSet(viewsets.ModelViewSet):
             try:
                 total = base_qs.count()
                 sample_ids = list(base_qs.values_list('id', flat=True)[:5])
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 total = f"error: {e}"
                 sample_ids = []
             print(f"  Total agents in DB: {total}")
@@ -142,14 +155,14 @@ class AgentViewSet(viewsets.ModelViewSet):
                 try:
                     uuid_obj = _uuid.UUID(str(pk))
                     exists_uuid = base_qs.filter(id=uuid_obj).exists()
-                except Exception as e:
+                except Exception as e:  # noqa: BLE001
                     exists_uuid = f"error converting to UUID: {e}"
                 print(f"  Existence with coerced UUID object: {exists_uuid}")
                 # Extra diagnostics: show filter values fetched via IN query
                 try:
                     probe = list(base_qs.filter(id__in=[pk]).values_list('id', flat=True))
                     print(f"  Probe filter(id__in=[pk]) returned: {probe}")
-                except Exception as e:
+                except Exception as e:  # noqa: BLE001
                     print(f"  Probe filter error: {e}")
                 # Manual fallback if membership is True
                 if 'direct_membership' in locals() and direct_membership:
@@ -267,7 +280,7 @@ class AgentViewSet(viewsets.ModelViewSet):
                 info["status"] = agent.status
                 return Response(info)
             return Response(info, status=404)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             info["error"] = str(e)
             return Response(info, status=500)
 
@@ -276,6 +289,8 @@ class SessionViewSet(viewsets.ModelViewSet):
     permission_classes = [AllowAny] if settings.DEBUG else [IsAuthenticated]
     
     def get_queryset(self):
+        if self.request.user.is_anonymous:
+            return Session.objects.none()
         if settings.DEBUG:
             return Session.objects.all()
         return Session.objects.filter(user=self.request.user)
@@ -454,9 +469,11 @@ class SessionViewSet(viewsets.ModelViewSet):
 
 class TaskViewSet(viewsets.ModelViewSet):
     serializer_class = TaskSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]  # noqa: RUF012
     
     def get_queryset(self):
+        if self.request.user.is_anonymous:
+            return Task.objects.none()
         return Task.objects.filter(session__user=self.request.user)
     
     @action(detail=True, methods=['post'])
@@ -467,7 +484,7 @@ class TaskViewSet(viewsets.ModelViewSet):
             return Response({'error': 'Task is not in pending state'}, status=status.HTTP_400_BAD_REQUEST)
         
         task.status = TaskStatus.IN_PROGRESS
-        task.started_at = datetime.now()
+        task.started_at = datetime.now(timezone.utc)
         task.save()
         
         # Execute task asynchronously
@@ -494,6 +511,8 @@ class MessageViewSet(viewsets.ModelViewSet):
     permission_classes = [AllowAny] if settings.DEBUG else [IsAuthenticated]
     
     def get_queryset(self):
+        if self.request.user.is_anonymous:
+            return Message.objects.none()
         if settings.DEBUG:
             # In debug mode, allow filtering by session parameter
             session_id = self.request.query_params.get('session')
@@ -638,7 +657,7 @@ class MessageViewSet(viewsets.ModelViewSet):
             return Message.objects.create(
                 session=user_message.session,
                 sender=None,
-                content=f"Sorry, I encountered an internal error: {str(e)}",
+                content=f"Sorry, I encountered an internal error: {e!s}",
                 message_type='text',
                 metadata={
                     'run_id': run_id,
@@ -956,6 +975,8 @@ class PerformanceViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [AllowAny] if settings.DEBUG else [IsAuthenticated]
     
     def get_queryset(self):
+        if self.request.user.is_anonymous:
+            return PerformanceMetric.objects.none()
         if settings.DEBUG:
             return PerformanceMetric.objects.all()
         return PerformanceMetric.objects.filter(agent__owner=self.request.user)
@@ -1004,7 +1025,7 @@ class PerformanceViewSet(viewsets.ReadOnlyModelViewSet):
         return Response(metrics_data)
 
 class GroqIntegrationView(viewsets.ViewSet):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]  # noqa: RUF012
     
     @action(detail=False, methods=['post'])
     def chat_completion(self, request):
@@ -1047,9 +1068,11 @@ class GroqIntegrationView(viewsets.ViewSet):
 
 class AgentMemoryViewSet(viewsets.ModelViewSet):
     serializer_class = AgentMemorySerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]  # noqa: RUF012
     
     def get_queryset(self):
+        if self.request.user.is_anonymous:
+            return AgentMemory.objects.none()
         return AgentMemory.objects.filter(agent__owner=self.request.user)
     
     @action(detail=False, methods=['post'])
@@ -1067,7 +1090,7 @@ class AgentMemoryViewSet(viewsets.ModelViewSet):
         except (Agent.DoesNotExist, Session.DoesNotExist):
             return Response({'error': 'Agent or Session not found'}, status=status.HTTP_404_NOT_FOUND)
         
-        memory, created = AgentMemory.objects.update_or_create(
+        memory, _ = AgentMemory.objects.update_or_create(
             agent=agent,
             session=session,
             key=key,
@@ -1145,7 +1168,7 @@ class SmartAgentViewSet(viewsets.ViewSet):
                     status=status.HTTP_404_NOT_FOUND
                 )
                 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return Response(
                 {'error': str(e)}, 
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -1181,7 +1204,7 @@ class SmartAgentViewSet(viewsets.ViewSet):
             
             return Response({'recommendations': result})
             
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return Response(
                 {'error': str(e)}, 
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -1210,7 +1233,7 @@ class SmartAgentViewSet(viewsets.ViewSet):
                 'recommendations': recommendations
             })
             
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return Response(
                 {'error': str(e)}, 
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -1253,7 +1276,7 @@ class WorkflowViewSet(viewsets.ViewSet):
             
             return Response(result)
             
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return Response(
                 {'error': str(e)}, 
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -1281,7 +1304,7 @@ class WorkflowViewSet(viewsets.ViewSet):
                     status=status.HTTP_404_NOT_FOUND
                 )
                 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return Response(
                 {'error': str(e)}, 
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -1309,7 +1332,7 @@ class WorkflowViewSet(viewsets.ViewSet):
                     status=status.HTTP_404_NOT_FOUND
                 )
                 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return Response(
                 {'error': str(e)}, 
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -1344,7 +1367,7 @@ class WorkflowViewSet(viewsets.ViewSet):
             
             return Response({'templates': template_data})
             
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return Response(
                 {'error': str(e)}, 
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -1355,7 +1378,7 @@ class MultiModalProcessorViewSet(viewsets.ViewSet):
     """Advanced multi-modal processing capabilities."""
     
     permission_classes = [AllowAny] if settings.DEBUG else [IsAuthenticated]
-    parser_classes = [MultiPartParser, FormParser, JSONParser]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]  # noqa: RUF012
     
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -1391,7 +1414,7 @@ class MultiModalProcessorViewSet(viewsets.ViewSet):
             
             return Response(result)
             
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return Response(
                 {'error': str(e)}, 
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -1417,7 +1440,7 @@ class MultiModalProcessorViewSet(viewsets.ViewSet):
             
             return Response(result)
             
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return Response(
                 {'error': str(e)}, 
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -1443,7 +1466,7 @@ class MultiModalProcessorViewSet(viewsets.ViewSet):
             
             return Response(result)
             
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return Response(
                 {'error': str(e)}, 
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -1475,7 +1498,7 @@ class AnalyticsDashboardViewSet(viewsets.ViewSet):
             
             return Response(result)
             
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return Response(
                 {'error': str(e)}, 
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -1491,7 +1514,7 @@ class AnalyticsDashboardViewSet(viewsets.ViewSet):
             
             return Response(performance_data)
             
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return Response(
                 {'error': str(e)}, 
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -1521,7 +1544,7 @@ class AnalyticsDashboardViewSet(viewsets.ViewSet):
                 'generated_at': timezone.now().isoformat()
             })
             
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return Response(
                 {'error': str(e)}, 
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -1605,7 +1628,7 @@ class AutomationViewSet(viewsets.ViewSet):
                 'message': 'Task created and assigned automatically'
             })
             
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return Response(
                 {'error': str(e)}, 
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -1657,7 +1680,7 @@ class AutomationViewSet(viewsets.ViewSet):
             
             return Response({'suggestions': suggestions})
             
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return Response(
                 {'error': str(e)}, 
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR

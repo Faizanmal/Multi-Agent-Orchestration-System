@@ -87,6 +87,7 @@ interface AuthContextType extends AuthState {
   revokeSession: (sessionId: string) => Promise<boolean>;
   hasPermission: (permission: string) => boolean;
   hasRole: (role: string) => boolean;
+  handleOAuthCallback: (access: string, refresh: string) => Promise<void>;
 }
 
 // ---------------------------------------------------------------------------
@@ -211,35 +212,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // ---------- token refresh ----------
 
-  const refreshTokens = useCallback(async (): Promise<boolean> => {
-    const rawRefresh = getStoredRefresh();
-    if (!rawRefresh) {
-      setUnauthenticated();
-      return false;
-    }
-
-    try {
-      const resp = await apiFetch(`${AUTH_BASE}/refresh/`, {
-        method: 'POST',
-        body: JSON.stringify({ refresh_token: rawRefresh }),
-      });
-
-      if (!resp.ok) {
+  async function refreshTokens(): Promise<boolean> {
+      const rawRefresh = getStoredRefresh();
+      if (!rawRefresh) {
         setUnauthenticated();
         return false;
       }
 
-      const data = await resp.json();
-      storeTokens(data.access_token, data.refresh_token);
-      if (data.user) {
-        setAuthenticated(data.user, data.access_token, data.expires_in);
+      try {
+        const resp = await apiFetch(`${AUTH_BASE}/refresh/`, {
+          method: 'POST',
+          body: JSON.stringify({ refresh_token: rawRefresh }),
+        });
+
+        if (!resp.ok) {
+          setUnauthenticated();
+          return false;
+        }
+
+        const data = await resp.json();
+        storeTokens(data.access_token, data.refresh_token);
+        if (data.user) {
+          setAuthenticated(data.user, data.access_token, data.expires_in);
+        }
+        return true;
+      } catch {
+        setUnauthenticated();
+        return false;
       }
-      return true;
-    } catch {
-      setUnauthenticated();
-      return false;
-    }
-  }, [setAuthenticated, setUnauthenticated]);
+    };
 
   // ---------- fetch profile ----------
 
@@ -556,6 +557,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     revokeSession,
     hasPermission,
     hasRole,
+    handleOAuthCallback,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -1,6 +1,8 @@
+# ruff: noqa
 # Make 0006 a no-op if already repaired manually; keep state aligned.
-import django.db.models.deletion
 import uuid
+
+import django.db.models.deletion
 from django.conf import settings
 from django.db import migrations, models
 

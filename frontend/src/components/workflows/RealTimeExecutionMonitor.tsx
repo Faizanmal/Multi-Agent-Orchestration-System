@@ -241,7 +241,7 @@ const RealTimeExecutionMonitor: React.FC<RealTimeExecutionMonitorProps> = ({
   }, [executionId, workflowId])
 
   useEffect(() => {
-    loadExecution()
+    setTimeout(() => { loadExecution() }, 0)
   }, [loadExecution])
 
   // Poll while running/queued — refresh from API only (no fake progress)
@@ -253,7 +253,7 @@ const RealTimeExecutionMonitor: React.FC<RealTimeExecutionMonitorProps> = ({
       loadExecution(true)
     }, 3000)
     return () => clearInterval(interval)
-  }, [execution?.status, loadExecution])
+  }, [execution, loadExecution])
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -343,7 +343,7 @@ const RealTimeExecutionMonitor: React.FC<RealTimeExecutionMonitorProps> = ({
     )
   }
 
-  const currentRunningTime = (execution.endTime || Date.now()) - execution.startTime
+  const currentRunningTime = (execution.endTime || new Date().getTime()) - execution.startTime
 
   return (
     <div className="space-y-6">

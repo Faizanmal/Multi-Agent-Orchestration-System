@@ -1,13 +1,21 @@
 """
 Enterprise monitoring and metrics system using Prometheus
 """
-from prometheus_client import Counter, Histogram, Gauge, Info, generate_latest
-from prometheus_client import REGISTRY, CONTENT_TYPE_LATEST
+import logging
+import time
+from functools import wraps
+
 from django.http import HttpResponse
 from django.views import View
-from functools import wraps
-import time
-import logging
+from prometheus_client import (
+    CONTENT_TYPE_LATEST,
+    REGISTRY,
+    Counter,
+    Gauge,
+    Histogram,
+    Info,
+    generate_latest,
+)
 
 logger = logging.getLogger(__name__)
 

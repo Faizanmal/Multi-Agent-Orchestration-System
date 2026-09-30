@@ -1,5 +1,5 @@
 """Notion integration provider."""
-from typing import Any, Dict, List
+from typing import Any
 
 import requests
 
@@ -19,7 +19,7 @@ class NotionProvider(IntegrationProvider):
         return "notion" in text
 
     @classmethod
-    def tool_definitions(cls) -> List[Dict[str, Any]]:
+    def tool_definitions(cls) -> list[dict[str, Any]]:
         return [
             {"name": "notion.search", "description": "Search Notion pages and databases", "parameters": {"query": "string"}},
             {"name": "notion.get_page", "description": "Get a Notion page by ID", "parameters": {"page_id": "string"}},
@@ -27,7 +27,7 @@ class NotionProvider(IntegrationProvider):
         ]
 
     @classmethod
-    def _headers(cls, integration: APIIntegration) -> Dict[str, str]:
+    def _headers(cls, integration: APIIntegration) -> dict[str, str]:
         token = cls._token(integration)
         if not token:
             raise ValueError("Notion integration token required (secret_...)")
@@ -38,18 +38,18 @@ class NotionProvider(IntegrationProvider):
         }
 
     @classmethod
-    def test_connection(cls, integration: APIIntegration) -> Dict[str, Any]:
+    def test_connection(cls, integration: APIIntegration) -> dict[str, Any]:
         try:
             resp = requests.get("https://api.notion.com/v1/users/me", headers=cls._headers(integration), timeout=30)
             if resp.status_code >= 400:
                 raise ValueError(resp.json().get("message", resp.text))
             user = resp.json()
             return {"status": "success", "message": f"Connected as {user.get('name', 'Notion user')}", "data": user}
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return {"status": "error", "message": str(e)}
 
     @classmethod
-    def execute_tool(cls, integration: APIIntegration, tool_name: str, params: Dict[str, Any]) -> Dict[str, Any]:
+    def execute_tool(cls, integration: APIIntegration, tool_name: str, params: dict[str, Any]) -> dict[str, Any]:
         try:
             headers = cls._headers(integration)
             if tool_name == "notion.search":
@@ -92,11 +92,11 @@ class NotionProvider(IntegrationProvider):
                 return {"status": "success", "page_id": data.get("id"), "url": data.get("url")}
 
             return {"status": "error", "message": f"Unknown Notion tool: {tool_name}"}
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return {"status": "error", "message": str(e)}
 
     @classmethod
-    def _title(cls, obj: Dict) -> str:
+    def _title(cls, obj: dict) -> str:
         props = obj.get("properties", {})
         for val in props.values():
             if val.get("type") == "title":

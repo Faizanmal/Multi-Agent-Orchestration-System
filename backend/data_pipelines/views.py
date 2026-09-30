@@ -1,20 +1,21 @@
+from django.shortcuts import get_object_or_404
 from rest_framework import generics
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from django.shortcuts import get_object_or_404
+from rest_framework.response import Response
 
-from .models import DataPipeline, DataSource, DataQualityRule
+from .models import DataPipeline, DataQualityRule, DataSource
 from .serializers import (
-    DataPipelineSerializer, DataSourceSerializer,
-    DataQualityRuleSerializer
+    DataPipelineSerializer,
+    DataQualityRuleSerializer,
+    DataSourceSerializer,
 )
 
 
 class DataPipelineListCreateView(generics.ListCreateAPIView):
     """List and create data pipelines"""
     serializer_class = DataPipelineSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]  # noqa: RUF012
     
     def get_queryset(self):
         return DataPipeline.objects.filter(user=self.request.user)
@@ -26,7 +27,7 @@ class DataPipelineListCreateView(generics.ListCreateAPIView):
 class DataPipelineDetailView(generics.RetrieveUpdateDestroyAPIView):
     """Retrieve, update, delete data pipeline"""
     serializer_class = DataPipelineSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]  # noqa: RUF012
     
     def get_queryset(self):
         return DataPipeline.objects.filter(user=self.request.user)
@@ -75,7 +76,7 @@ def stop_pipeline_view(request, pk):
 class DataSourceListCreateView(generics.ListCreateAPIView):
     """List and create data sources"""
     serializer_class = DataSourceSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]  # noqa: RUF012
     
     def get_queryset(self):
         return DataSource.objects.filter(user=self.request.user)
@@ -87,7 +88,7 @@ class DataSourceListCreateView(generics.ListCreateAPIView):
 class DataSourceDetailView(generics.RetrieveUpdateDestroyAPIView):
     """Retrieve, update, delete data source"""
     serializer_class = DataSourceSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]  # noqa: RUF012
     
     def get_queryset(self):
         return DataSource.objects.filter(user=self.request.user)
@@ -96,6 +97,7 @@ class DataSourceDetailView(generics.RetrieveUpdateDestroyAPIView):
 def _test_data_source_connection(data_source):
     """Attempt a real connection based on DataSource type/config."""
     import time
+
     from django.utils import timezone
 
     config = data_source.connection_config or {}
@@ -210,11 +212,11 @@ def _test_data_source_connection(data_source):
                 req = urllib.request.Request(config['url'], method='HEAD')
                 try:
                     urllib.request.urlopen(req, timeout=10)
-                except Exception as probe_err:
+                except Exception as probe_err:  # noqa: BLE001
                     # HEAD may be rejected; try GET
                     try:
                         urllib.request.urlopen(config['url'], timeout=10)
-                    except Exception:
+                    except Exception:  # noqa: BLE001
                         raise probe_err from None
         else:
             raise ValueError(f"Unsupported source_type '{source_type}'")
@@ -232,7 +234,7 @@ def _test_data_source_connection(data_source):
             'connection_time': round(elapsed_ms, 2),
             'message': 'Connection successful',
         }
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001
         elapsed_ms = (time.perf_counter() - started) * 1000
         data_source.status = 'error'
         data_source.last_test_at = timezone.now()
@@ -261,7 +263,7 @@ def test_data_source_view(request, pk):
 class DataQualityRuleListCreateView(generics.ListCreateAPIView):
     """List and create data quality rules"""
     serializer_class = DataQualityRuleSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]  # noqa: RUF012
     
     def get_queryset(self):
         return DataQualityRule.objects.filter(user=self.request.user)

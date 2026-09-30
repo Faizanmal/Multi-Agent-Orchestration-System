@@ -4,11 +4,12 @@ Supports dynamic model switching and orchestration across Groq, OpenAI, and Anth
 """
 
 import logging
-import time
-from typing import Dict, Any, List, Optional
-from enum import Enum
-from django.conf import settings
 import os
+import time
+from enum import Enum
+from typing import Any
+
+from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +35,7 @@ class ModelConfig:
     """Configuration for different models"""
     
     # Model capabilities and cost tiers
-    MODELS = {
+    MODELS = {  # noqa: RUF012
         # NVIDIA models - high-performance inference
         ModelProvider.NVIDIA: {
             "llama-3.1-70b-instruct": {
@@ -183,7 +184,7 @@ class MultiModelOrchestrator:
                 base_url="https://integrate.api.nvidia.com/v1",
                 api_key=settings.NVIDIA_API_KEY or os.getenv('NVIDIA_API_KEY')
             )
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.warning(f"NVIDIA client initialization failed: {e}")
             self.nvidia_client = None
         
@@ -193,7 +194,7 @@ class MultiModelOrchestrator:
             self.groq_client = Groq(
                 api_key=settings.GROQ_API_KEY or os.getenv('GROQ_API_KEY')
             )
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.warning(f"Groq client initialization failed: {e}")
             self.groq_client = None
         
@@ -202,7 +203,7 @@ class MultiModelOrchestrator:
             import google.generativeai as genai
             genai.configure(api_key=settings.GOOGLE_API_KEY or os.getenv('GOOGLE_API_KEY'))
             self.google_client = genai
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.warning(f"Google client initialization failed: {e}")
             self.google_client = None
         
@@ -212,7 +213,7 @@ class MultiModelOrchestrator:
             self.openai_client = OpenAI(
                 api_key=settings.OPENAI_API_KEY or os.getenv('OPENAI_API_KEY')
             )
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.warning(f"OpenAI client initialization failed: {e}")
             self.openai_client = None
         
@@ -222,11 +223,11 @@ class MultiModelOrchestrator:
             self.anthropic_client = anthropic.Anthropic(
                 api_key=settings.ANTHROPIC_API_KEY if hasattr(settings, 'ANTHROPIC_API_KEY') else os.getenv('ANTHROPIC_API_KEY')
             )
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.warning(f"Anthropic client initialization failed: {e}")
             self.anthropic_client = None
     
-    def analyze_task_complexity(self, messages: List[Dict], context: Dict = None) -> TaskComplexity:
+    def analyze_task_complexity(self, messages: list[dict], context: dict | None = None) -> TaskComplexity:
         """
         Analyze task complexity to determine optimal model
         
@@ -274,7 +275,7 @@ class MultiModelOrchestrator:
         self, 
         complexity: TaskComplexity, 
         priority: str = "balanced",
-        constraints: Dict = None
+        constraints: dict | None = None
     ) -> tuple:
         """
         Select optimal model based on task complexity and priorities
@@ -319,7 +320,7 @@ class MultiModelOrchestrator:
         
         return provider, model_name
     
-    def _score_model(self, config: Dict, priority: str, constraints: Dict) -> float:
+    def _score_model(self, config: dict, priority: str, constraints: dict) -> float:
         """Score a model based on priority and constraints"""
         score = 0.0
         
@@ -350,7 +351,7 @@ class MultiModelOrchestrator:
         
         return score
     
-    def _get_provider_models_sorted(self, provider: ModelProvider, complexity: TaskComplexity, priority: str = "balanced", constraints: Dict = None) -> List[str]:
+    def _get_provider_models_sorted(self, provider: ModelProvider, complexity: TaskComplexity, priority: str = "balanced", constraints: dict | None = None) -> list[str]:
         """Get all models for a provider sorted by preference for the given complexity"""
         constraints = constraints or {}
         candidates = []
@@ -369,12 +370,12 @@ class MultiModelOrchestrator:
         
         return [model_name for _, model_name in candidates]
     
-    def _try_provider_models(self, provider: ModelProvider, messages: List[Dict], complexity: TaskComplexity, stream: bool, priority: str = "balanced", **kwargs) -> Dict:
+    def _try_provider_models(self, provider: ModelProvider, messages: list[dict], complexity: TaskComplexity, stream: bool, priority: str = "balanced", **kwargs) -> dict:
         """Try all available models for a provider in order of preference"""
         available_models = self._get_provider_models_sorted(provider, complexity, priority, kwargs.get('constraints'))
         
         if not available_models:
-            raise Exception(f"No suitable models found for {provider.value} with complexity {complexity.value}")
+            raise Exception(f"No suitable models found for {provider.value} with complexity {complexity.value}")  # noqa: TRY002
         
         # Try each model for this provider
         for model in available_models:
@@ -397,22 +398,22 @@ class MultiModelOrchestrator:
                 logger.info(f"Successfully executed {provider.value}/{model}")
                 return result
                 
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 logger.warning(f"Model {provider.value}/{model} failed: {e}")
                 continue
         
-        raise Exception(f"All models failed for provider {provider.value}")
+        raise Exception(f"All models failed for provider {provider.value}")  # noqa: TRY002
     
     def chat_completion(
         self,
-        messages: List[Dict],
-        complexity: Optional[TaskComplexity] = None,
-        provider: Optional[ModelProvider] = None,
-        model: Optional[str] = None,
+        messages: list[dict],
+        complexity: TaskComplexity | None = None,
+        provider: ModelProvider | None = None,
+        model: str | None = None,
         priority: str = "balanced",
         stream: bool = False,
         **kwargs
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Execute chat completion with automatic model selection
         
@@ -492,15 +493,15 @@ Please format ALL your responses this way. Never use plain text paragraphs."""
             
             return result
             
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error(f"Primary provider {provider.value} failed: {e}")
             # Attempt comprehensive fallback
             return self._execute_fallback(messages, provider, complexity, stream, **kwargs)
     
-    def _groq_completion(self, messages: List[Dict], model: str, stream: bool, **kwargs) -> Dict:
+    def _groq_completion(self, messages: list[dict], model: str, stream: bool, **kwargs) -> dict:
         """Execute Groq completion"""
         if not self.groq_client:
-            raise Exception("Groq client not initialized")
+            raise Exception("Groq client not initialized")  # noqa: TRY002
         
         response = self.groq_client.chat.completions.create(
             messages=messages,
@@ -524,10 +525,10 @@ Please format ALL your responses this way. Never use plain text paragraphs."""
             'finish_reason': response.choices[0].finish_reason
         }
     
-    def _nvidia_completion(self, messages: List[Dict], model: str, stream: bool, **kwargs) -> Dict:
+    def _nvidia_completion(self, messages: list[dict], model: str, stream: bool, **kwargs) -> dict:
         """Execute NVIDIA completion"""
         if not self.nvidia_client:
-            raise Exception("NVIDIA client not initialized")
+            raise Exception("NVIDIA client not initialized")  # noqa: TRY002
         
         response = self.nvidia_client.chat.completions.create(
             messages=messages,
@@ -551,10 +552,10 @@ Please format ALL your responses this way. Never use plain text paragraphs."""
             'finish_reason': response.choices[0].finish_reason
         }
     
-    def _google_completion(self, messages: List[Dict], model: str, stream: bool, **kwargs) -> Dict:
+    def _google_completion(self, messages: list[dict], model: str, stream: bool, **kwargs) -> dict:
         """Execute Google Gemini completion"""
         if not self.google_client:
-            raise Exception("Google client not initialized")
+            raise Exception("Google client not initialized")  # noqa: TRY002
         
         # Convert messages to Gemini format
         gemini_messages = []
@@ -602,10 +603,10 @@ Please format ALL your responses this way. Never use plain text paragraphs."""
             'finish_reason': 'stop'  # Gemini doesn't provide detailed finish reasons
         }
     
-    def _openai_completion(self, messages: List[Dict], model: str, stream: bool, **kwargs) -> Dict:
+    def _openai_completion(self, messages: list[dict], model: str, stream: bool, **kwargs) -> dict:
         """Execute OpenAI completion"""
         if not self.openai_client:
-            raise Exception("OpenAI client not initialized")
+            raise Exception("OpenAI client not initialized")  # noqa: TRY002
         
         response = self.openai_client.chat.completions.create(
             messages=messages,
@@ -629,10 +630,10 @@ Please format ALL your responses this way. Never use plain text paragraphs."""
             'finish_reason': response.choices[0].finish_reason
         }
     
-    def _anthropic_completion(self, messages: List[Dict], model: str, stream: bool, **kwargs) -> Dict:
+    def _anthropic_completion(self, messages: list[dict], model: str, stream: bool, **kwargs) -> dict:
         """Execute Anthropic completion"""
         if not self.anthropic_client:
-            raise Exception("Anthropic client not initialized")
+            raise Exception("Anthropic client not initialized")  # noqa: TRY002
         
         # Convert messages format for Anthropic
         system_message = ""
@@ -672,12 +673,12 @@ Please format ALL your responses this way. Never use plain text paragraphs."""
     
     def _execute_fallback(
         self, 
-        messages: List[Dict], 
+        messages: list[dict], 
         failed_provider: ModelProvider,
         complexity: TaskComplexity,
         stream: bool,
         **kwargs
-    ) -> Dict:
+    ) -> dict:
         """Execute comprehensive fallback strategy when primary model fails"""
         logger.info(f"Executing comprehensive fallback after {failed_provider.value} failure")
         
@@ -726,7 +727,7 @@ Please format ALL your responses this way. Never use plain text paragraphs."""
                     logger.info(f"Successfully fell back to {provider.value}/{model}")
                     return result
                     
-                except Exception as e:
+                except Exception as e:  # noqa: BLE001
                     logger.warning(f"Model {provider.value}/{model} failed: {e}")
                     continue
             
@@ -744,7 +745,7 @@ Please format ALL your responses this way. Never use plain text paragraphs."""
         model: str, 
         complexity: TaskComplexity,
         duration: float,
-        result: Dict
+        result: dict
     ):
         """Track model performance for optimization"""
         self.performance_history.append({
@@ -761,7 +762,7 @@ Please format ALL your responses this way. Never use plain text paragraphs."""
         if len(self.performance_history) > 1000:
             self.performance_history = self.performance_history[-1000:]
     
-    def get_performance_insights(self) -> Dict[str, Any]:
+    def get_performance_insights(self) -> dict[str, Any]:
         """Get performance insights and recommendations"""
         if not self.performance_history:
             return {'message': 'No performance data available'}
@@ -787,7 +788,7 @@ Please format ALL your responses this way. Never use plain text paragraphs."""
             'recommendations': self._generate_recommendations()
         }
     
-    def _generate_recommendations(self) -> List[str]:
+    def _generate_recommendations(self) -> list[str]:
         """Generate optimization recommendations based on performance history"""
         recommendations = []
         

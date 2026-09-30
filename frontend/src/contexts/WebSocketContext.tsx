@@ -422,7 +422,7 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
         timestamp: new Date().toISOString(),
         type: 'system'
       };
-      setMessages(prev => [...prev, systemMsg]);
+      setTimeout(() => { setMessages(prev => [...prev, systemMsg]); }, 0)
     }
   }, [connectionStatus]);
 

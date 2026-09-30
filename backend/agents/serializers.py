@@ -1,18 +1,32 @@
-from rest_framework import serializers
 from django.db.models import Avg, Count, Q
+from django.utils.html import escape
+from rest_framework import serializers
+
 from .models import (
-    Agent, Session, Task, Message, AgentMemory, PerformanceMetric,
-    TaskStatus, TaskExecution
+    Agent,
+    AgentMemory,
+    Message,
+    PerformanceMetric,
+    Session,
+    Task,
+    TaskExecution,
+    TaskStatus,
 )
+
 
 class AgentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Agent
-        fields = [
+        fields = [  # noqa: RUF012
             'id', 'name', 'type', 'status', 'capabilities', 
             'configuration', 'created_at', 'updated_at', 'is_active'
         ]
-        read_only_fields = ['id', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'created_at', 'updated_at']  # noqa: RUF012
+
+    def validate_name(self, value):
+        if value:
+            return escape(value)
+        return value
 
 class SessionSerializer(serializers.ModelSerializer):
     agents = AgentSerializer(many=True, read_only=True)
@@ -21,11 +35,11 @@ class SessionSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Session
-        fields = [
+        fields = [  # noqa: RUF012
             'id', 'name', 'user', 'agents', 'context', 'created_at', 
             'updated_at', 'is_active', 'agent_count', 'message_count'
         ]
-        read_only_fields = ['id', 'user', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'user', 'created_at', 'updated_at']  # noqa: RUF012
     
     def get_agent_count(self, obj):
         return obj.agents.count()
@@ -41,13 +55,13 @@ class TaskSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Task
-        fields = [
+        fields = [  # noqa: RUF012
             'id', 'title', 'description', 'input_data', 'output_data',
             'status', 'priority', 'assigned_agent', 'assigned_agent_id',
             'parent_task', 'subtasks', 'created_at', 'started_at',
             'completed_at', 'error_message', 'duration'
         ]
-        read_only_fields = ['id', 'created_at', 'started_at', 'completed_at']
+        read_only_fields = ['id', 'created_at', 'started_at', 'completed_at']  # noqa: RUF012
     
     def get_subtasks(self, obj):
         subtasks = obj.subtasks.all()
@@ -66,12 +80,12 @@ class MessageSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Message
-        fields = [
+        fields = [  # noqa: RUF012
             'id', 'content', 'message_type', 'metadata', 'created_at',
             'processed_at', 'sender_name', 'sender_agent_name',
             'recipient_agent_name', 'file_attachment', 'file_url'
         ]
-        read_only_fields = ['id', 'created_at', 'processed_at']
+        read_only_fields = ['id', 'created_at', 'processed_at']  # noqa: RUF012
     
     def get_sender_name(self, obj):
         return obj.sender.username if obj.sender else None
@@ -94,11 +108,11 @@ class AgentMemorySerializer(serializers.ModelSerializer):
     
     class Meta:
         model = AgentMemory
-        fields = [
+        fields = [  # noqa: RUF012
             'id', 'key', 'value', 'created_at', 'accessed_at',
             'importance_score', 'agent_name'
         ]
-        read_only_fields = ['id', 'created_at', 'accessed_at']
+        read_only_fields = ['id', 'created_at', 'accessed_at']  # noqa: RUF012
     
     def get_agent_name(self, obj):
         return obj.agent.name
@@ -108,11 +122,11 @@ class PerformanceMetricSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = PerformanceMetric
-        fields = [
+        fields = [  # noqa: RUF012
             'id', 'metric_name', 'metric_value', 'timestamp',
             'metadata', 'agent_name'
         ]
-        read_only_fields = ['id', 'timestamp']
+        read_only_fields = ['id', 'timestamp']  # noqa: RUF012
     
     def get_agent_name(self, obj):
         return obj.agent.name
@@ -122,7 +136,7 @@ class AgentCreateSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Agent
-        fields = [
+        fields = [  # noqa: RUF012
             'name', 'type', 'capabilities', 'configuration'
         ]
     
@@ -152,7 +166,7 @@ class SessionCreateSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Session
-        fields = ['name', 'context']
+        fields = ['name', 'context']  # noqa: RUF012
     
     def validate_name(self, value):
         """Ensure session name is unique for the user"""
@@ -192,7 +206,7 @@ class MultiModalMessageSerializer(serializers.Serializer):
             'file': []  # Allow any file type for generic files
         }
         
-        if message_type in allowed_types and allowed_types[message_type]:
+        if allowed_types.get(message_type):
             file_extension = value.name.split('.')[-1].lower()
             if file_extension not in allowed_types[message_type]:
                 raise serializers.ValidationError(

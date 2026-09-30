@@ -1,5 +1,4 @@
 """Default AI model catalog and seeding helpers."""
-from typing import List
 
 from .models import AIModelConfig
 
@@ -43,8 +42,8 @@ DEFAULT_AI_MODELS = [
 ]
 
 
-def seed_default_ai_models(user=None) -> List[str]:
-    created: List[str] = []
+def seed_default_ai_models(user=None) -> list[str]:
+    created: list[str] = []
     for item in DEFAULT_AI_MODELS:
         obj, was_created = AIModelConfig.objects.get_or_create(
             provider=item['provider'],

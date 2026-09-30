@@ -3,8 +3,9 @@ Test Runner Script
 Run all tests with coverage reporting
 """
 import os
-import sys
 import subprocess
+import sys
+
 
 def run_tests():
     """Run all tests with pytest"""
@@ -41,8 +42,8 @@ def run_tests():
     except FileNotFoundError:
         print("❌ pytest not found. Install it with: pip install pytest pytest-django pytest-cov")
         return 1
-    except Exception as e:
-        print(f"❌ Error running tests: {str(e)}")
+    except Exception as e:  # noqa: BLE001
+        print(f"❌ Error running tests: {e!s}")
         return 1
 
 def run_specific_tests(test_path):
@@ -55,21 +56,21 @@ def run_specific_tests(test_path):
     try:
         result = subprocess.run(cmd, check=False)
         return result.returncode
-    except Exception as e:
-        print(f"❌ Error: {str(e)}")
+    except Exception as e:  # noqa: BLE001
+        print(f"❌ Error: {e!s}")
         return 1
 
 def run_unit_tests():
     """Run only unit tests"""
     print("🧪 Running unit tests...")
     cmd = ['pytest', '-m', 'unit', '--verbose']
-    subprocess.run(cmd)
+    subprocess.run(cmd, check=False)
 
 def run_integration_tests():
     """Run only integration tests"""
     print("🧪 Running integration tests...")
     cmd = ['pytest', '-m', 'integration', '--verbose']
-    subprocess.run(cmd)
+    subprocess.run(cmd, check=False)
 
 if __name__ == '__main__':
     if len(sys.argv) > 1:

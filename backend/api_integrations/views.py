@@ -1,18 +1,20 @@
-from rest_framework import generics
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.response import Response
+from authentication.permissions_util import public_or_authenticated
 from django.conf import settings
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from rest_framework import generics
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.response import Response
 
-from .models import APIIntegration, APITemplate, APICallResult, ScheduledAutomation
+from .models import APICallResult, APIIntegration, APITemplate, ScheduledAutomation
+from .registry import IntegrationToolRegistry
 from .serializers import (
-    APIIntegrationSerializer, APITemplateSerializer, APICallResultSerializer,
+    APICallResultSerializer,
+    APIIntegrationSerializer,
+    APITemplateSerializer,
     ScheduledAutomationSerializer,
 )
-from .registry import IntegrationToolRegistry
 from .services import ensure_integration_agents
-from authentication.permissions_util import public_or_authenticated
 
 
 def _integration_queryset(request):
@@ -171,6 +173,7 @@ class ScheduledAutomationDetailView(generics.RetrieveUpdateDestroyAPIView):
 @permission_classes(public_or_authenticated())
 def run_automation_now_view(request, pk):
     from django.shortcuts import get_object_or_404
+
     from .automation_runner import run_automation
     qs = ScheduledAutomation.objects.all() if settings.DEBUG else ScheduledAutomation.objects.filter(user=request.user)
     automation = get_object_or_404(qs, pk=pk)

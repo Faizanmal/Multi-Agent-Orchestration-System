@@ -61,6 +61,7 @@ interface Particle {
   size: number;
   duration: number;
   delay: number;
+  xOffset: number;
 }
 
 export function FloatingParticles({ count = 50 }: { count?: number }) {
@@ -73,9 +74,10 @@ export function FloatingParticles({ count = 50 }: { count?: number }) {
       y: Math.random() * 100,
       size: Math.random() * 4 + 2,
       duration: Math.random() * 20 + 10,
-      delay: Math.random() * 5
+      delay: Math.random() * 5,
+      xOffset: Math.random() * 50 - 25
     }));
-    setParticles(newParticles);
+    setTimeout(() => { setParticles(newParticles); }, 0)
   }, [count]);
 
   return (
@@ -92,7 +94,7 @@ export function FloatingParticles({ count = 50 }: { count?: number }) {
           }}
           animate={{
             y: [0, -100, 0],
-            x: [0, Math.random() * 50 - 25, 0],
+            x: [0, particle.xOffset, 0],
             opacity: [0, 1, 0],
           }}
           transition={{

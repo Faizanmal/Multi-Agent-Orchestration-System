@@ -282,7 +282,7 @@ const AdvancedAnalyticsDashboard: React.FC = () => {
   }, [timeRange])
 
   useEffect(() => {
-    loadData()
+    setTimeout(() => { loadData() }, 0)
   }, [loadData])
 
   const handleRefresh = async () => {

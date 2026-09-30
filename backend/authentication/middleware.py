@@ -3,10 +3,11 @@ Authentication Middleware for JWT and API Keys
 """
 
 import logging
-from django.utils.functional import SimpleLazyObject
-from django.contrib.auth.models import AnonymousUser
+
 from channels.db import database_sync_to_async
 from channels.middleware import BaseMiddleware
+from django.contrib.auth.models import AnonymousUser
+from django.utils.functional import SimpleLazyObject
 
 logger = logging.getLogger()
 

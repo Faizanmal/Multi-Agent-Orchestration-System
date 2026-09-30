@@ -1,9 +1,10 @@
 """
 Advanced AI Features: RAG, Vector Database, Semantic Search
 """
-import os
 import logging
-from typing import List, Dict, Optional, Any
+import os
+from typing import Any
+
 from django.conf import settings
 
 # sentence_transformers and chromadb are imported lazily inside classes/methods
@@ -57,10 +58,10 @@ class VectorDatabase:
             logger.info(f"Vector database initialized: {self.collection_name}")
             
         except Exception as e:
-            logger.error(f"Failed to initialize vector database: {str(e)}")
+            logger.error(f"Failed to initialize vector database: {e!s}")
             raise
     
-    def add_documents(self, documents: List[Dict[str, Any]]):
+    def add_documents(self, documents: list[dict[str, Any]]):
         """
         Add documents to vector database
         
@@ -91,10 +92,10 @@ class VectorDatabase:
             logger.info(f"Added {len(documents)} documents to vector database")
             
         except Exception as e:
-            logger.error(f"Failed to add documents: {str(e)}")
+            logger.error(f"Failed to add documents: {e!s}")
             raise
     
-    def search(self, query: str, top_k: int = 5, filter_metadata: Optional[Dict] = None) -> List[Dict]:
+    def search(self, query: str, top_k: int = 5, filter_metadata: dict | None = None) -> list[dict]:
         """
         Semantic search in vector database
         
@@ -130,11 +131,11 @@ class VectorDatabase:
             
             return documents
             
-        except Exception as e:
-            logger.error(f"Search failed: {str(e)}")
+        except Exception as e:  # noqa: BLE001
+            logger.error(f"Search failed: {e!s}")
             return []
     
-    def update_document(self, doc_id: str, text: str, metadata: Optional[Dict] = None):
+    def update_document(self, doc_id: str, text: str, metadata: dict | None = None):
         """Update existing document"""
         try:
             embedding = self.embedding_model.encode([text])[0].tolist()
@@ -149,7 +150,7 @@ class VectorDatabase:
             logger.info(f"Updated document: {doc_id}")
             
         except Exception as e:
-            logger.error(f"Failed to update document: {str(e)}")
+            logger.error(f"Failed to update document: {e!s}")
             raise
     
     def delete_document(self, doc_id: str):
@@ -158,10 +159,10 @@ class VectorDatabase:
             self.collection.delete(ids=[str(doc_id)])
             logger.info(f"Deleted document: {doc_id}")
         except Exception as e:
-            logger.error(f"Failed to delete document: {str(e)}")
+            logger.error(f"Failed to delete document: {e!s}")
             raise
     
-    def get_collection_stats(self) -> Dict:
+    def get_collection_stats(self) -> dict:
         """Get collection statistics"""
         try:
             count = self.collection.count()
@@ -170,8 +171,8 @@ class VectorDatabase:
                 'document_count': count,
                 'embedding_dimension': 384,  # all-MiniLM-L6-v2 dimension
             }
-        except Exception as e:
-            logger.error(f"Failed to get stats: {str(e)}")
+        except Exception as e:  # noqa: BLE001
+            logger.error(f"Failed to get stats: {e!s}")
             return {}
 
 
@@ -207,7 +208,7 @@ class RAGSystem:
         
         return "\n".join(context_parts)
     
-    def generate_with_context(self, query: str, groq_service, top_k: int = 3) -> Dict:
+    def generate_with_context(self, query: str, groq_service, top_k: int = 3) -> dict:
         """
         Generate response using retrieved context
         
@@ -263,8 +264,8 @@ class SemanticSearch:
     def __init__(self, vector_db: VectorDatabase):
         self.vector_db = vector_db
     
-    def search(self, query: str, filters: Optional[Dict] = None, 
-               top_k: int = 10, min_score: float = 0.0) -> List[Dict]:
+    def search(self, query: str, filters: dict | None = None, 
+               top_k: int = 10, min_score: float = 0.0) -> list[dict]:
         """
         Perform semantic search with advanced filtering
         
@@ -292,8 +293,8 @@ class SemanticSearch:
         
         return filtered_results
     
-    def hybrid_search(self, query: str, keyword_results: List[Dict], 
-                     top_k: int = 10, alpha: float = 0.5) -> List[Dict]:
+    def hybrid_search(self, query: str, keyword_results: list[dict], 
+                     top_k: int = 10, alpha: float = 0.5) -> list[dict]:
         """
         Combine semantic and keyword search results
         
@@ -345,7 +346,7 @@ class DocumentProcessor:
     """
     
     @staticmethod
-    def chunk_text(text: str, chunk_size: int = 512, overlap: int = 128) -> List[str]:
+    def chunk_text(text: str, chunk_size: int = 512, overlap: int = 128) -> list[str]:
         """
         Split text into overlapping chunks
         
@@ -380,7 +381,7 @@ class DocumentProcessor:
         return chunks
     
     @staticmethod
-    def extract_metadata(text: str) -> Dict:
+    def extract_metadata(text: str) -> dict:
         """
         Extract metadata from document text
         

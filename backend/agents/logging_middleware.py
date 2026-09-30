@@ -1,12 +1,15 @@
+from datetime import timezone
+
 """
 Request Logging and Monitoring Middleware
 """
-import time
-import logging
 import json
-from django.utils.deprecation import MiddlewareMixin
-from django.conf import settings
+import logging
+import time
 from datetime import datetime
+
+from django.conf import settings
+from django.utils.deprecation import MiddlewareMixin
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +27,6 @@ class RequestLoggingMiddleware(MiddlewareMixin):
         logger.info(f"Request: {request.method} {request.path}")
         logger.debug(f"Headers: {dict(request.headers)}")
         
-        return None
     
     def process_response(self, request, response):
         """Log outgoing response"""
@@ -45,10 +47,8 @@ class RequestLoggingMiddleware(MiddlewareMixin):
     def process_exception(self, request, exception):
         """Log exceptions"""
         logger.error(
-            f"Exception: {request.method} {request.path} - {str(exception)}",
-            exc_info=True
+            f"Exception: {request.method} {request.path} - {exception!s}"
         )
-        return None
 
 
 class APIMetricsMiddleware(MiddlewareMixin):
@@ -59,7 +59,6 @@ class APIMetricsMiddleware(MiddlewareMixin):
     def process_request(self, request):
         """Start timing request"""
         request._metrics_start = time.time()
-        return None
     
     def process_response(self, request, response):
         """Collect metrics"""
@@ -72,7 +71,7 @@ class APIMetricsMiddleware(MiddlewareMixin):
                 'path': request.path,
                 'status_code': response.status_code,
                 'duration_ms': round(duration * 1000, 2),
-                'timestamp': datetime.now().isoformat(),
+                'timestamp': datetime.now(timezone.utc).isoformat(),
                 'user': request.user.username if request.user.is_authenticated else 'anonymous'
             }
             
@@ -99,17 +98,16 @@ class ErrorTrackingMiddleware(MiddlewareMixin):
             'path': request.path,
             'method': request.method,
             'user': request.user.username if request.user.is_authenticated else 'anonymous',
-            'timestamp': datetime.now().isoformat()
+            'timestamp': datetime.now(timezone.utc).isoformat()
         }
         
-        logger.error(f"Error tracked: {json.dumps(error_data)}", exc_info=True)
+        logger.error(f"Error tracked: {json.dumps(error_data)}")
         
         # Could send to error tracking service (Sentry, etc.)
         if hasattr(settings, 'SENTRY_DSN'):
             # Send to Sentry
             pass
         
-        return None
 
 
 class CORSDebugMiddleware(MiddlewareMixin):
@@ -123,7 +121,6 @@ class CORSDebugMiddleware(MiddlewareMixin):
             origin = request.headers.get('Origin')
             if origin:
                 logger.debug(f"CORS Request - Origin: {origin}, Path: {request.path}")
-        return None
     
     def process_response(self, request, response):
         """Log CORS response headers"""

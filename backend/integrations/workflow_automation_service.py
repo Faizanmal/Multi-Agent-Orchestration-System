@@ -1,17 +1,20 @@
+from datetime import timezone
+
 """
 Zapier and Make.com Integration Service
 Enables workflow automation across 5000+ apps
 """
 
-import logging
-import requests
-import hmac
 import hashlib
-from typing import Dict, Any, List, Optional
-from django.conf import settings
-import os
+import hmac
 import json
+import logging
+import os
 from datetime import datetime
+from typing import Any
+
+import requests
+from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +27,7 @@ class ZapierService:
         self.webhook_secret = getattr(settings, 'ZAPIER_WEBHOOK_SECRET', os.getenv('ZAPIER_WEBHOOK_SECRET'))
         self.enabled = bool(self.api_key)
     
-    def trigger_zap(self, webhook_url: str, data: Dict[str, Any]) -> Dict[str, Any]:
+    def trigger_zap(self, webhook_url: str, data: dict[str, Any]) -> dict[str, Any]:
         """
         Trigger a Zap via webhook
         
@@ -77,8 +80,8 @@ class ZapierService:
         self,
         target_url: str,
         event_type: str,
-        filters: Optional[Dict] = None
-    ) -> Dict[str, Any]:
+        filters: dict | None = None
+    ) -> dict[str, Any]:
         """
         Create webhook subscription for Zapier triggers
         
@@ -113,7 +116,7 @@ class ZapierService:
                 'target_url': target_url
             }
             
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error(f"Failed to create webhook subscription: {e}")
             return {
                 'success': False,
@@ -129,7 +132,7 @@ class MakeService:
         self.webhook_secret = getattr(settings, 'MAKE_WEBHOOK_SECRET', os.getenv('MAKE_WEBHOOK_SECRET'))
         self.enabled = bool(self.api_key)
     
-    def trigger_scenario(self, webhook_url: str, data: Dict[str, Any]) -> Dict[str, Any]:
+    def trigger_scenario(self, webhook_url: str, data: dict[str, Any]) -> dict[str, Any]:
         """
         Trigger a Make scenario via webhook
         
@@ -144,7 +147,7 @@ class MakeService:
             # Add timestamp and metadata
             payload = {
                 **data,
-                'timestamp': datetime.utcnow().isoformat(),
+                'timestamp': datetime.now(timezone.utc).isoformat(),
                 'source': 'MultiAgentSystem'
             }
             
@@ -189,8 +192,8 @@ class MakeService:
         self,
         module: str,
         action: str,
-        parameters: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        parameters: dict[str, Any]
+    ) -> dict[str, Any]:
         """
         Execute Make RPC call
         
@@ -227,7 +230,7 @@ class MakeService:
                 'result': response.json()
             }
             
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error(f"Make RPC call failed: {e}")
             return {
                 'success': False,
@@ -246,8 +249,8 @@ class WorkflowAutomationService:
         self,
         platform: str,
         webhook_url: str,
-        event_data: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        event_data: dict[str, Any]
+    ) -> dict[str, Any]:
         """
         Trigger automation on specified platform
         
@@ -271,7 +274,7 @@ class WorkflowAutomationService:
         platform: str,
         payload: bytes,
         signature: str
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Handle incoming webhook from automation platform
         
@@ -295,7 +298,7 @@ class WorkflowAutomationService:
             'payload': json.loads(payload) if verified else None
         }
     
-    def get_available_platforms(self) -> List[Dict[str, Any]]:
+    def get_available_platforms(self) -> list[dict[str, Any]]:
         """Get list of configured automation platforms"""
         platforms = []
         

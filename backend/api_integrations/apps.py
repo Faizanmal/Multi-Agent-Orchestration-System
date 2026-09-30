@@ -16,6 +16,6 @@ class ApiIntegrationsConfig(AppConfig):
         try:
             from .scheduler import start_scheduler
             start_scheduler()
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             import logging
             logging.getLogger(__name__).warning(f"Could not start automation scheduler: {e}")

@@ -1,5 +1,12 @@
 from rest_framework import serializers
-from .models import WebhookEndpoint, WebhookDelivery, NotificationChannel, WebhookNotification, EventLog
+
+from .models import (
+    EventLog,
+    NotificationChannel,
+    WebhookDelivery,
+    WebhookEndpoint,
+    WebhookNotification,
+)
 
 
 class WebhookEndpointSerializer(serializers.ModelSerializer):
@@ -9,7 +16,7 @@ class WebhookEndpointSerializer(serializers.ModelSerializer):
     class Meta:
         model = WebhookEndpoint
         fields = '__all__'
-        read_only_fields = ['user', 'total_deliveries', 'successful_deliveries', 'failed_deliveries']
+        read_only_fields = ['user', 'total_deliveries', 'successful_deliveries', 'failed_deliveries']  # noqa: RUF012
     
     def get_success_rate(self, obj):
         if obj.total_deliveries == 0:
@@ -32,7 +39,7 @@ class NotificationChannelSerializer(serializers.ModelSerializer):
     class Meta:
         model = NotificationChannel
         fields = '__all__'
-        read_only_fields = ['user']
+        read_only_fields = ['user']  # noqa: RUF012
 
 
 class WebhookNotificationSerializer(serializers.ModelSerializer):
@@ -41,7 +48,7 @@ class WebhookNotificationSerializer(serializers.ModelSerializer):
     class Meta:
         model = WebhookNotification
         fields = '__all__'
-        read_only_fields = ['user', 'is_sent', 'sent_at', 'read_at']
+        read_only_fields = ['user', 'is_sent', 'sent_at', 'read_at']  # noqa: RUF012
 
 
 class EventLogSerializer(serializers.ModelSerializer):

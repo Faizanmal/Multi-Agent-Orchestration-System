@@ -1,9 +1,13 @@
+from datetime import timezone
+
 """
 API endpoints for frontend integration
 """
+from datetime import datetime
+
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from datetime import datetime
+
 
 @api_view(['GET'])
 def integrations_list(request):
@@ -35,7 +39,7 @@ def integrations_calls(request):
             {
                 'id': 1,
                 'integration': 'Groq API',
-                'timestamp': datetime.now().isoformat(),
+                'timestamp': datetime.now(timezone.utc).isoformat(),
                 'status': 'success',
                 'response_time': 150
             }
@@ -66,7 +70,7 @@ def reports_charts(request):
                 'title': 'Agent Activity',
                 'type': 'line',
                 'data': [
-                    {'timestamp': datetime.now().isoformat(), 'value': 85}
+                    {'timestamp': datetime.now(timezone.utc).isoformat(), 'value': 85}
                 ]
             }
         ]
@@ -114,7 +118,7 @@ def notifications_list(request):
                 'title': 'System Status',
                 'message': 'All agents operational',
                 'type': 'success',
-                'timestamp': datetime.now().isoformat()
+                'timestamp': datetime.now(timezone.utc).isoformat()
             }
         ]
     })
@@ -148,7 +152,7 @@ def data_pipelines(request):
                 'id': 1,
                 'name': 'Agent Data Pipeline',
                 'status': 'running',
-                'last_run': datetime.now().isoformat()
+                'last_run': datetime.now(timezone.utc).isoformat()
             }
         ]
     })

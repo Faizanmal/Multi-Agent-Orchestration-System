@@ -1,10 +1,11 @@
 """Microsoft OneDrive (Graph) integration provider."""
-from typing import Any, Dict, List
+from typing import Any
+
+import requests
 
 from ..models import APIIntegration
 from .base import IntegrationProvider
 from .ms_graph import graph_get, graph_token, test_graph_me
-import requests
 
 
 class OneDriveProvider(IntegrationProvider):
@@ -19,7 +20,7 @@ class OneDriveProvider(IntegrationProvider):
         return "onedrive" in text or "one drive" in text
 
     @classmethod
-    def tool_definitions(cls) -> List[Dict[str, Any]]:
+    def tool_definitions(cls) -> list[dict[str, Any]]:
         return [
             {"name": "onedrive.list_files", "description": "List files in OneDrive root or a folder", "parameters": {"folder_path": "string"}},
             {"name": "onedrive.search", "description": "Search OneDrive files", "parameters": {"query": "string"}},
@@ -27,11 +28,11 @@ class OneDriveProvider(IntegrationProvider):
         ]
 
     @classmethod
-    def test_connection(cls, integration: APIIntegration) -> Dict[str, Any]:
+    def test_connection(cls, integration: APIIntegration) -> dict[str, Any]:
         return test_graph_me(cls, integration, "OneDrive")
 
     @classmethod
-    def execute_tool(cls, integration: APIIntegration, tool_name: str, params: Dict[str, Any]) -> Dict[str, Any]:
+    def execute_tool(cls, integration: APIIntegration, tool_name: str, params: dict[str, Any]) -> dict[str, Any]:
         try:
             token = graph_token(cls, integration)
 
@@ -66,5 +67,5 @@ class OneDriveProvider(IntegrationProvider):
                 return {"status": "success", "content": resp.text[:50000], "message": ""}
 
             return {"status": "error", "message": f"Unknown OneDrive tool: {tool_name}"}
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return {"status": "error", "message": str(e)}

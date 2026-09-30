@@ -2,14 +2,12 @@
 
 import logging
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional
-from django.utils import timezone
-from django.db.models import Count, Avg, Q, F
+
 from django.contrib.auth import get_user_model
-from ..models import (
-    Agent, Task, Session, Message, 
-    AgentStatus, TaskStatus
-)
+from django.db.models import Avg, Count, F, Q
+from django.utils import timezone
+
+from ..models import Agent, AgentStatus, Message, Session, Task, TaskStatus
 from .performance_tracker import PerformanceTracker
 
 # Get the custom user model
@@ -28,10 +26,10 @@ class AnalyticsDashboard:
     
     async def get_dashboard_data(
         self, 
-        user_id: str = None, 
+        user_id: str | None = None, 
         time_range: str = '7d',
         include_predictions: bool = True
-    ) -> Dict:
+    ) -> dict:
         """
         Get comprehensive dashboard data including metrics, trends, and insights.
         
@@ -72,7 +70,7 @@ class AnalyticsDashboard:
             
             return dashboard_data
             
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error(f"Error generating dashboard data: {e}")
             return {
                 'error': str(e),
@@ -82,7 +80,7 @@ class AnalyticsDashboard:
                 }
             }
     
-    async def _get_system_overview(self, user_id: str, since_date: datetime) -> Dict:
+    async def _get_system_overview(self, user_id: str, since_date: datetime) -> dict:
         """Get high-level system overview metrics."""
         
         # Base queries
@@ -169,7 +167,7 @@ class AnalyticsDashboard:
             }
         }
     
-    async def _get_agent_metrics(self, user_id: str, since_date: datetime) -> Dict:
+    async def _get_agent_metrics(self, user_id: str, since_date: datetime) -> dict:
         """Get detailed agent performance metrics."""
         
         agent_metrics = {}
@@ -228,7 +226,7 @@ class AnalyticsDashboard:
             }
         }
     
-    async def _get_task_analytics(self, user_id: str, since_date: datetime) -> Dict:
+    async def _get_task_analytics(self, user_id: str, since_date: datetime) -> dict:
         """Get detailed task analytics and patterns."""
         
         # Base task query
@@ -290,7 +288,7 @@ class AnalyticsDashboard:
             }
         }
     
-    async def _get_performance_trends(self, user_id: str, since_date: datetime, days: int) -> Dict:
+    async def _get_performance_trends(self, user_id: str, since_date: datetime, days: int) -> dict:
         """Get performance trends over time."""
         
         # Calculate time intervals for trend analysis
@@ -388,7 +386,7 @@ class AnalyticsDashboard:
         
         return trends
     
-    async def _get_user_activity(self, user_id: str, since_date: datetime) -> Dict:
+    async def _get_user_activity(self, user_id: str, since_date: datetime) -> dict:
         """Get user activity patterns and statistics."""
         
         if not user_id:
@@ -437,7 +435,7 @@ class AnalyticsDashboard:
             'engagement_score': await self._calculate_user_engagement_score(user_id, since_date)
         }
     
-    async def _get_system_health(self) -> Dict:
+    async def _get_system_health(self) -> dict:
         """Get overall system health metrics."""
         
         # Agent health
@@ -482,7 +480,7 @@ class AnalyticsDashboard:
             'last_updated': timezone.now().isoformat()
         }
     
-    async def _generate_insights(self, user_id: str, since_date: datetime) -> List[Dict]:
+    async def _generate_insights(self, user_id: str, since_date: datetime) -> list[dict]:
         """Generate intelligent insights from the analytics data."""
         
         insights = []
@@ -554,12 +552,12 @@ class AnalyticsDashboard:
                         'actionable': False
                     })
             
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error(f"Error generating insights: {e}")
         
         return insights
     
-    async def _get_recommendations(self, user_id: str, since_date: datetime) -> List[Dict]:
+    async def _get_recommendations(self, user_id: str, since_date: datetime) -> list[dict]:
         """Get intelligent recommendations for system optimization."""
         
         recommendations = []
@@ -642,12 +640,12 @@ class AnalyticsDashboard:
                         ]
                     })
         
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error(f"Error generating recommendations: {e}")
         
         return recommendations
     
-    async def _get_predictive_analytics(self, user_id: str, since_date: datetime) -> Dict:
+    async def _get_predictive_analytics(self, user_id: str, since_date: datetime) -> dict:
         """Generate predictive analytics and forecasts."""
         
         predictions = {
@@ -718,7 +716,7 @@ class AnalyticsDashboard:
                 )
                 predictions['success_rate_prediction'] = current_success_rate
         
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error(f"Error generating predictive analytics: {e}")
         
         return predictions
@@ -736,7 +734,7 @@ class AnalyticsDashboard:
         
         return range_mapping.get(time_range.lower(), 7)
     
-    async def _calculate_agent_efficiency(self, agent: Agent, performance_data: Dict) -> float:
+    async def _calculate_agent_efficiency(self, agent: Agent, performance_data: dict) -> float:
         """Calculate agent efficiency score."""
         if not performance_data:
             return 0.5
@@ -757,18 +755,18 @@ class AnalyticsDashboard:
         
         return min(efficiency, 1.0)
     
-    async def _get_agent_last_activity(self, agent: Agent) -> Optional[str]:
+    async def _get_agent_last_activity(self, agent: Agent) -> str | None:
         """Get agent's last activity timestamp."""
         try:
             last_task = Task.objects.filter(assigned_agent=agent).order_by('-created_at').first()
             if last_task:
                 return last_task.created_at.isoformat()
-        except Exception:
-            pass
+        except Exception as e:  # noqa: BLE001
+            logger.warning(f"Error fetching last task: {e}")
         
         return None
     
-    async def _analyze_task_complexity(self, tasks) -> Dict:
+    async def _analyze_task_complexity(self, tasks) -> dict:
         """Analyze task complexity patterns."""
         # Simplified complexity analysis
         complexity_scores = []
@@ -791,7 +789,7 @@ class AnalyticsDashboard:
         
         return {}
     
-    async def _analyze_failure_patterns(self, failed_tasks) -> Dict:
+    async def _analyze_failure_patterns(self, failed_tasks) -> dict:
         """Analyze patterns in failed tasks."""
         patterns = {
             'by_type': {},
@@ -838,5 +836,5 @@ class AnalyticsDashboard:
             
             return min(engagement_score, 1.0)
             
-        except Exception:
+        except Exception:  # noqa: BLE001
             return 0.0

@@ -1,5 +1,5 @@
 """Discord integration provider."""
-from typing import Any, Dict, List
+from typing import Any
 
 import requests
 
@@ -19,7 +19,7 @@ class DiscordProvider(IntegrationProvider):
         return "discord" in text
 
     @classmethod
-    def tool_definitions(cls) -> List[Dict[str, Any]]:
+    def tool_definitions(cls) -> list[dict[str, Any]]:
         return [
             {"name": "discord.list_channels", "description": "List guild text channels", "parameters": {}},
             {"name": "discord.send_message", "description": "Send a message to a channel", "parameters": {"channel_id": "string", "content": "string"}},
@@ -27,7 +27,7 @@ class DiscordProvider(IntegrationProvider):
         ]
 
     @classmethod
-    def _headers(cls, integration: APIIntegration) -> Dict[str, str]:
+    def _headers(cls, integration: APIIntegration) -> dict[str, str]:
         token = cls._token(integration)
         if not token:
             raise ValueError("Discord bot token required")
@@ -42,18 +42,18 @@ class DiscordProvider(IntegrationProvider):
         return str(gid)
 
     @classmethod
-    def test_connection(cls, integration: APIIntegration) -> Dict[str, Any]:
+    def test_connection(cls, integration: APIIntegration) -> dict[str, Any]:
         try:
             resp = requests.get("https://discord.com/api/v10/users/@me", headers=cls._headers(integration), timeout=30)
             if resp.status_code >= 400:
                 raise ValueError(resp.text)
             bot = resp.json()
             return {"status": "success", "message": f"Connected as {bot.get('username')}", "data": bot}
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return {"status": "error", "message": str(e)}
 
     @classmethod
-    def execute_tool(cls, integration: APIIntegration, tool_name: str, params: Dict[str, Any]) -> Dict[str, Any]:
+    def execute_tool(cls, integration: APIIntegration, tool_name: str, params: dict[str, Any]) -> dict[str, Any]:
         try:
             headers = cls._headers(integration)
             if tool_name == "discord.list_channels":
@@ -102,5 +102,5 @@ class DiscordProvider(IntegrationProvider):
                 return {"status": "success", "messages": messages}
 
             return {"status": "error", "message": f"Unknown Discord tool: {tool_name}"}
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return {"status": "error", "message": str(e)}

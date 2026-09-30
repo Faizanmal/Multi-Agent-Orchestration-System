@@ -15,7 +15,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const saved = localStorage.getItem('theme');
     if (saved === 'dark') {
-      setIsDark(true);
+      setTimeout(() => { setIsDark(true); }, 0)
       document.documentElement.classList.add('dark');
     }
   }, []);

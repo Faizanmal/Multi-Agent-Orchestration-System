@@ -1,5 +1,5 @@
 """Dropbox API integration provider."""
-from typing import Any, Dict, List
+from typing import Any
 
 import requests
 
@@ -19,7 +19,7 @@ class DropboxProvider(IntegrationProvider):
         return "dropbox" in text
 
     @classmethod
-    def tool_definitions(cls) -> List[Dict[str, Any]]:
+    def tool_definitions(cls) -> list[dict[str, Any]]:
         return [
             {"name": "dropbox.list_folder", "description": "List files in a Dropbox folder", "parameters": {"path": "string"}},
             {"name": "dropbox.search", "description": "Search Dropbox files by query", "parameters": {"query": "string"}},
@@ -28,7 +28,7 @@ class DropboxProvider(IntegrationProvider):
         ]
 
     @classmethod
-    def _headers(cls, integration: APIIntegration, content_type: str = "application/json") -> Dict[str, str]:
+    def _headers(cls, integration: APIIntegration, content_type: str = "application/json") -> dict[str, str]:
         token = cls._token(integration)
         if not token:
             raise ValueError("Dropbox access token required")
@@ -38,7 +38,7 @@ class DropboxProvider(IntegrationProvider):
         return h
 
     @classmethod
-    def test_connection(cls, integration: APIIntegration) -> Dict[str, Any]:
+    def test_connection(cls, integration: APIIntegration) -> dict[str, Any]:
         try:
             resp = requests.post(
                 "https://api.dropboxapi.com/2/users/get_current_account",
@@ -58,11 +58,11 @@ class DropboxProvider(IntegrationProvider):
             data = resp.json()
             name = (data.get("name") or {}).get("display_name") or data.get("email", "Dropbox user")
             return {"status": "success", "message": f"Connected to Dropbox as {name}", "data": {"email": data.get("email")}}
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return {"status": "error", "message": str(e)}
 
     @classmethod
-    def execute_tool(cls, integration: APIIntegration, tool_name: str, params: Dict[str, Any]) -> Dict[str, Any]:
+    def execute_tool(cls, integration: APIIntegration, tool_name: str, params: dict[str, Any]) -> dict[str, Any]:
         try:
             token = cls._token(integration)
             auth = {"Authorization": f"Bearer {token}"}
@@ -131,5 +131,5 @@ class DropboxProvider(IntegrationProvider):
                 return {"status": "success", "path": path, "content": resp.text[:50000], "message": ""}
 
             return {"status": "error", "message": f"Unknown Dropbox tool: {tool_name}"}
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return {"status": "error", "message": str(e)}

@@ -1,5 +1,5 @@
 """WhatsApp Cloud API (Meta) integration provider."""
-from typing import Any, Dict, List
+from typing import Any
 
 import requests
 
@@ -22,7 +22,7 @@ class WhatsAppProvider(IntegrationProvider):
         return "whatsapp" in text or "wa cloud" in text
 
     @classmethod
-    def tool_definitions(cls) -> List[Dict[str, Any]]:
+    def tool_definitions(cls) -> list[dict[str, Any]]:
         return [
             {
                 "name": "whatsapp.get_phone_number",
@@ -62,14 +62,14 @@ class WhatsAppProvider(IntegrationProvider):
         return str(token), str(phone_id)
 
     @classmethod
-    def _headers(cls, token: str) -> Dict[str, str]:
+    def _headers(cls, token: str) -> dict[str, str]:
         return {
             "Authorization": f"Bearer {token}",
             "Content-Type": "application/json",
         }
 
     @classmethod
-    def test_connection(cls, integration: APIIntegration) -> Dict[str, Any]:
+    def test_connection(cls, integration: APIIntegration) -> dict[str, Any]:
         try:
             token, phone_id = cls._creds(integration)
             resp = requests.get(
@@ -87,13 +87,13 @@ class WhatsAppProvider(IntegrationProvider):
                 "message": f"Connected to WhatsApp Business: {label}",
                 "data": data,
             }
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return {"status": "error", "message": str(e)}
 
     @classmethod
     def execute_tool(
-        cls, integration: APIIntegration, tool_name: str, params: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        cls, integration: APIIntegration, tool_name: str, params: dict[str, Any]
+    ) -> dict[str, Any]:
         try:
             token, phone_id = cls._creds(integration)
             headers = cls._headers(token)
@@ -164,5 +164,5 @@ class WhatsAppProvider(IntegrationProvider):
                 }
 
             return {"status": "error", "message": f"Unknown WhatsApp tool: {tool_name}"}
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return {"status": "error", "message": str(e)}

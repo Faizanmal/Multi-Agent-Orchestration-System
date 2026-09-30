@@ -1,12 +1,13 @@
-from django.db import models
-from django.conf import settings
-from django.utils import timezone
 import uuid
+
+from django.conf import settings
+from django.db import models
+from django.utils import timezone
 
 
 class DataSource(models.Model):
     """Data source configurations"""
-    SOURCE_TYPES = [
+    SOURCE_TYPES = [  # noqa: RUF012
         ('database', 'Database'),
         ('api', 'API'),
         ('file', 'File System'),
@@ -17,7 +18,7 @@ class DataSource(models.Model):
         ('email', 'Email'),
     ]
     
-    DATABASE_TYPES = [
+    DATABASE_TYPES = [  # noqa: RUF012
         ('postgresql', 'PostgreSQL'),
         ('mysql', 'MySQL'),
         ('mongodb', 'MongoDB'),
@@ -27,7 +28,7 @@ class DataSource(models.Model):
         ('mssql', 'SQL Server'),
     ]
     
-    STATUS_CHOICES = [
+    STATUS_CHOICES = [  # noqa: RUF012
         ('active', 'Active'),
         ('inactive', 'Inactive'),
         ('error', 'Error'),
@@ -60,7 +61,7 @@ class DataSource(models.Model):
     
     class Meta:
         db_table = 'data_pipeline_sources'
-        ordering = ['-created_at']
+        ordering = ['-created_at']  # noqa: RUF012
     
     def __str__(self):
         return f"{self.name} ({self.source_type})"
@@ -68,7 +69,7 @@ class DataSource(models.Model):
 
 class DataPipeline(models.Model):
     """Data processing pipelines"""
-    STATUS_CHOICES = [
+    STATUS_CHOICES = [  # noqa: RUF012
         ('draft', 'Draft'),
         ('active', 'Active'),
         ('paused', 'Paused'),
@@ -76,7 +77,7 @@ class DataPipeline(models.Model):
         ('archived', 'Archived'),
     ]
     
-    TRIGGER_TYPES = [
+    TRIGGER_TYPES = [  # noqa: RUF012
         ('manual', 'Manual'),
         ('scheduled', 'Scheduled'),
         ('event', 'Event-driven'),
@@ -117,7 +118,7 @@ class DataPipeline(models.Model):
     
     class Meta:
         db_table = 'data_pipelines'
-        ordering = ['-created_at']
+        ordering = ['-created_at']  # noqa: RUF012
     
     def __str__(self):
         return f"{self.name} ({self.status})"
@@ -130,7 +131,7 @@ class DataPipeline(models.Model):
 
 class PipelineExecution(models.Model):
     """Track pipeline executions"""
-    STATUS_CHOICES = [
+    STATUS_CHOICES = [  # noqa: RUF012
         ('pending', 'Pending'),
         ('running', 'Running'),
         ('success', 'Success'),
@@ -169,7 +170,7 @@ class PipelineExecution(models.Model):
     
     class Meta:
         db_table = 'data_pipeline_executions'
-        ordering = ['-started_at']
+        ordering = ['-started_at']  # noqa: RUF012
     
     def __str__(self):
         return f"{self.pipeline.name} execution ({self.status})"
@@ -177,7 +178,7 @@ class PipelineExecution(models.Model):
 
 class DataQualityRule(models.Model):
     """Data quality validation rules"""
-    RULE_TYPES = [
+    RULE_TYPES = [  # noqa: RUF012
         ('completeness', 'Completeness'),
         ('accuracy', 'Accuracy'),
         ('consistency', 'Consistency'),
@@ -187,7 +188,7 @@ class DataQualityRule(models.Model):
         ('custom', 'Custom'),
     ]
     
-    SEVERITY_LEVELS = [
+    SEVERITY_LEVELS = [  # noqa: RUF012
         ('low', 'Low'),
         ('medium', 'Medium'),
         ('high', 'High'),
@@ -235,7 +236,7 @@ class DataQualityRule(models.Model):
 
 class DataQualityCheck(models.Model):
     """Individual quality check results"""
-    STATUS_CHOICES = [
+    STATUS_CHOICES = [  # noqa: RUF012
         ('passed', 'Passed'),
         ('failed', 'Failed'),
         ('warning', 'Warning'),
@@ -264,7 +265,7 @@ class DataQualityCheck(models.Model):
     
     class Meta:
         db_table = 'data_quality_checks'
-        ordering = ['-created_at']
+        ordering = ['-created_at']  # noqa: RUF012
     
     def __str__(self):
         return f"{self.rule.name} check ({self.status})"
@@ -272,7 +273,7 @@ class DataQualityCheck(models.Model):
 
 class PipelineSchedule(models.Model):
     """Pipeline scheduling configuration"""
-    FREQUENCY_CHOICES = [
+    FREQUENCY_CHOICES = [  # noqa: RUF012
         ('once', 'Once'),
         ('hourly', 'Hourly'),
         ('daily', 'Daily'),
@@ -318,7 +319,7 @@ class PipelineSchedule(models.Model):
 
 class DataTransformation(models.Model):
     """Data transformation definitions"""
-    TRANSFORMATION_TYPES = [
+    TRANSFORMATION_TYPES = [  # noqa: RUF012
         ('filter', 'Filter'),
         ('map', 'Map/Transform'),
         ('aggregate', 'Aggregate'),
@@ -351,7 +352,7 @@ class DataTransformation(models.Model):
     
     class Meta:
         db_table = 'data_transformations'
-        ordering = ['order']
+        ordering = ['order']  # noqa: RUF012
     
     def __str__(self):
         return f"{self.name} ({self.transformation_type})"

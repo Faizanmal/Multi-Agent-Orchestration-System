@@ -81,7 +81,7 @@ export default function MultiModalDashboard() {
   }, [toast]);
 
   useEffect(() => {
-    loadData();
+    setTimeout(() => { loadData(); }, 0)
   }, [loadData]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'image' | 'audio' | 'video') => {

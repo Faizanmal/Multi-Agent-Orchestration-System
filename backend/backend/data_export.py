@@ -1,20 +1,23 @@
+from datetime import timezone
+
 """
 Data Export/Import Service for Enterprise Applications
 Supports CSV, JSON, Excel, PDF exports
 """
 import csv
-import json
 import io
-from typing import List, Dict, Any
-from datetime import datetime
-from django.http import HttpResponse, StreamingHttpResponse
-from reportlab.lib.pagesizes import A4
-from reportlab.lib import colors
-from reportlab.lib.styles import getSampleStyleSheet
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
-from openpyxl import Workbook
-from openpyxl.styles import Font, PatternFill, Alignment
+import json
 import logging
+from datetime import datetime
+from typing import Any
+
+from django.http import HttpResponse, StreamingHttpResponse
+from openpyxl import Workbook
+from openpyxl.styles import Alignment, Font, PatternFill
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.platypus import Paragraph, SimpleDocTemplate, Table, TableStyle
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +29,7 @@ class DataExporter:
     """
     
     @staticmethod
-    def export_to_csv(data: List[Dict[str, Any]], filename: str = None) -> HttpResponse:
+    def export_to_csv(data: list[dict[str, Any]], filename: str | None = None) -> HttpResponse:
         """
         Export data to CSV format
         
@@ -40,7 +43,7 @@ class DataExporter:
         if not data:
             return HttpResponse("No data to export", status=400)
         
-        filename = filename or f"export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+        filename = filename or f"export_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}.csv"
         
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = f'attachment; filename="{filename}"'
@@ -58,7 +61,7 @@ class DataExporter:
         return response
     
     @staticmethod
-    def export_to_json(data: List[Dict[str, Any]], filename: str = None, 
+    def export_to_json(data: list[dict[str, Any]], filename: str | None = None, 
                       pretty: bool = True) -> HttpResponse:
         """
         Export data to JSON format
@@ -71,13 +74,13 @@ class DataExporter:
         Returns:
             HttpResponse with JSON data
         """
-        filename = filename or f"export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+        filename = filename or f"export_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}.json"
         
         response = HttpResponse(content_type='application/json')
         response['Content-Disposition'] = f'attachment; filename="{filename}"'
         
         export_data = {
-            'exported_at': datetime.now().isoformat(),
+            'exported_at': datetime.now(timezone.utc).isoformat(),
             'count': len(data),
             'data': data
         }
@@ -89,7 +92,7 @@ class DataExporter:
         return response
     
     @staticmethod
-    def export_to_excel(data: List[Dict[str, Any]], filename: str = None,
+    def export_to_excel(data: list[dict[str, Any]], filename: str | None = None,
                        sheet_name: str = "Data") -> HttpResponse:
         """
         Export data to Excel format
@@ -105,7 +108,7 @@ class DataExporter:
         if not data:
             return HttpResponse("No data to export", status=400)
         
-        filename = filename or f"export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+        filename = filename or f"export_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}.xlsx"
         
         # Create workbook
         wb = Workbook()
@@ -141,7 +144,7 @@ class DataExporter:
                 try:
                     if len(str(cell.value)) > max_length:
                         max_length = len(cell.value)
-                except Exception:
+                except Exception:  # noqa: BLE001, S110
                     pass
             adjusted_width = min(max_length + 2, 50)
             ws.column_dimensions[column_letter].width = adjusted_width
@@ -158,7 +161,7 @@ class DataExporter:
         return response
     
     @staticmethod
-    def export_to_pdf(data: List[Dict[str, Any]], filename: str = None,
+    def export_to_pdf(data: list[dict[str, Any]], filename: str | None = None,
                      title: str = "Data Export") -> HttpResponse:
         """
         Export data to PDF format
@@ -174,7 +177,7 @@ class DataExporter:
         if not data:
             return HttpResponse("No data to export", status=400)
         
-        filename = filename or f"export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+        filename = filename or f"export_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}.pdf"
         
         response = HttpResponse(content_type='application/pdf')
         response['Content-Disposition'] = f'attachment; filename="{filename}"'
@@ -189,7 +192,7 @@ class DataExporter:
         
         # Add title
         elements.append(Paragraph(title, title_style))
-        elements.append(Paragraph(f"Exported: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", styles['Normal']))
+        elements.append(Paragraph(f"Exported: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')}", styles['Normal']))
         elements.append(Paragraph("<br/><br/>", styles['Normal']))
         
         # Prepare table data
@@ -289,7 +292,7 @@ class DataImporter:
     """
     
     @staticmethod
-    def import_from_csv(file, model_class, field_mapping: Dict = None) -> Dict[str, Any]:
+    def import_from_csv(file, model_class, field_mapping: dict | None = None) -> dict[str, Any]:
         """
         Import data from CSV file
         
@@ -324,7 +327,7 @@ class DataImporter:
                     
                     results['success'] += 1
                     
-                except Exception as e:
+                except Exception as e:  # noqa: BLE001
                     results['errors'] += 1
                     results['error_details'].append({
                         'row': row_num,
@@ -334,14 +337,14 @@ class DataImporter:
             
             logger.info(f"CSV import completed: {results['success']} success, {results['errors']} errors")
             
-        except Exception as e:
-            logger.error(f"CSV import failed: {str(e)}")
+        except Exception as e:  # noqa: BLE001
+            logger.error(f"CSV import failed: {e!s}")
             results['error_details'].append({'error': str(e)})
         
         return results
     
     @staticmethod
-    def import_from_json(file, model_class) -> Dict[str, Any]:
+    def import_from_json(file, model_class) -> dict[str, Any]:
         """
         Import data from JSON file
         
@@ -371,7 +374,7 @@ class DataImporter:
                     instance.save()
                     results['success'] += 1
                     
-                except Exception as e:
+                except Exception as e:  # noqa: BLE001
                     results['errors'] += 1
                     results['error_details'].append({
                         'item': item_num,
@@ -381,8 +384,8 @@ class DataImporter:
             
             logger.info(f"JSON import completed: {results['success']} success, {results['errors']} errors")
             
-        except Exception as e:
-            logger.error(f"JSON import failed: {str(e)}")
+        except Exception as e:  # noqa: BLE001
+            logger.error(f"JSON import failed: {e!s}")
             results['error_details'].append({'error': str(e)})
         
         return results

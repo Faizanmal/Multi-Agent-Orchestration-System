@@ -1,7 +1,8 @@
-from django.db import models
-from django.contrib.auth import get_user_model
-from django.conf import settings
 import uuid
+
+from django.conf import settings
+from django.contrib.auth import get_user_model
+from django.db import models
 
 User = get_user_model()
 
@@ -35,8 +36,8 @@ class AgentCoordinationSession(models.Model):
     completed_at = models.DateTimeField(null=True, blank=True)
     
     class Meta:
-        ordering = ['-created_at']
-        indexes = [
+        ordering = ['-created_at']  # noqa: RUF012
+        indexes = [  # noqa: RUF012
             models.Index(fields=['user', 'is_active']),
             models.Index(fields=['strategy', 'created_at']),
         ]
@@ -67,8 +68,8 @@ class AgentInteraction(models.Model):
     processed_at = models.DateTimeField(null=True, blank=True)
     
     class Meta:
-        ordering = ['created_at']
-        indexes = [
+        ordering = ['created_at']  # noqa: RUF012
+        indexes = [  # noqa: RUF012
             models.Index(fields=['coordination_session', 'created_at']),
             models.Index(fields=['source_agent_id', 'target_agent_id']),
         ]
@@ -91,8 +92,8 @@ class CoordinationMetric(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
     
     class Meta:
-        ordering = ['-timestamp']
-        indexes = [
+        ordering = ['-timestamp']  # noqa: RUF012
+        indexes = [  # noqa: RUF012
             models.Index(fields=['coordination_session', 'metric_name']),
         ]
     

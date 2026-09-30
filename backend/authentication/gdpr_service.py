@@ -2,14 +2,15 @@
 GDPR Compliance and Data Privacy Service
 """
 
+import json
 import logging
-from typing import Dict, Any, List
+import os
+from typing import Any
+
+from cryptography.fernet import Fernet
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.utils import timezone
-from cryptography.fernet import Fernet
-import os
-import json
 
 logger = logging.getLogger(__name__)
 
@@ -51,12 +52,12 @@ class EncryptionService:
             logger.error(f"Decryption failed: {e}")
             raise
     
-    def encrypt_dict(self, data: Dict) -> str:
+    def encrypt_dict(self, data: dict) -> str:
         """Encrypt dictionary to encrypted JSON string"""
         json_str = json.dumps(data)
         return self.encrypt(json_str)
     
-    def decrypt_dict(self, encrypted_data: str) -> Dict:
+    def decrypt_dict(self, encrypted_data: str) -> dict:
         """Decrypt encrypted JSON string to dictionary"""
         json_str = self.decrypt(encrypted_data)
         return json.loads(json_str)
@@ -74,7 +75,7 @@ class GDPRComplianceService:
         consent_type: str,
         granted: bool,
         purpose: str
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Record user consent
         
@@ -114,7 +115,7 @@ class GDPRComplianceService:
             logger.error(f"Failed to record consent: {e}")
             raise
     
-    def get_user_consents(self, user_id: str) -> List[Dict[str, Any]]:
+    def get_user_consents(self, user_id: str) -> list[dict[str, Any]]:
         """Get all consent records for user"""
         from authentication.models import UserConsent
         
@@ -128,7 +129,7 @@ class GDPRComplianceService:
             'created_at': c.created_at.isoformat()
         } for c in consents]
     
-    def export_user_data(self, user_id: str) -> Dict[str, Any]:
+    def export_user_data(self, user_id: str) -> dict[str, Any]:
         """
         Export all user data (GDPR Right to Data Portability)
         
@@ -138,9 +139,10 @@ class GDPRComplianceService:
         Returns:
             Complete user data export
         """
-        from authentication.models import UserDataExport
         from agents.models import Agent, Session
         from Multi_model_Intelligence.models import ModelExecution
+
+        from authentication.models import UserDataExport
         
         try:
             user = User.objects.get(id=user_id)
@@ -204,7 +206,7 @@ class GDPRComplianceService:
             logger.error(f"Data export failed: {e}")
             raise
     
-    def delete_user_data(self, user_id: str, reason: str = None) -> Dict[str, Any]:
+    def delete_user_data(self, user_id: str, reason: str | None = None) -> dict[str, Any]:
         """
         Delete all user data (GDPR Right to Erasure)
         
@@ -215,9 +217,10 @@ class GDPRComplianceService:
         Returns:
             Deletion summary
         """
-        from authentication.models import UserDeletionLog
         from agents.models import Agent, Session
         from Multi_model_Intelligence.models import ModelExecution
+
+        from authentication.models import UserDeletionLog
         
         try:
             user = User.objects.get(id=user_id)
@@ -263,7 +266,7 @@ class GDPRComplianceService:
             logger.error(f"Data deletion failed: {e}")
             raise
     
-    def anonymize_data(self, data: Dict[str, Any], fields: List[str]) -> Dict[str, Any]:
+    def anonymize_data(self, data: dict[str, Any], fields: list[str]) -> dict[str, Any]:
         """Anonymize specified fields in data"""
         anonymized = data.copy()
         
@@ -281,7 +284,7 @@ class GDPRComplianceService:
             return '***'
         return '***'
     
-    def check_data_retention(self) -> Dict[str, Any]:
+    def check_data_retention(self) -> dict[str, Any]:
         """Check and enforce data retention policies"""
         from datetime import timedelta
         

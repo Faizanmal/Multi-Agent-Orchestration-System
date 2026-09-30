@@ -1,9 +1,10 @@
 # MCP Integration Models
 
-from django.db import models
-from django.contrib.auth import get_user_model
-from django.conf import settings
 import uuid
+
+from django.conf import settings
+from django.contrib.auth import get_user_model
+from django.db import models
 
 # Get the custom user model
 User = get_user_model()
@@ -39,8 +40,8 @@ class MCPTool(models.Model):
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
     
     class Meta:
-        ordering = ['category', 'name']
-        indexes = [
+        ordering = ['category', 'name']  # noqa: RUF012
+        indexes = [  # noqa: RUF012
             models.Index(fields=['category', 'is_active']),
             models.Index(fields=['is_public', 'is_active']),
         ]
@@ -89,8 +90,8 @@ class MCPSession(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
-        ordering = ['-last_activity']
-        indexes = [
+        ordering = ['-last_activity']  # noqa: RUF012
+        indexes = [  # noqa: RUF012
             models.Index(fields=['created_by', 'is_active']),
             models.Index(fields=['last_activity']),
         ]
@@ -138,8 +139,8 @@ class MCPToolExecution(models.Model):
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
     
     class Meta:
-        ordering = ['-created_at']
-        indexes = [
+        ordering = ['-created_at']  # noqa: RUF012
+        indexes = [  # noqa: RUF012
             models.Index(fields=['tool', 'success']),
             models.Index(fields=['session_id', '-created_at']),
             models.Index(fields=['agent_id', '-created_at']),
@@ -179,7 +180,7 @@ class MCPToolRegistry(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
-        ordering = ['registry_name']
+        ordering = ['registry_name']  # noqa: RUF012
     
     def __str__(self):
         return f"MCP Registry: {self.registry_name} v{self.version}"
@@ -209,9 +210,9 @@ class MCPAgentToolBinding(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
-        unique_together = ['agent_id', 'tool']
-        ordering = ['-priority', 'tool__name']
-        indexes = [
+        unique_together = ['agent_id', 'tool']  # noqa: RUF012
+        ordering = ['-priority', 'tool__name']  # noqa: RUF012
+        indexes = [  # noqa: RUF012
             models.Index(fields=['agent_id', 'is_preferred']),
             models.Index(fields=['tool', 'success_rate']),
         ]

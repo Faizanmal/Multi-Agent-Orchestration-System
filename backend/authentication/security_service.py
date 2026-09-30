@@ -1,17 +1,20 @@
+from datetime import timezone
+
 """
 OAuth2 and JWT Authentication Middleware
 Enhanced security with token-based authentication
 """
 
 import logging
-import jwt
+import os
 from datetime import datetime, timedelta
-from typing import Optional, Dict, Any
+from typing import Any
+
+import jwt
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.http import JsonResponse
 from rest_framework import authentication, exceptions
-import os
 
 User = get_user_model()
 logger = logging.getLogger(__name__)
@@ -48,8 +51,8 @@ class JWTService:
             'email': user.email,
             'username': user.username,
             'role': user.role,
-            'exp': datetime.utcnow() + JWTConfig.ACCESS_TOKEN_LIFETIME,
-            'iat': datetime.utcnow(),
+            'exp': datetime.now(timezone.utc) + JWTConfig.ACCESS_TOKEN_LIFETIME,
+            'iat': datetime.now(timezone.utc),
             'iss': JWTConfig.ISSUER,
             'aud': JWTConfig.AUDIENCE,
             'type': 'access'
@@ -73,8 +76,8 @@ class JWTService:
         """
         payload = {
             'user_id': str(user.id),
-            'exp': datetime.utcnow() + JWTConfig.REFRESH_TOKEN_LIFETIME,
-            'iat': datetime.utcnow(),
+            'exp': datetime.now(timezone.utc) + JWTConfig.REFRESH_TOKEN_LIFETIME,
+            'iat': datetime.now(timezone.utc),
             'iss': JWTConfig.ISSUER,
             'aud': JWTConfig.AUDIENCE,
             'type': 'refresh'
@@ -86,7 +89,7 @@ class JWTService:
         return token
     
     @staticmethod
-    def verify_token(token: str) -> Optional[Dict[str, Any]]:
+    def verify_token(token: str) -> dict[str, Any] | None:
         """
         Verify and decode JWT token
         
@@ -115,7 +118,7 @@ class JWTService:
             return None
     
     @staticmethod
-    def refresh_access_token(refresh_token: str) -> Optional[str]:
+    def refresh_access_token(refresh_token: str) -> str | None:
         """
         Generate new access token from refresh token
         
@@ -163,7 +166,7 @@ class JWTAuthentication(authentication.BaseAuthentication):
                 raise exceptions.AuthenticationFailed('User account is disabled')
             
             # Update last activity
-            user.last_activity = datetime.now()
+            user.last_activity = datetime.now(timezone.utc)
             user.save(update_fields=['last_activity'])
             
             return (user, token)
@@ -230,7 +233,7 @@ class RateLimitMiddleware:
     
     def _get_reset_time(self, tier):
         """Get time when rate limit resets"""
-        return int((datetime.utcnow() + timedelta(seconds=self.rate_limits[tier]['window'])).timestamp())
+        return int((datetime.now(timezone.utc) + timedelta(seconds=self.rate_limits[tier]['window'])).timestamp())
 
 
 class SecurityMiddleware:
@@ -308,7 +311,7 @@ class OAuth2Service:
         from urllib.parse import urlencode
         return f"{config['auth_url']}?{urlencode(params)}"
     
-    def exchange_code_for_token(self, provider: str, code: str, redirect_uri: str) -> Dict[str, Any]:
+    def exchange_code_for_token(self, provider: str, code: str, redirect_uri: str) -> dict[str, Any]:
         """
         Exchange authorization code for access token
         
@@ -339,7 +342,7 @@ class OAuth2Service:
         
         return response.json()
     
-    def get_user_info(self, provider: str, access_token: str) -> Dict[str, Any]:
+    def get_user_info(self, provider: str, access_token: str) -> dict[str, Any]:
         """
         Get user info from OAuth provider
         

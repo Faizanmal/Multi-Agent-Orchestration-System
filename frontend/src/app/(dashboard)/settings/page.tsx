@@ -127,9 +127,11 @@ export default function SettingsPage() {
 
   useEffect(() => {
     if (!user) return;
-    setFirstName(user.first_name || '');
-    setLastName(user.last_name || '');
-    setEmail(user.email || '');
+    setTimeout(() => { setFirstName(user.first_name || ''); }, 0)
+    setTimeout(() => {
+        setLastName(user.last_name || '');
+      }, 0)
+    setTimeout(() => setEmail(user.email || ''), 0);
   }, [user]);
 
   const loadApiKeys = useCallback(async () => {
@@ -147,45 +149,47 @@ export default function SettingsPage() {
   }, []);
 
   const loadBilling = useCallback(async () => {
-    setBillingLoading(true);
-    try {
-      const base = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
-      const token = accessToken || (typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null);
-      const res = await fetch(`${base}/api/billing/status/`, {
-        headers: {
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-      });
-      if (!res.ok) throw new Error('Failed');
-      const data = await res.json();
-      setBilling({
-        plan: data.plan || user?.subscription_tier || 'free',
-        subscription_status: data.subscription_status ?? null,
-        current_period_end: data.current_period_end ?? null,
-        usage: {
-          used_tokens: data.usage?.used_tokens ?? 0,
-          total_tokens: data.usage?.total_tokens ?? null,
-          percentage: data.usage?.percentage ?? 0,
-        },
-      });
-    } catch {
-      setBilling({
-        plan: user?.subscription_tier || 'free',
-        usage: { used_tokens: 0, total_tokens: null, percentage: 0 },
-      });
-    } finally {
-      setBillingLoading(false);
-    }
-  }, [accessToken, user?.subscription_tier]);
+      setBillingLoading(true);
+      try {
+        const base = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
+        const token = accessToken || (typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null);
+        const res = await fetch(`${base}/api/billing/status/`, {
+          headers: {
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+        });
+        if (!res.ok) throw new Error('Failed');
+        const data = await res.json();
+        setBilling({
+          plan: data.plan || user?.subscription_tier || 'free',
+          subscription_status: data.subscription_status ?? null,
+          current_period_end: data.current_period_end ?? null,
+          usage: {
+            used_tokens: data.usage?.used_tokens ?? 0,
+            total_tokens: data.usage?.total_tokens ?? null,
+            percentage: data.usage?.percentage ?? 0,
+          },
+        });
+      } catch {
+        setBilling({
+          plan: user?.subscription_tier || 'free',
+          usage: { used_tokens: 0, total_tokens: null, percentage: 0 },
+        });
+      } finally {
+        setBillingLoading(false);
+      }
+    }, [accessToken, user]);
 
   useEffect(() => {
     if (activeTab === 'api-keys') {
-      loadApiKeys();
+      setTimeout(() => { loadApiKeys(); }, 0)
     }
     if (activeTab === 'billing') {
-      loadBilling();
+      setTimeout(() => {
+          loadBilling();
+        }, 0)
     }
   }, [activeTab, loadApiKeys, loadBilling]);
 

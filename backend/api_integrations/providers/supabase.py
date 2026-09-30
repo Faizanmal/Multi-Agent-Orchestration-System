@@ -1,5 +1,5 @@
 """Supabase (Postgres REST) integration provider."""
-from typing import Any, Dict, List
+from typing import Any
 
 import requests
 
@@ -19,7 +19,7 @@ class SupabaseProvider(IntegrationProvider):
         return "supabase" in text
 
     @classmethod
-    def tool_definitions(cls) -> List[Dict[str, Any]]:
+    def tool_definitions(cls) -> list[dict[str, Any]]:
         return [
             {"name": "supabase.list_rows", "description": "List rows from a table via PostgREST", "parameters": {"table": "string", "limit": "int", "select": "string"}},
             {"name": "supabase.insert_row", "description": "Insert a JSON row into a table", "parameters": {"table": "string", "row": "object"}},
@@ -40,7 +40,7 @@ class SupabaseProvider(IntegrationProvider):
         return base, str(key)
 
     @classmethod
-    def _headers(cls, key: str) -> Dict[str, str]:
+    def _headers(cls, key: str) -> dict[str, str]:
         return {
             "apikey": key,
             "Authorization": f"Bearer {key}",
@@ -49,7 +49,7 @@ class SupabaseProvider(IntegrationProvider):
         }
 
     @classmethod
-    def test_connection(cls, integration: APIIntegration) -> Dict[str, Any]:
+    def test_connection(cls, integration: APIIntegration) -> dict[str, Any]:
         try:
             base, key = cls._base_and_key(integration)
             # Hit REST root — 200 or 404 with JSON still means reachable + auth accepted often
@@ -62,11 +62,11 @@ class SupabaseProvider(IntegrationProvider):
             if resp.ok:
                 return {"status": "success", "message": f"Connected to Supabase at {base}"}
             return {"status": "error", "message": resp.text[:300]}
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return {"status": "error", "message": str(e)}
 
     @classmethod
-    def execute_tool(cls, integration: APIIntegration, tool_name: str, params: Dict[str, Any]) -> Dict[str, Any]:
+    def execute_tool(cls, integration: APIIntegration, tool_name: str, params: dict[str, Any]) -> dict[str, Any]:
         try:
             base, key = cls._base_and_key(integration)
             headers = cls._headers(key)
@@ -126,5 +126,5 @@ class SupabaseProvider(IntegrationProvider):
                 }
 
             return {"status": "error", "message": f"Unknown Supabase tool: {tool_name}"}
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return {"status": "error", "message": str(e)}

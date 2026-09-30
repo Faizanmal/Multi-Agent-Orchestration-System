@@ -1,11 +1,11 @@
 """Billing API views — Stripe checkout and portal."""
+from authentication.models import Workspace, WorkspaceMembership
 from django.conf import settings
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from authentication.models import Workspace, WorkspaceMembership
 from .services import create_checkout_session, get_customer_portal
 from .usage import usage_summary
 
@@ -55,7 +55,7 @@ def create_checkout_session_view(request):
         return Response({'url': url})
     except ValueError as exc:
         return Response({'error': str(exc)}, status=status.HTTP_400_BAD_REQUEST)
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001
         return Response({'error': str(exc)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
@@ -73,7 +73,7 @@ def customer_portal_view(request):
         workspace = _user_workspace(request.user)
         url = get_customer_portal(workspace, return_url)
         return Response({'url': url})
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001
         return Response({'error': str(exc)}, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -106,7 +106,7 @@ def billing_status_view(request):
                 if subscription.current_period_end else None
             )
             cancel_at_period_end = subscription.cancel_at_period_end
-    except Exception:
+    except Exception:  # noqa: BLE001, S110
         pass
 
     return Response({

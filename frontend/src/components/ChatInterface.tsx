@@ -48,15 +48,15 @@ export function ChatInterface({ sessionId, agentId }: ChatInterfaceProps) {
   useEffect(() => {
     if (lastMessage) {
       const wsMessage = lastMessage as unknown as WsMessage;
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: wsMessage.id,
-          role: 'assistant',
-          content: wsMessage.content,
-          timestamp: new Date(wsMessage.timestamp),
-        },
-      ]);
+      setTimeout(() => { setMessages((prev) => [
+                ...prev,
+                {
+                  id: wsMessage.id,
+                  role: 'assistant',
+                  content: wsMessage.content,
+                  timestamp: new Date(wsMessage.timestamp),
+                },
+              ]); }, 0)
     }
   }, [lastMessage]);
 

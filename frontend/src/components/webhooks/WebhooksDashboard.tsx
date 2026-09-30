@@ -81,11 +81,7 @@ export default function WebhooksDashboard() {
     timeout_seconds: 30
   });
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
+  async function loadData() {
     try {
       setLoading(true);
       const [webhooksRes, notificationsRes] = await Promise.all([
@@ -194,6 +190,8 @@ export default function WebhooksDashboard() {
     }
   };
 
+  useEffect(() => { setTimeout(() => loadData(), 0); }, []);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -204,6 +202,7 @@ export default function WebhooksDashboard() {
       </div>
     );
   }
+
 
   return (
     <div className="container mx-auto p-6 space-y-6">

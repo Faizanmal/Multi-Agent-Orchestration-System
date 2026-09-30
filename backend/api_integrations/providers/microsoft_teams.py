@@ -1,5 +1,5 @@
 """Microsoft Teams (Graph) integration provider."""
-from typing import Any, Dict, List
+from typing import Any
 
 from ..models import APIIntegration
 from .base import IntegrationProvider
@@ -20,7 +20,7 @@ class MicrosoftTeamsProvider(IntegrationProvider):
         ) or text.strip() in ("teams", "microsoft_teams")
 
     @classmethod
-    def tool_definitions(cls) -> List[Dict[str, Any]]:
+    def tool_definitions(cls) -> list[dict[str, Any]]:
         return [
             {"name": "microsoft_teams.list_chats", "description": "List recent Teams chats", "parameters": {"top": "int"}},
             {"name": "microsoft_teams.list_joined_teams", "description": "List Teams the user has joined", "parameters": {}},
@@ -28,11 +28,11 @@ class MicrosoftTeamsProvider(IntegrationProvider):
         ]
 
     @classmethod
-    def test_connection(cls, integration: APIIntegration) -> Dict[str, Any]:
+    def test_connection(cls, integration: APIIntegration) -> dict[str, Any]:
         return test_graph_me(cls, integration, "Microsoft Teams")
 
     @classmethod
-    def execute_tool(cls, integration: APIIntegration, tool_name: str, params: Dict[str, Any]) -> Dict[str, Any]:
+    def execute_tool(cls, integration: APIIntegration, tool_name: str, params: dict[str, Any]) -> dict[str, Any]:
         try:
             token = graph_token(cls, integration)
             top = min(int(params.get("top", 20)), 50)
@@ -59,5 +59,5 @@ class MicrosoftTeamsProvider(IntegrationProvider):
                 return {"status": "success" if ok else "error", "result": data if ok else {}, "message": err}
 
             return {"status": "error", "message": f"Unknown Teams tool: {tool_name}"}
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return {"status": "error", "message": str(e)}

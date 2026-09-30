@@ -1,11 +1,13 @@
 """
 Service classes for webhook delivery and notification sending
 """
-import requests
 import logging
-from django.utils import timezone
-from django.core.mail import send_mail, EmailMultiAlternatives
+
+import requests
 from django.conf import settings
+from django.core.mail import EmailMultiAlternatives, send_mail
+from django.utils import timezone
+
 from .models import WebhookDelivery
 
 logger = logging.getLogger(__name__)
@@ -72,8 +74,8 @@ class WebhookService:
                 'delivery_id': delivery.id
             }
             
-        except Exception as e:
-            logger.error(f"Webhook delivery failed: {str(e)}")
+        except Exception as e:  # noqa: BLE001
+            logger.error(f"Webhook delivery failed: {e!s}")
             
             # Create failed delivery record
             delivery = WebhookDelivery.objects.create(
@@ -101,8 +103,8 @@ class WebhookService:
     
     def _generate_signature(self, secret_key, payload):
         """Generate HMAC signature for webhook"""
-        import hmac
         import hashlib
+        import hmac
         import json
         
         message = json.dumps(payload, sort_keys=True).encode()
@@ -157,8 +159,8 @@ class NotificationService:
             
             return result
             
-        except Exception as e:
-            logger.error(f"Notification send failed: {str(e)}")
+        except Exception as e:  # noqa: BLE001
+            logger.error(f"Notification send failed: {e!s}")
             return {'success': False, 'error': str(e)}
     
     def _send_email(self, channel, title, message):
@@ -204,8 +206,8 @@ class NotificationService:
             logger.info(f"Email notification sent to {len(recipients)} recipients: {title}")
             return {'success': True, 'channel': 'email', 'recipients': len(recipients)}
             
-        except Exception as e:
-            logger.error(f"Email notification failed: {str(e)}")
+        except Exception as e:  # noqa: BLE001
+            logger.error(f"Email notification failed: {e!s}")
             return {'success': False, 'error': str(e)}
     
     def _send_slack(self, channel, title, message):
@@ -222,8 +224,8 @@ class NotificationService:
             response = requests.post(webhook_url, json=payload, timeout=10)
             return {'success': response.status_code == 200}
             
-        except Exception as e:
-            logger.error(f"Slack notification failed: {str(e)}")
+        except Exception as e:  # noqa: BLE001
+            logger.error(f"Slack notification failed: {e!s}")
             return {'success': False, 'error': str(e)}
     
     def _send_discord(self, channel, title, message):
@@ -244,8 +246,8 @@ class NotificationService:
             response = requests.post(webhook_url, json=payload, timeout=10)
             return {'success': 200 <= response.status_code < 300}
             
-        except Exception as e:
-            logger.error(f"Discord notification failed: {str(e)}")
+        except Exception as e:  # noqa: BLE001
+            logger.error(f"Discord notification failed: {e!s}")
             return {'success': False, 'error': str(e)}
     
     def _send_telegram(self, channel, title, message):
@@ -293,8 +295,8 @@ class NotificationService:
                 logger.error(f"Telegram API error: {error_msg}")
                 return {'success': False, 'error': error_msg}
             
-        except Exception as e:
-            logger.error(f"Telegram notification failed: {str(e)}")
+        except Exception as e:  # noqa: BLE001
+            logger.error(f"Telegram notification failed: {e!s}")
             return {'success': False, 'error': str(e)}
     
     def _send_sms(self, channel, title, message):
@@ -346,8 +348,8 @@ class NotificationService:
                     else:
                         errors.append(f"{to_number}: {response.json().get('message')}")
                         
-                except Exception as e:
-                    errors.append(f"{to_number}: {str(e)}")
+                except Exception as e:  # noqa: BLE001
+                    errors.append(f"{to_number}: {e!s}")
             
             if sent_count > 0:
                 logger.info(f"SMS sent to {sent_count} recipients: {title}")
@@ -360,8 +362,8 @@ class NotificationService:
             else:
                 return {'success': False, 'error': f"Failed to send: {errors}"}
             
-        except Exception as e:
-            logger.error(f"SMS notification failed: {str(e)}")
+        except Exception as e:  # noqa: BLE001
+            logger.error(f"SMS notification failed: {e!s}")
             return {'success': False, 'error': str(e)}
     
     def _send_push(self, channel, title, message):
@@ -415,8 +417,8 @@ class NotificationService:
                     else:
                         errors.append(f"{token[:20]}...: {response_data.get('results', [{}])[0].get('error')}")
                         
-                except Exception as e:
-                    errors.append(f"{token[:20]}...: {str(e)}")
+                except Exception as e:  # noqa: BLE001
+                    errors.append(f"{token[:20]}...: {e!s}")
             
             if sent_count > 0:
                 logger.info(f"Push notifications sent to {sent_count} devices: {title}")
@@ -429,6 +431,6 @@ class NotificationService:
             else:
                 return {'success': False, 'error': f"Failed to send: {errors}"}
             
-        except Exception as e:
-            logger.error(f"Push notification failed: {str(e)}")
+        except Exception as e:  # noqa: BLE001
+            logger.error(f"Push notification failed: {e!s}")
             return {'success': False, 'error': str(e)}

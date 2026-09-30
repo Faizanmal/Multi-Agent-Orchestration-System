@@ -1,17 +1,17 @@
 # agents/services/multimodal_processor.py
 
+import asyncio
 import io
 import logging
-import asyncio
 import tempfile
-from typing import Dict, List, Union
 from pathlib import Path
+
 import cv2
 import numpy as np
-from PIL import Image
-import speech_recognition as sr
 import pytesseract
+import speech_recognition as sr
 from django.core.files.uploadedfile import UploadedFile
+from PIL import Image
 
 logger = logging.getLogger(__name__)
 
@@ -49,7 +49,7 @@ class MultiModalProcessor:
             _torch = None
             try:
                 _torch = importlib.import_module('torch')
-            except Exception:
+            except Exception:  # noqa: BLE001
                 _torch = None
 
             if _torch is not None:
@@ -60,7 +60,7 @@ class MultiModalProcessor:
             transformers = None
             try:
                 transformers = importlib.import_module('transformers')
-            except Exception:
+            except Exception:  # noqa: BLE001
                 transformers = None
 
             if transformers is None:
@@ -103,7 +103,7 @@ class MultiModalProcessor:
 
             logger.info("AI models initialized successfully")
 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error(f"Error initializing AI models: {e}")
             # Initialize placeholder models
             self.image_caption_model = None
@@ -113,9 +113,9 @@ class MultiModalProcessor:
     
     async def process_multimodal_input(
         self, 
-        input_data: Dict, 
-        processing_options: Dict = None
-    ) -> Dict:
+        input_data: dict, 
+        processing_options: dict | None = None
+    ) -> dict:
         """
         Process multi-modal input data and return comprehensive analysis.
         
@@ -180,13 +180,13 @@ class MultiModalProcessor:
             
             return results
             
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error(f"Error in multi-modal processing: {e}")
             results['error'] = str(e)
             results['processing_time'] = asyncio.get_event_loop().time() - start_time
             return results
     
-    async def _process_text(self, text_data: Union[str, Dict], options: Dict) -> Dict:
+    async def _process_text(self, text_data: str | dict, options: dict) -> dict:
         """Process text data with various AI analysis."""
         
         if isinstance(text_data, dict):
@@ -217,7 +217,7 @@ class MultiModalProcessor:
                 try:
                     sentiment_result = self.sentiment_model(text[:512])  # Limit for model
                     result['analysis']['sentiment'] = sentiment_result[0] if sentiment_result else None
-                except Exception as e:
+                except Exception as e:  # noqa: BLE001
                     logger.warning(f"Sentiment analysis failed: {e}")
             
             # Text summarization for longer texts
@@ -239,7 +239,7 @@ class MultiModalProcessor:
                     
                     result['analysis']['summary'] = ' '.join(summaries) if summaries else None
                     
-                except Exception as e:
+                except Exception as e:  # noqa: BLE001
                     logger.warning(f"Text summarization failed: {e}")
             
             # Keyword extraction (simple implementation)
@@ -250,13 +250,13 @@ class MultiModalProcessor:
             if options.get('detect_language', True):
                 result['analysis']['detected_language'] = await self._detect_language(text)
             
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error(f"Error processing text: {e}")
             result['error'] = str(e)
         
         return result
     
-    async def _process_image(self, image_data: Union[UploadedFile, str, bytes], options: Dict) -> Dict:
+    async def _process_image(self, image_data: UploadedFile | str | bytes, options: dict) -> dict:
         """Process image data with computer vision analysis."""
         
         result = {
@@ -278,7 +278,7 @@ class MultiModalProcessor:
                 image = Image.open(io.BytesIO(image_data))
                 result['format'] = image.format or 'Unknown'
             else:
-                raise ValueError("Unsupported image data type")
+                raise TypeError("Unsupported image data type")
             
             # Basic image properties
             result['dimensions'] = {
@@ -297,7 +297,7 @@ class MultiModalProcessor:
                 try:
                     captions = self.image_caption_model(image)
                     result['analysis']['caption'] = captions[0]['generated_text'] if captions else None
-                except Exception as e:
+                except Exception as e:  # noqa: BLE001
                     logger.warning(f"Image captioning failed: {e}")
             
             # Object detection
@@ -312,7 +312,7 @@ class MultiModalProcessor:
                             'confidence': obj['score'],
                             'bbox': obj['box']
                         })
-                except Exception as e:
+                except Exception as e:  # noqa: BLE001
                     logger.warning(f"Object detection failed: {e}")
             
             # OCR text extraction
@@ -325,7 +325,7 @@ class MultiModalProcessor:
                     if extracted_text.strip():
                         result['analysis']['ocr_text'] = extracted_text.strip()
                         result['analysis']['text_confidence'] = pytesseract.image_to_data(img_array, output_type=pytesseract.Output.DICT)
-                except Exception as e:
+                except Exception as e:  # noqa: BLE001
                     logger.warning(f"OCR failed: {e}")
             
             # Color analysis
@@ -336,13 +336,13 @@ class MultiModalProcessor:
             if options.get('detect_faces', True):
                 result['analysis']['faces'] = await self._detect_faces(np.array(image))
             
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error(f"Error processing image: {e}")
             result['error'] = str(e)
         
         return result
     
-    async def _process_audio(self, audio_data: Union[UploadedFile, str, bytes], options: Dict) -> Dict:
+    async def _process_audio(self, audio_data: UploadedFile | str | bytes, options: dict) -> dict:
         """Process audio data with speech recognition and analysis."""
         
         result = {
@@ -360,7 +360,7 @@ class MultiModalProcessor:
                         temp_file.write(chunk)
                     result['format'] = audio_data.name.split('.')[-1] if '.' in audio_data.name else 'unknown'
                 elif isinstance(audio_data, str):  # File path
-                    with open(audio_data, 'rb') as f:
+                    with open(audio_data, 'rb') as f:  # noqa: ASYNC230
                         temp_file.write(f.read())
                     result['format'] = Path(audio_data).suffix[1:]
                 elif isinstance(audio_data, bytes):
@@ -385,17 +385,17 @@ class MultiModalProcessor:
                             'text': text,
                             'confidence': 'unknown'  # Google API doesn't return confidence
                         }
-                    except Exception as e:
+                    except Exception as e:  # noqa: BLE001
                         logger.warning(f"Google speech recognition failed: {e}")
                     
                     # Add the best transcription to results
                     if transcription_results:
-                        best_transcription = list(transcription_results.values())[0]
+                        best_transcription = next(iter(transcription_results.values()))
                         result['analysis']['transcription'] = best_transcription['text']
                         result['analysis']['transcription_confidence'] = best_transcription['confidence']
                         result['analysis']['all_transcriptions'] = transcription_results
                 
-                except Exception as e:
+                except Exception as e:  # noqa: BLE001
                     logger.warning(f"Speech recognition failed: {e}")
             
             # Audio analysis (duration, frequency analysis, etc.)
@@ -405,16 +405,16 @@ class MultiModalProcessor:
             # Clean up temporary file
             try:
                 Path(temp_path).unlink()
-            except Exception:
-                pass
+            except Exception as cleanup_err:  # noqa: BLE001
+                logger.warning(f"Failed to cleanup temp audio file: {cleanup_err}")
                 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error(f"Error processing audio: {e}")
             result['error'] = str(e)
         
         return result
     
-    async def _process_video(self, video_data: Union[UploadedFile, str, bytes], options: Dict) -> Dict:
+    async def _process_video(self, video_data: UploadedFile | str | bytes, options: dict) -> dict:
         """Process video data with frame analysis and content extraction."""
         
         result = {
@@ -434,7 +434,7 @@ class MultiModalProcessor:
                         temp_file.write(chunk)
                     result['format'] = video_data.name.split('.')[-1] if '.' in video_data.name else 'unknown'
                 elif isinstance(video_data, str):  # File path
-                    with open(video_data, 'rb') as f:
+                    with open(video_data, 'rb') as f:  # noqa: ASYNC230
                         temp_file.write(f.read())
                     result['format'] = Path(video_data).suffix[1:]
                 elif isinstance(video_data, bytes):
@@ -488,16 +488,16 @@ class MultiModalProcessor:
             # Clean up temporary file
             try:
                 Path(temp_path).unlink()
-            except Exception:
-                pass
+            except Exception as cleanup_err:  # noqa: BLE001
+                logger.warning(f"Failed to cleanup temp video file: {cleanup_err}")
                 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error(f"Error processing video: {e}")
             result['error'] = str(e)
         
         return result
     
-    async def _process_document(self, document_data: Union[UploadedFile, str, bytes], options: Dict) -> Dict:
+    async def _process_document(self, document_data: UploadedFile | str | bytes, options: dict) -> dict:
         """Process document data with text extraction and analysis."""
         
         result = {
@@ -529,7 +529,7 @@ class MultiModalProcessor:
                 if isinstance(document_data, UploadedFile):
                     extracted_text = document_data.read().decode('utf-8')
                 elif isinstance(document_data, str):
-                    with open(document_data, 'r', encoding='utf-8') as f:
+                    with open(document_data, 'r', encoding='utf-8') as f:  # noqa: ASYNC230
                         extracted_text = f.read()
                 elif isinstance(document_data, bytes):
                     extracted_text = document_data.decode('utf-8')
@@ -545,13 +545,13 @@ class MultiModalProcessor:
             if options.get('analyze_structure', True):
                 result['analysis']['structure'] = await self._analyze_document_structure(extracted_text)
             
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error(f"Error processing document: {e}")
             result['error'] = str(e)
         
         return result
     
-    async def _cross_modal_analysis(self, modal_results: Dict) -> Dict:
+    async def _cross_modal_analysis(self, modal_results: dict) -> dict:
         """Perform cross-modal analysis to find connections between different input types."""
         
         cross_modal = {
@@ -593,7 +593,7 @@ class MultiModalProcessor:
             # Generate insights
             cross_modal['insights'] = await self._generate_cross_modal_insights(modal_results, cross_modal['correlations'])
             
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error(f"Error in cross-modal analysis: {e}")
             cross_modal['error'] = str(e)
         
@@ -601,7 +601,7 @@ class MultiModalProcessor:
     
     # Helper methods (implementations would be more detailed in production)
     
-    async def _extract_keywords(self, text: str) -> List[str]:
+    async def _extract_keywords(self, text: str) -> list[str]:
         """Extract keywords from text using simple frequency analysis."""
         # Simplified implementation
         words = text.lower().split()
@@ -623,7 +623,7 @@ class MultiModalProcessor:
         # Placeholder implementation
         return 'en'  # Default to English
     
-    async def _analyze_image_colors(self, image: Image.Image) -> Dict:
+    async def _analyze_image_colors(self, image: Image.Image) -> dict:
         """Analyze dominant colors in image."""
         # Convert image to RGB and get color palette
         image_rgb = image.convert('RGB')
@@ -639,7 +639,7 @@ class MultiModalProcessor:
         
         return {}
     
-    async def _detect_faces(self, image_array: np.ndarray) -> List[Dict]:
+    async def _detect_faces(self, image_array: np.ndarray) -> list[dict]:
         """Detect faces in image using OpenCV."""
         try:
             # Load face cascade classifier
@@ -660,11 +660,11 @@ class MultiModalProcessor:
             
             return face_list
             
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.warning(f"Face detection failed: {e}")
             return []
     
-    async def _analyze_audio_properties(self, audio_path: str) -> Dict:
+    async def _analyze_audio_properties(self, audio_path: str) -> dict:
         """Analyze audio properties."""
         # Placeholder implementation
         return {
@@ -673,7 +673,7 @@ class MultiModalProcessor:
             'bit_depth': 16
         }
     
-    async def _extract_key_frames(self, cap: cv2.VideoCapture, max_frames: int) -> List[np.ndarray]:
+    async def _extract_key_frames(self, cap: cv2.VideoCapture, max_frames: int) -> list[np.ndarray]:
         """Extract key frames from video."""
         frames = []
         frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
@@ -692,7 +692,7 @@ class MultiModalProcessor:
         
         return frames
     
-    async def _extract_video_audio(self, video_path: str) -> Dict:
+    async def _extract_video_audio(self, video_path: str) -> dict:
         """Extract audio from video file."""
         # Placeholder implementation - would use ffmpeg in production
         return {
@@ -700,17 +700,17 @@ class MultiModalProcessor:
             'reason': 'Audio extraction not implemented in demo'
         }
     
-    async def _extract_pdf_text(self, pdf_data: Union[UploadedFile, str, bytes]) -> str:
+    async def _extract_pdf_text(self, pdf_data: UploadedFile | str | bytes) -> str:
         """Extract text from PDF document."""
         # Placeholder implementation - would use PyPDF2 or pdfplumber in production
         return "PDF text extraction not implemented in demo"
     
-    async def _extract_word_text(self, doc_data: Union[UploadedFile, str, bytes]) -> str:
+    async def _extract_word_text(self, doc_data: UploadedFile | str | bytes) -> str:
         """Extract text from Word document."""
         # Placeholder implementation - would use python-docx in production
         return "Word document text extraction not implemented in demo"
     
-    async def _analyze_document_structure(self, text: str) -> Dict:
+    async def _analyze_document_structure(self, text: str) -> dict:
         """Analyze document structure (headings, paragraphs, etc.)."""
         lines = text.split('\n')
         
@@ -734,7 +734,7 @@ class MultiModalProcessor:
         
         return len(intersection) / len(union) if union else 0.0
     
-    async def _generate_combined_narrative(self, modal_results: Dict) -> str:
+    async def _generate_combined_narrative(self, modal_results: dict) -> str:
         """Generate a combined narrative from all modal results."""
         narrative_parts = []
         
@@ -754,7 +754,7 @@ class MultiModalProcessor:
         
         return ". ".join(narrative_parts)
     
-    async def _generate_cross_modal_insights(self, modal_results: Dict, correlations: List[Dict]) -> List[str]:
+    async def _generate_cross_modal_insights(self, modal_results: dict, correlations: list[dict]) -> list[str]:
         """Generate insights from cross-modal analysis."""
         insights = []
         

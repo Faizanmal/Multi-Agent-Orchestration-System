@@ -1,5 +1,5 @@
 """Twilio SMS/voice integration provider."""
-from typing import Any, Dict, List
+from typing import Any
 
 import requests
 
@@ -19,7 +19,7 @@ class TwilioProvider(IntegrationProvider):
         return "twilio" in text or "sms" in text
 
     @classmethod
-    def tool_definitions(cls) -> List[Dict[str, Any]]:
+    def tool_definitions(cls) -> list[dict[str, Any]]:
         return [
             {"name": "twilio.send_sms", "description": "Send an SMS message", "parameters": {"to": "string", "body": "string", "from": "string"}},
             {"name": "twilio.list_messages", "description": "List recent SMS messages", "parameters": {"limit": "int"}},
@@ -36,7 +36,7 @@ class TwilioProvider(IntegrationProvider):
         return str(sid), str(token)
 
     @classmethod
-    def test_connection(cls, integration: APIIntegration) -> Dict[str, Any]:
+    def test_connection(cls, integration: APIIntegration) -> dict[str, Any]:
         try:
             sid, token = cls._creds(integration)
             resp = requests.get(
@@ -48,11 +48,11 @@ class TwilioProvider(IntegrationProvider):
                 return {"status": "error", "message": resp.text[:200]}
             data = resp.json()
             return {"status": "success", "message": f"Connected to Twilio account {data.get('friendly_name') or sid}", "data": {"status": data.get("status")}}
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return {"status": "error", "message": str(e)}
 
     @classmethod
-    def execute_tool(cls, integration: APIIntegration, tool_name: str, params: Dict[str, Any]) -> Dict[str, Any]:
+    def execute_tool(cls, integration: APIIntegration, tool_name: str, params: dict[str, Any]) -> dict[str, Any]:
         try:
             sid, token = cls._creds(integration)
             auth = (sid, token)
@@ -86,5 +86,5 @@ class TwilioProvider(IntegrationProvider):
                 return {"status": "success" if resp.ok else "error", "messages": msgs, "message": "" if resp.ok else resp.text[:200]}
 
             return {"status": "error", "message": f"Unknown Twilio tool: {tool_name}"}
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return {"status": "error", "message": str(e)}

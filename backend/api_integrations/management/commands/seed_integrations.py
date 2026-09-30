@@ -1,16 +1,36 @@
 """Seed APITemplate records for all supported integrations."""
-from django.core.management.base import BaseCommand
 from django.contrib.auth import get_user_model
+from django.core.management.base import BaseCommand
 
 from api_integrations.models import APITemplate
 from api_integrations.providers import (
-    GmailProvider, SlackProvider, GitHubProvider, OpenAIProvider, AnthropicProvider,
-    NotionProvider, JiraProvider, DiscordProvider, S3Provider,
-    TelegramProvider, TrelloProvider, LinearProvider, HubSpotProvider,
-    TwilioProvider, AirtableProvider, GoogleCalendarProvider, WebhookProvider,
-    WhatsAppProvider, InstagramProvider,
-    GoogleDriveProvider, DropboxProvider, OutlookProvider, MicrosoftTeamsProvider,
-    OneDriveProvider, StripeProvider, SupabaseProvider, ShopifyProvider,
+    AirtableProvider,
+    AnthropicProvider,
+    DiscordProvider,
+    DropboxProvider,
+    GitHubProvider,
+    GmailProvider,
+    GoogleCalendarProvider,
+    GoogleDriveProvider,
+    HubSpotProvider,
+    InstagramProvider,
+    JiraProvider,
+    LinearProvider,
+    MicrosoftTeamsProvider,
+    NotionProvider,
+    OneDriveProvider,
+    OpenAIProvider,
+    OutlookProvider,
+    S3Provider,
+    ShopifyProvider,
+    SlackProvider,
+    StripeProvider,
+    SupabaseProvider,
+    TelegramProvider,
+    TrelloProvider,
+    TwilioProvider,
+    WebhookProvider,
+    WhatsAppProvider,
 )
 
 User = get_user_model()

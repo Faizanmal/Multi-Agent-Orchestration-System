@@ -3,23 +3,29 @@ Plugin Service
 Manages plugin lifecycle, execution, and marketplace operations
 """
 import traceback
-from typing import Dict, Any, List, Tuple
-from django.utils import timezone
-from django.db.models import Q, Avg, Sum
-from django.core.exceptions import ValidationError
+from typing import Any
 
-from ..plugin_models import (
-    AgentPlugin, PluginInstallation, PluginReview, PluginDependency,
-    PluginExecutionLog, PluginMarketplaceMetrics, PluginStatus
-)
+from django.core.exceptions import ValidationError
+from django.db.models import Avg, Q, Sum
+from django.utils import timezone
+
 from ..models import Agent
+from ..plugin_models import (
+    AgentPlugin,
+    PluginDependency,
+    PluginExecutionLog,
+    PluginInstallation,
+    PluginMarketplaceMetrics,
+    PluginReview,
+    PluginStatus,
+)
 
 
 class PluginService:
     """Service for managing plugin operations"""
     
     @staticmethod
-    def install_plugin(plugin: AgentPlugin, user, configuration: Dict = None) -> PluginInstallation:
+    def install_plugin(plugin: AgentPlugin, user, configuration: dict | None = None) -> PluginInstallation:
         """Install a plugin for a user"""
         
         # Check if already installed
@@ -70,8 +76,8 @@ class PluginService:
     
     @staticmethod
     def execute_plugin(installation: PluginInstallation, 
-                      input_data: Dict,
-                      execution_context: Dict = None) -> Tuple[bool, Any, str]:
+                      input_data: dict,
+                      execution_context: dict | None = None) -> tuple[bool, Any, str]:
         """
         Execute a plugin safely
         Returns: (success, result, error_message)
@@ -102,7 +108,7 @@ class PluginService:
             
             # Execute plugin code
             start_time = timezone.now()
-            exec(plugin_code, namespace)
+            exec(plugin_code, namespace)  # noqa: S102
             end_time = timezone.now()
             
             # Get result (plugin should set 'result' variable)
@@ -123,7 +129,7 @@ class PluginService:
             
             return True, result, ""
             
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             error_message = str(e)
             error_trace = traceback.format_exc()
             
@@ -140,7 +146,7 @@ class PluginService:
             return False, None, error_message
     
     @staticmethod
-    def validate_plugin_code(code: str) -> Tuple[bool, str]:
+    def validate_plugin_code(code: str) -> tuple[bool, str]:
         """
         Validate plugin code for security and correctness
         Returns: (is_valid, error_message)
@@ -162,17 +168,17 @@ class PluginService:
         try:
             compile(code, '<plugin>', 'exec')
         except SyntaxError as e:
-            return False, f"Syntax error: {str(e)}"
+            return False, f"Syntax error: {e!s}"
         
         return True, ""
     
     @staticmethod
     def search_plugins(query: str = "",
-                      category: str = None,
-                      tags: List[str] = None,
+                      category: str | None = None,
+                      tags: list[str] | None = None,
                       min_rating: float = 0.0,
-                      is_free: bool = None,
-                      sort_by: str = 'downloads') -> List[AgentPlugin]:
+                      is_free: bool | None = None,
+                      sort_by: str = 'downloads') -> list[AgentPlugin]:
         """Search plugins in marketplace"""
         
         plugins = AgentPlugin.objects.filter(
@@ -219,7 +225,7 @@ class PluginService:
         return plugins
     
     @staticmethod
-    def get_plugin_recommendations(user, limit: int = 10) -> List[AgentPlugin]:
+    def get_plugin_recommendations(user, limit: int = 10) -> list[AgentPlugin]:
         """Get personalized plugin recommendations"""
         
         # Get user's installed plugins
@@ -244,7 +250,7 @@ class PluginService:
     @staticmethod
     def submit_review(plugin: AgentPlugin, user, rating: int, 
                      title: str, review_text: str,
-                     pros: List[str] = None, cons: List[str] = None) -> PluginReview:
+                     pros: list[str] | None = None, cons: list[str] | None = None) -> PluginReview:
         """Submit a plugin review"""
         
         # Check if user has installed the plugin
@@ -273,7 +279,7 @@ class PluginService:
         return review
     
     @staticmethod
-    def get_plugin_analytics(plugin: AgentPlugin, days: int = 30) -> Dict:
+    def get_plugin_analytics(plugin: AgentPlugin, days: int = 30) -> dict:
         """Get analytics for a plugin"""
         from datetime import timedelta
         
@@ -346,7 +352,7 @@ class PluginMarketplaceService:
     """Service for marketplace operations"""
     
     @staticmethod
-    def submit_plugin(plugin_data: Dict, author) -> AgentPlugin:
+    def submit_plugin(plugin_data: dict, author) -> AgentPlugin:
         """Submit a new plugin to marketplace"""
         
         # Validate plugin code
@@ -383,7 +389,7 @@ class PluginMarketplaceService:
         # send_notification(plugin.author, f"Plugin rejected: {reason}")
     
     @staticmethod
-    def get_trending_plugins(limit: int = 10) -> List[AgentPlugin]:
+    def get_trending_plugins(limit: int = 10) -> list[AgentPlugin]:
         """Get trending plugins based on recent activity"""
         from datetime import timedelta
         
@@ -408,7 +414,7 @@ class PluginMarketplaceService:
         return [plugin_dict[str(pid)] for pid in trending_plugin_ids if str(pid) in plugin_dict]
     
     @staticmethod
-    def get_featured_plugins() -> List[AgentPlugin]:
+    def get_featured_plugins() -> list[AgentPlugin]:
         """Get featured plugins"""
         return AgentPlugin.objects.filter(
             is_featured=True,

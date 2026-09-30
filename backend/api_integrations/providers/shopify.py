@@ -1,5 +1,5 @@
 """Shopify Admin API integration provider."""
-from typing import Any, Dict, List
+from typing import Any
 
 import requests
 
@@ -19,7 +19,7 @@ class ShopifyProvider(IntegrationProvider):
         return "shopify" in text
 
     @classmethod
-    def tool_definitions(cls) -> List[Dict[str, Any]]:
+    def tool_definitions(cls) -> list[dict[str, Any]]:
         return [
             {"name": "shopify.list_orders", "description": "List recent Shopify orders", "parameters": {"limit": "int", "status": "string"}},
             {"name": "shopify.list_products", "description": "List Shopify products", "parameters": {"limit": "int"}},
@@ -45,14 +45,14 @@ class ShopifyProvider(IntegrationProvider):
         return base, str(token)
 
     @classmethod
-    def _headers(cls, token: str) -> Dict[str, str]:
+    def _headers(cls, token: str) -> dict[str, str]:
         return {
             "X-Shopify-Access-Token": token,
             "Content-Type": "application/json",
         }
 
     @classmethod
-    def test_connection(cls, integration: APIIntegration) -> Dict[str, Any]:
+    def test_connection(cls, integration: APIIntegration) -> dict[str, Any]:
         try:
             base, token = cls._base_and_token(integration)
             resp = requests.get(f"{base}/shop.json", headers=cls._headers(token), timeout=20)
@@ -64,11 +64,11 @@ class ShopifyProvider(IntegrationProvider):
                 "message": f"Connected to Shopify store {shop.get('name') or shop.get('domain')}",
                 "data": {"domain": shop.get("domain"), "plan": shop.get("plan_name")},
             }
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return {"status": "error", "message": str(e)}
 
     @classmethod
-    def execute_tool(cls, integration: APIIntegration, tool_name: str, params: Dict[str, Any]) -> Dict[str, Any]:
+    def execute_tool(cls, integration: APIIntegration, tool_name: str, params: dict[str, Any]) -> dict[str, Any]:
         try:
             base, token = cls._base_and_token(integration)
             headers = cls._headers(token)
@@ -119,5 +119,5 @@ class ShopifyProvider(IntegrationProvider):
                 }
 
             return {"status": "error", "message": f"Unknown Shopify tool: {tool_name}"}
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return {"status": "error", "message": str(e)}

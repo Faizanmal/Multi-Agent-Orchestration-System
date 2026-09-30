@@ -1,7 +1,8 @@
-from rest_framework import serializers
 from django.contrib.auth import authenticate
 from django.contrib.auth.password_validation import validate_password
-from .models import CustomUser, APIKey, UserSession, TwoFactorAuth
+from rest_framework import serializers
+
+from .models import APIKey, CustomUser, TwoFactorAuth, UserSession
 
 
 class CustomUserSerializer(serializers.ModelSerializer):
@@ -10,15 +11,15 @@ class CustomUserSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = CustomUser
-        fields = [
-            'id', 'username', 'email', 'first_name', 'last_name',
+        fields = [  # noqa: RUF012
+            'id', 'username', 'email', 'password', 'first_name', 'last_name',
             'avatar', 'role', 'subscription_tier', 'is_2fa_enabled',
             'phone_number', 'user_timezone', 'profile_image', 'date_of_birth',
             'bio', 'location', 'website', 'email_notifications',
             'push_notifications', 'marketing_emails', 'theme_preference',
             'language', 'is_active', 'date_joined', 'last_activity'
         ]
-        read_only_fields = ['id', 'date_joined', 'last_activity']
+        read_only_fields = ['id', 'date_joined', 'last_activity']  # noqa: RUF012
     
     def create(self, validated_data):
         password = validated_data.pop('password')
@@ -44,7 +45,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = CustomUser
-        fields = [
+        fields = [  # noqa: RUF012
             'username', 'email', 'password', 'password_confirm',
             'first_name', 'last_name', 'phone_number'
         ]
@@ -108,39 +109,39 @@ class APIKeySerializer(serializers.ModelSerializer):
     
     class Meta:
         model = APIKey
-        fields = [
+        fields = [  # noqa: RUF012
             'id', 'name', 'key', 'permissions', 'rate_limit',
             'usage_count', 'last_used', 'is_active', 'expires_at',
             'created_at'
         ]
-        read_only_fields = ['id', 'key', 'usage_count', 'last_used', 'created_at']
+        read_only_fields = ['id', 'key', 'usage_count', 'last_used', 'created_at']  # noqa: RUF012
 
 
 class UserSessionSerializer(serializers.ModelSerializer):
     """Serializer for user sessions"""
     class Meta:
         model = UserSession
-        fields = [
+        fields = [  # noqa: RUF012
             'id', 'session_key', 'ip_address', 'user_agent',
             'device_info', 'location', 'is_active',
             'last_activity', 'created_at', 'expires_at'
         ]
-        read_only_fields = ['id', 'created_at', 'last_activity']
+        read_only_fields = ['id', 'created_at', 'last_activity']  # noqa: RUF012
 
 
 class TwoFactorAuthSerializer(serializers.ModelSerializer):
     """Serializer for 2FA settings"""
     class Meta:
         model = TwoFactorAuth
-        fields = [
+        fields = [  # noqa: RUF012
             'is_enabled', 'last_used', 'created_at'
         ]
-        read_only_fields = ['last_used', 'created_at']
+        read_only_fields = ['last_used', 'created_at']  # noqa: RUF012
 
 
 class Enable2FASerializer(serializers.Serializer):
     """Serializer for enabling 2FA"""
-    pass  # Will be handled in view
+    # Will be handled in view
 
 
 class Verify2FASerializer(serializers.Serializer):

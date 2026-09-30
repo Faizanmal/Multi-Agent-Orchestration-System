@@ -5,18 +5,20 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Moon, Sun, Zap, Activity, Settings, Brain } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useRouter } from 'next/navigation';
 import { useAgent } from '@/contexts/AgentContext';
 import { WorkspaceSwitcher } from '@/components/workspace/WorkspaceSwitcher';
 
 export default function Header() {
   const { isDark, toggleTheme } = useTheme();
   const { agents, activeAgents, isOrchestrating } = useAgent();
+  const router = useRouter();
   const [avgLatency, setAvgLatency] = useState(0);
 
   useEffect(() => {
     const activeAgentsList = agents.filter(agent => activeAgents.has(agent.id));
     const totalLatency = activeAgentsList.reduce((sum, agent) => sum + (agent.latency ?? 0), 0);
-    setAvgLatency(activeAgentsList.length > 0 ? Math.round(totalLatency / activeAgentsList.length) : 0);
+    setTimeout(() => { setAvgLatency(activeAgentsList.length > 0 ? Math.round(totalLatency / activeAgentsList.length) : 0); }, 0)
   }, [agents, activeAgents]);
 
   return (
@@ -73,7 +75,7 @@ export default function Header() {
               variant="default"
               size="sm"
               className="hidden md:flex bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white border-0 h-9"
-              onClick={() => window.location.href = '/settings/billing'}
+              onClick={() => router.push('/settings/billing')}
             >
               Upgrade to Pro
             </Button>

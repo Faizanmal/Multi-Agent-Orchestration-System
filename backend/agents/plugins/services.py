@@ -1,5 +1,6 @@
 import logging
-from typing import Dict, Any, Optional
+from typing import Any
+
 from . import models
 from .registry import plugin_registry
 
@@ -22,10 +23,10 @@ class PluginService:
             logger.info("Initializing plugin system...")
             self.registry.load_installed_plugins()
             logger.info(f"Loaded {len(self.registry.get_installed_plugins())} plugins")
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error(f"Failed to initialize plugins: {e}")
     
-    def install_plugin(self, plugin_id: str, user_id: str, configuration: Optional[Dict[str, Any]] = None) -> bool:
+    def install_plugin(self, plugin_id: str, user_id: str, configuration: dict[str, Any] | None = None) -> bool:
         """Install a plugin for a user"""
         try:
             plugin = Plugin.objects.get(id=plugin_id)
@@ -59,7 +60,7 @@ class PluginService:
         except Plugin.DoesNotExist:
             logger.error(f"Plugin with ID {plugin_id} not found")
             return False
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error(f"Failed to install plugin {plugin_id}: {e}")
             return False
     
@@ -84,11 +85,11 @@ class PluginService:
         except PluginInstallation.DoesNotExist:
             logger.error(f"Plugin installation {plugin_id} not found for user {user_id}")
             return False
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error(f"Failed to uninstall plugin {plugin_id}: {e}")
             return False
     
-    def execute_plugin(self, plugin_id: str, user_id: str, **kwargs) -> Optional[Dict[str, Any]]:
+    def execute_plugin(self, plugin_id: str, user_id: str, **kwargs) -> dict[str, Any] | None:
         """Execute a plugin with given parameters"""
         try:
             # Check if plugin is installed by user
@@ -116,11 +117,11 @@ class PluginService:
         except PluginInstallation.DoesNotExist:
             logger.error(f"Plugin {plugin_id} not installed for user {user_id}")
             return None
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error(f"Failed to execute plugin {plugin_id}: {e}")
             return None
     
-    def get_user_plugins(self, user_id: str) -> Dict[str, Any]:
+    def get_user_plugins(self, user_id: str) -> dict[str, Any]:
         """Get all plugins installed by a user"""
         try:
             installations = PluginInstallation.objects.filter(
@@ -135,7 +136,7 @@ class PluginService:
                     plugins_info[str(installation.plugin.id)] = plugin_instance.get_info()
             
             return plugins_info
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error(f"Failed to get user plugins: {e}")
             return {}
 

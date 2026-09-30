@@ -1,7 +1,8 @@
-from django.db import models
-from django.contrib.auth import get_user_model
-from agents.models import Agent
 import uuid
+
+from agents.models import Agent
+from django.contrib.auth import get_user_model
+from django.db import models
 
 User = get_user_model()
 
@@ -57,7 +58,7 @@ class Plugin(models.Model):
     
     class Meta:
         db_table = 'plugin'
-        ordering = ['-rating', '-download_count']
+        ordering = ['-rating', '-download_count']  # noqa: RUF012
     
     def __str__(self):
         return f"{self.name} v{self.version}"
@@ -82,8 +83,8 @@ class PluginInstallation(models.Model):
     
     class Meta:
         db_table = 'plugin_installation'
-        unique_together = ['plugin', 'user']
-        ordering = ['-installed_at']
+        unique_together = ['plugin', 'user']  # noqa: RUF012
+        ordering = ['-installed_at']  # noqa: RUF012
     
     def __str__(self):
         return f"{self.plugin.name} - {self.user.username}"
@@ -128,8 +129,8 @@ class PluginReview(models.Model):
     
     class Meta:
         db_table = 'plugin_review'
-        unique_together = ['plugin', 'user']
-        ordering = ['-created_at']
+        unique_together = ['plugin', 'user']  # noqa: RUF012
+        ordering = ['-created_at']  # noqa: RUF012
     
     def __str__(self):
         return f"{self.plugin.name} - {self.rating}★ by {self.user.username}"
@@ -153,7 +154,7 @@ class PluginAPIKey(models.Model):
     
     class Meta:
         db_table = 'plugin_api_key'
-        ordering = ['-created_at']
+        ordering = ['-created_at']  # noqa: RUF012
     
     def __str__(self):
         return f"{self.service_name} - {self.installation.plugin.name}"

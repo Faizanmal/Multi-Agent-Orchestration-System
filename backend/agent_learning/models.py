@@ -1,6 +1,7 @@
-from django.db import models
-from agents.models import Agent, Session
 import uuid
+
+from agents.models import Agent, Session
+from django.db import models
 
 
 class LearningAlgorithm(models.TextChoices):
@@ -38,7 +39,7 @@ class AgentLearningProfile(models.Model):
     
     class Meta:
         db_table = 'agent_learning_profile'
-        ordering = ['-success_rate']
+        ordering = ('-success_rate',)
     
     def __str__(self):
         return f"Learning Profile: {self.agent.name} ({self.success_rate:.2%})"
@@ -69,11 +70,11 @@ class ReinforcementState(models.Model):
     
     class Meta:
         db_table = 'reinforcement_state'
-        ordering = ['-created_at']
-        indexes = [
+        ordering = ('-created_at',)
+        indexes = (
             models.Index(fields=['learning_profile', '-created_at']),
             models.Index(fields=['task_type', 'success']),
-        ]
+        )
 
 
 class AdaptiveStrategy(models.Model):
@@ -103,7 +104,7 @@ class AdaptiveStrategy(models.Model):
     
     class Meta:
         db_table = 'adaptive_strategy'
-        ordering = ['-confidence_score', '-success_rate']
+        ordering = ('-confidence_score', '-success_rate')
     
     def __str__(self):
         return f"{self.name} ({self.success_rate:.2%})"
@@ -124,7 +125,7 @@ class LearningEvent(models.Model):
     
     class Meta:
         db_table = 'learning_event'
-        ordering = ['-created_at']
+        ordering = ('-created_at',)
     
     def __str__(self):
         return f"{self.event_type} - {self.learning_profile.agent.name}"
@@ -151,8 +152,8 @@ class SkillMatrix(models.Model):
     
     class Meta:
         db_table = 'skill_matrix'
-        unique_together = ['learning_profile', 'skill_name']
-        ordering = ['-expertise_level']
+        unique_together = ('learning_profile', 'skill_name')
+        ordering = ('-expertise_level',)
     
     def __str__(self):
         return f"{self.skill_name}: {self.expertise_level:.2f}"
@@ -182,10 +183,10 @@ class AgentLearningPolicy(models.Model):
     
     class Meta:
         db_table = 'agent_learning_policies'
-        ordering = ['-updated_at']
-        indexes = [
+        ordering = ('-updated_at',)
+        indexes = (
             models.Index(fields=['agent_identifier', 'is_active']),
-        ]
+        )
     
     def __str__(self):
         return f"Policy for {self.agent_identifier} (v{self.version})"

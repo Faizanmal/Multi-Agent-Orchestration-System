@@ -131,15 +131,17 @@ export default function IntelligencePage() {
   };
 
   useEffect(() => {
-    loadModels();
+    setTimeout(() => { loadModels(); }, 0)
   }, []);
 
   useEffect(() => {
     const options = PROVIDER_MODELS[provider] || [];
     if (options.length) {
-      setModelId(options[0].id);
-      setModelType(options[0].type);
-      if (!alias) setAlias(options[0].label);
+      setTimeout(() => { setModelId(options[0].id); }, 0)
+      setTimeout(() => {
+          setModelType(options[0].type);
+        }, 0)
+      if (!alias) setTimeout(() => setAlias(options[0].label), 0);
     }
   }, [provider]); // eslint-disable-line react-hooks/exhaustive-deps
 

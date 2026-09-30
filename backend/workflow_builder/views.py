@@ -1,19 +1,17 @@
-from rest_framework import viewsets, status
-from rest_framework.decorators import action
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.conf import settings
+from django.db import models, transaction
 from django.utils import timezone
-from django.db import transaction
-from django.db import models
+from rest_framework import status, viewsets
+from rest_framework.decorators import action
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
 
-from .models import (
-    WorkflowTemplate, VisualWorkflow, WorkflowExecution, WorkflowVersion
-)
+from .models import VisualWorkflow, WorkflowExecution, WorkflowTemplate, WorkflowVersion
 from .serializers import (
-    WorkflowTemplateSerializer, VisualWorkflowSerializer,
+    VisualWorkflowSerializer,
     WorkflowExecutionSerializer,
-    WorkflowVersionSerializer
+    WorkflowTemplateSerializer,
+    WorkflowVersionSerializer,
 )
 
 
@@ -21,7 +19,7 @@ class WorkflowTemplateViewSet(viewsets.ModelViewSet):
     """ViewSet for workflow templates"""
     queryset = WorkflowTemplate.objects.all()
     serializer_class = WorkflowTemplateSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = (IsAuthenticated,)
     
     def get_queryset(self):
         """Filter public templates or user's own templates"""
@@ -109,6 +107,7 @@ class VisualWorkflowViewSet(viewsets.ModelViewSet):
     def execute(self, request, pk=None):
         """Execute a workflow"""
         import asyncio
+
         from agents.services.workflow_engine import WorkflowEngine
         
         workflow = self.get_object()
@@ -163,14 +162,14 @@ class VisualWorkflowViewSet(viewsets.ModelViewSet):
             serializer = WorkflowExecutionSerializer(execution)
             return Response(serializer.data, status=status.HTTP_200_OK)
             
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001  # noqa: BLE001
             execution.status = 'failed'
             execution.completed_at = timezone.now()
             execution.error_message = str(e)
             execution.save()
             
             return Response(
-                {'error': f'Workflow execution failed: {str(e)}'},
+                {'error': f'Workflow execution failed: {e!s}'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
     
@@ -347,7 +346,7 @@ class WorkflowExecutionViewSet(viewsets.ReadOnlyModelViewSet):
     """ViewSet for workflow executions (read-only)"""
     queryset = WorkflowExecution.objects.all()
     serializer_class = WorkflowExecutionSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = (IsAuthenticated,)
     
     def get_queryset(self):
         """Filter by user's workflows"""

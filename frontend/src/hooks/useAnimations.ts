@@ -231,8 +231,10 @@ export function useTypewriter(text: string, speed: number = 50) {
 
   useEffect(() => {
     let index = 0;
-    setDisplayText('');
-    setIsComplete(false);
+    setTimeout(() => {
+      setDisplayText('');
+      setIsComplete(false);
+    }, 0);
 
     const timer = setInterval(() => {
       if (index < text.length) {

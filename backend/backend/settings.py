@@ -10,10 +10,11 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
+import os
 from datetime import timedelta as _td
 from pathlib import Path
-from urllib.parse import urlparse, unquote
-import os
+from urllib.parse import unquote, urlparse
+
 from dotenv import load_dotenv
 
 # Disable TensorFlow backend in transformers/sentence-transformers.

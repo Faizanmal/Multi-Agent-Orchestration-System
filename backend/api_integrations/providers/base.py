@@ -1,9 +1,9 @@
 """Base class for third-party integration providers."""
-from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional
 import time
+from abc import ABC, abstractmethod
+from typing import Any
 
-from ..models import APIIntegration, APICallResult
+from ..models import APICallResult, APIIntegration
 
 
 class IntegrationProvider(ABC):
@@ -21,23 +21,23 @@ class IntegrationProvider(ABC):
 
     @classmethod
     @abstractmethod
-    def tool_definitions(cls) -> List[Dict[str, Any]]:
+    def tool_definitions(cls) -> list[dict[str, Any]]:
         """Tool schemas exposed to agents (name, description, parameters)."""
 
     @classmethod
     @abstractmethod
-    def test_connection(cls, integration: APIIntegration) -> Dict[str, Any]:
+    def test_connection(cls, integration: APIIntegration) -> dict[str, Any]:
         """Verify credentials and API access."""
 
     @classmethod
     @abstractmethod
     def execute_tool(
-        cls, integration: APIIntegration, tool_name: str, params: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        cls, integration: APIIntegration, tool_name: str, params: dict[str, Any]
+    ) -> dict[str, Any]:
         """Run a namespaced tool, e.g. gmail.read_inbox."""
 
     @classmethod
-    def sub_agents(cls) -> List[Dict[str, Any]]:
+    def sub_agents(cls) -> list[dict[str, Any]]:
         """Sub-agent definitions created when this integration is connected."""
         return [
             {
@@ -66,9 +66,9 @@ class IntegrationProvider(ABC):
         integration: APIIntegration,
         status: str,
         response_time: float,
-        response_data: Optional[Dict] = None,
+        response_data: dict | None = None,
         error_message: str = "",
-        request_data: Optional[Dict] = None,
+        request_data: dict | None = None,
     ) -> None:
         APICallResult.objects.create(
             integration=integration,
@@ -91,8 +91,8 @@ class IntegrationProvider(ABC):
 
     @classmethod
     def timed_execute(
-        cls, integration: APIIntegration, tool_name: str, params: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        cls, integration: APIIntegration, tool_name: str, params: dict[str, Any]
+    ) -> dict[str, Any]:
         start = time.time()
         try:
             result = cls.execute_tool(integration, tool_name, params)
@@ -105,7 +105,7 @@ class IntegrationProvider(ABC):
                 request_data={"tool": tool_name, "params": params},
             )
             return result
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             elapsed = (time.time() - start) * 1000
             cls.log_call(
                 integration, "error", elapsed,
@@ -115,7 +115,7 @@ class IntegrationProvider(ABC):
             return {"status": "error", "message": str(e)}
 
     @classmethod
-    def _auth(cls, integration: APIIntegration) -> Dict[str, Any]:
+    def _auth(cls, integration: APIIntegration) -> dict[str, Any]:
         return integration.get_auth_data() or {}
 
     @classmethod

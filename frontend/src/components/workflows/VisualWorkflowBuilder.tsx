@@ -100,11 +100,7 @@ export default function VisualWorkflowBuilder() {
     edges: [] as WorkflowEdge[]
   });
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
+  async function loadData() {
     try {
       setLoading(true);
       const [templatesRes, executionsRes] = await Promise.all([
@@ -219,6 +215,8 @@ export default function VisualWorkflowBuilder() {
     toast.success('Workflow exported successfully');
   };
 
+  useEffect(() => { setTimeout(() => loadData(), 0); }, []);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -229,6 +227,7 @@ export default function VisualWorkflowBuilder() {
       </div>
     );
   }
+
 
   return (
     <div className="container mx-auto p-6 space-y-6">

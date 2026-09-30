@@ -12,7 +12,7 @@ from __future__ import annotations
 import logging
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from django.db.models import Q
 
@@ -29,10 +29,10 @@ class ModelCoordinationService:
 
     def resolve_models(
         self,
-        model_ids: Optional[List[str]] = None,
+        model_ids: list[str] | None = None,
         user=None,
         require_active: bool = True,
-    ) -> List[AIModelConfig]:
+    ) -> list[AIModelConfig]:
         qs = AIModelConfig.objects.all()
         if require_active:
             qs = qs.filter(is_active=True)
@@ -50,10 +50,10 @@ class ModelCoordinationService:
         self,
         mode: str,
         prompt: str,
-        model_ids: Optional[List[str]] = None,
-        options: Optional[Dict[str, Any]] = None,
+        model_ids: list[str] | None = None,
+        options: dict[str, Any] | None = None,
         user=None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         mode = (mode or 'route').lower()
         if mode not in self.MODES:
             raise ValueError(f"Unknown mode '{mode}'. Use one of: {', '.join(self.MODES)}")
@@ -111,7 +111,7 @@ class ModelCoordinationService:
     # Invoke a single AIModelConfig
     # ------------------------------------------------------------------
 
-    def invoke(self, config: AIModelConfig, messages: List[Dict[str, str]], **kwargs) -> Dict[str, Any]:
+    def invoke(self, config: AIModelConfig, messages: list[dict[str, str]], **kwargs) -> dict[str, Any]:
         orchestrator = get_orchestrator()
         provider_key = (config.provider or '').lower().strip()
         model_name = config.model_id
@@ -153,7 +153,7 @@ class ModelCoordinationService:
                 'model_name': config.name,
                 'usage': result.get('usage') or {},
             }
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             logger.warning('Model %s/%s failed: %s', config.provider, model_name, exc)
             return {
                 'status': 'error',
@@ -169,7 +169,7 @@ class ModelCoordinationService:
     # Strategies
     # ------------------------------------------------------------------
 
-    def _run_route(self, models: List[AIModelConfig], prompt: str, options: Dict) -> Dict[str, Any]:
+    def _run_route(self, models: list[AIModelConfig], prompt: str, options: dict) -> dict[str, Any]:
         """Pick best model by priority, failover through the rest."""
         priority = options.get('priority', 'balanced')
         messages = [{'role': 'user', 'content': prompt}]
@@ -200,11 +200,11 @@ class ModelCoordinationService:
             'per_model': {t.get('model_config_id'): t for t in tried},
         }
 
-    def _run_collaborative(self, models: List[AIModelConfig], prompt: str, options: Dict) -> Dict[str, Any]:
+    def _run_collaborative(self, models: list[AIModelConfig], prompt: str, options: dict) -> dict[str, Any]:
         rounds = max(1, min(int(options.get('rounds', 2)), 4))
         messages_base = [{'role': 'user', 'content': prompt}]
-        per_model: Dict[str, Any] = {}
-        round_logs: List[Dict[str, Any]] = []
+        per_model: dict[str, Any] = {}
+        round_logs: list[dict[str, Any]] = []
 
         # Round 1: independent proposals (parallel)
         proposals = {}
@@ -293,10 +293,10 @@ class ModelCoordinationService:
             'per_model': per_model,
         }
 
-    def _run_debate(self, models: List[AIModelConfig], prompt: str, options: Dict) -> Dict[str, Any]:
+    def _run_debate(self, models: list[AIModelConfig], prompt: str, options: dict) -> dict[str, Any]:
         rounds = max(1, min(int(options.get('rounds', 2)), 3))
-        positions: Dict[str, Any] = {}
-        critiques: List[Dict[str, Any]] = []
+        positions: dict[str, Any] = {}
+        critiques: list[dict[str, Any]] = []
 
         # Opening positions
         with ThreadPoolExecutor(max_workers=min(4, len(models))) as pool:
@@ -383,7 +383,7 @@ class ModelCoordinationService:
             'per_model': positions,
         }
 
-    def _run_pipeline(self, models: List[AIModelConfig], prompt: str, options: Dict) -> Dict[str, Any]:
+    def _run_pipeline(self, models: list[AIModelConfig], prompt: str, options: dict) -> dict[str, Any]:
         stages_opt = options.get('stages')
         if stages_opt and isinstance(stages_opt, list) and stages_opt:
             stage_models = []
@@ -443,7 +443,7 @@ class ModelCoordinationService:
     # ------------------------------------------------------------------
 
     @staticmethod
-    def _merge_texts(texts: List[str]) -> str:
+    def _merge_texts(texts: list[str]) -> str:
         texts = [t.strip() for t in texts if t and t.strip()]
         if not texts:
             return ''
@@ -453,7 +453,7 @@ class ModelCoordinationService:
         return max(texts, key=len)
 
     @staticmethod
-    def _parse_verdict(raw: str, positions: Dict[str, Any], judge: AIModelConfig) -> Dict[str, Any]:
+    def _parse_verdict(raw: str, positions: dict[str, Any], judge: AIModelConfig) -> dict[str, Any]:
         import json
         import re
 
@@ -470,7 +470,7 @@ class ModelCoordinationService:
                 confidence = float(data.get('confidence', 0.5))
                 reason = data.get('reason', '')
                 final_answer = data.get('final_answer') or positions.get(str(winner), {}).get('content') or raw
-        except Exception:
+        except Exception:  # noqa: BLE001
             # Fallback: pick longest successful position
             best = max(
                 positions.values(),
@@ -490,7 +490,7 @@ class ModelCoordinationService:
         }
 
 
-_coordination_service: Optional[ModelCoordinationService] = None
+_coordination_service: ModelCoordinationService | None = None
 
 
 def get_coordination_service() -> ModelCoordinationService:

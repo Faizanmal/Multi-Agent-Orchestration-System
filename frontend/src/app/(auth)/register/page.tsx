@@ -135,6 +135,7 @@ export default function RegisterPage() {
     return strength;
   };
 
+  // eslint-disable-next-line react-hooks/incompatible-library
   const password = form.watch('password');
   const passwordStrength = getPasswordStrength(password);
 

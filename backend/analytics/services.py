@@ -1,9 +1,11 @@
-import numpy as np
 from datetime import timedelta
+from typing import Any
+
+import numpy as np
 from django.db.models import Avg, Sum
 from django.utils import timezone
-from typing import Dict, List, Any
-from .models import PerformanceMetric, CostAnalysis
+
+from .models import CostAnalysis, PerformanceMetric
 
 
 class AnalyticsService:
@@ -13,8 +15,8 @@ class AnalyticsService:
     def calculate_performance_trends(
         metric_type: str,
         time_range: str = '7d',
-        workflow_id: str = None
-    ) -> Dict[str, Any]:
+        workflow_id: str | None = None
+    ) -> dict[str, Any]:
         """Calculate performance trends over time"""
         
         # Parse time range
@@ -55,7 +57,7 @@ class AnalyticsService:
         }
     
     @staticmethod
-    def analyze_cost_optimization(user_id: int, time_range: str = '30d') -> Dict[str, Any]:
+    def analyze_cost_optimization(user_id: int, time_range: str = '30d') -> dict[str, Any]:
         """Analyze cost patterns and suggest optimizations"""
         
         time_delta = AnalyticsService._parse_time_range(time_range)
@@ -115,9 +117,9 @@ class AnalyticsService:
     @staticmethod
     def detect_anomalies(
         metric_type: str,
-        workflow_id: str = None,
+        workflow_id: str | None = None,
         sensitivity: float = 2.5
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Detect anomalies using statistical methods"""
         
         # Get recent metrics
@@ -159,7 +161,7 @@ class AnalyticsService:
         return anomalies
     
     @staticmethod
-    def generate_workflow_optimizations(workflow_id: str) -> List[Dict[str, Any]]:
+    def generate_workflow_optimizations(workflow_id: str) -> list[dict[str, Any]]:
         """Generate AI-powered workflow optimization suggestions"""
         
         # Get workflow performance data
@@ -242,8 +244,8 @@ class AnalyticsService:
     def predict_future_metrics(
         metric_type: str,
         prediction_horizon: str = '24h',
-        workflow_id: str = None
-    ) -> Dict[str, Any]:
+        workflow_id: str | None = None
+    ) -> dict[str, Any]:
         """Predict future metric values using simple time series analysis"""
         
         # Get historical data
@@ -324,7 +326,7 @@ class AnalyticsService:
             return 24
     
     @staticmethod
-    def _calculate_trend(values: List[float]) -> str:
+    def _calculate_trend(values: list[float]) -> str:
         """Calculate trend direction"""
         if len(values) < 2:
             return 'stable'

@@ -1,6 +1,5 @@
 """Fast, isolated settings for automated checks."""
-from .settings import *  # noqa: F403
-
+from .settings import *
 
 DATABASES = {
     'default': {

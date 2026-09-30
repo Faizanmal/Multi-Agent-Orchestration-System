@@ -1,12 +1,13 @@
-from django.db import models
-from django.conf import settings
-from django.utils import timezone
 import uuid
+
+from django.conf import settings
+from django.db import models
+from django.utils import timezone
 
 
 class NotificationCampaign(models.Model):
     """Email and notification campaigns"""
-    CAMPAIGN_TYPES = [
+    CAMPAIGN_TYPES = [  # noqa: RUF012
         ('email', 'Email Campaign'),
         ('push', 'Push Notification'),
         ('sms', 'SMS Campaign'),
@@ -14,7 +15,7 @@ class NotificationCampaign(models.Model):
         ('webhook', 'Webhook'),
     ]
     
-    STATUS_CHOICES = [
+    STATUS_CHOICES = [  # noqa: RUF012
         ('draft', 'Draft'),
         ('scheduled', 'Scheduled'),
         ('sending', 'Sending'),
@@ -59,7 +60,7 @@ class NotificationCampaign(models.Model):
     
     class Meta:
         db_table = 'notifications_campaigns'
-        ordering = ['-created_at']
+        ordering = ['-created_at']  # noqa: RUF012
     
     def __str__(self):
         return f"{self.name} ({self.campaign_type})"
@@ -77,14 +78,14 @@ class NotificationCampaign(models.Model):
 
 class NotificationTemplate(models.Model):
     """Email and notification templates"""
-    TEMPLATE_TYPES = [
+    TEMPLATE_TYPES = [  # noqa: RUF012
         ('email', 'Email Template'),
         ('push', 'Push Notification Template'),
         ('sms', 'SMS Template'),
         ('in_app', 'In-App Template'),
     ]
     
-    CATEGORIES = [
+    CATEGORIES = [  # noqa: RUF012
         ('welcome', 'Welcome'),
         ('alert', 'Alert'),
         ('reminder', 'Reminder'),
@@ -129,7 +130,7 @@ class NotificationTemplate(models.Model):
 
 class NotificationRule(models.Model):
     """Automated notification rules"""
-    TRIGGER_TYPES = [
+    TRIGGER_TYPES = [  # noqa: RUF012
         ('user_action', 'User Action'),
         ('system_event', 'System Event'),
         ('schedule', 'Scheduled'),
@@ -171,7 +172,7 @@ class NotificationRule(models.Model):
 
 class Notification(models.Model):
     """Individual notifications"""
-    NOTIFICATION_TYPES = [
+    NOTIFICATION_TYPES = [  # noqa: RUF012
         ('info', 'Info'),
         ('success', 'Success'),
         ('warning', 'Warning'),
@@ -179,7 +180,7 @@ class Notification(models.Model):
         ('system', 'System'),
     ]
     
-    STATUS_CHOICES = [
+    STATUS_CHOICES = [  # noqa: RUF012
         ('pending', 'Pending'),
         ('sent', 'Sent'),
         ('delivered', 'Delivered'),
@@ -210,7 +211,7 @@ class Notification(models.Model):
     
     class Meta:
         db_table = 'notifications'
-        ordering = ['-created_at']
+        ordering = ['-created_at']  # noqa: RUF012
     
     def __str__(self):
         return f"{self.title} for {self.user.username}"
@@ -224,7 +225,7 @@ class Notification(models.Model):
 
 class NotificationSubscription(models.Model):
     """User notification subscriptions"""
-    SUBSCRIPTION_TYPES = [
+    SUBSCRIPTION_TYPES = [  # noqa: RUF012
         ('email', 'Email'),
         ('push', 'Push Notification'),
         ('sms', 'SMS'),
@@ -249,7 +250,7 @@ class NotificationSubscription(models.Model):
     
     class Meta:
         db_table = 'notification_subscriptions'
-        unique_together = ['user', 'subscription_type']
+        unique_together = ['user', 'subscription_type']  # noqa: RUF012
     
     def __str__(self):
         return f"{self.user.username} - {self.subscription_type}"

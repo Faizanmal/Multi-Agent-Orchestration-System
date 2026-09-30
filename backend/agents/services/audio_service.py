@@ -1,10 +1,11 @@
-import speech_recognition as sr
-from pydub import AudioSegment
-import numpy as np
 import logging
-from typing import Dict, Any, List
 import os
 import tempfile
+from typing import Any
+
+import numpy as np
+import speech_recognition as sr
+from pydub import AudioSegment
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +29,7 @@ class AudioService:
             'zh-CN': 'Chinese (Mandarin)'
         }
     
-    def process_audio(self, audio_path: str, language: str = 'en-US') -> Dict[str, Any]:
+    def process_audio(self, audio_path: str, language: str = 'en-US') -> dict[str, Any]:
         """
         Comprehensive audio processing including speech recognition and analysis
         
@@ -62,11 +63,11 @@ class AudioService:
             
             return analysis
             
-        except Exception as e:
-            logger.error(f"Audio processing error: {str(e)}")
+        except Exception as e:  # noqa: BLE001
+            logger.error(f"Audio processing error: {e!s}")
             return {'error': str(e)}
     
-    def _get_audio_info(self, audio_path: str) -> Dict[str, Any]:
+    def _get_audio_info(self, audio_path: str) -> dict[str, Any]:
         """Get basic audio file information"""
         try:
             audio = AudioSegment.from_file(audio_path)
@@ -81,8 +82,8 @@ class AudioService:
                 'file_size_mb': os.path.getsize(audio_path) / (1024 * 1024)
             }
             
-        except Exception as e:
-            logger.error(f"Audio info error: {str(e)}")
+        except Exception as e:  # noqa: BLE001
+            logger.error(f"Audio info error: {e!s}")
             return {'error': str(e)}
     
     def _convert_to_wav(self, audio_path: str) -> str:
@@ -105,11 +106,11 @@ class AudioService:
             
             return wav_path
             
-        except Exception as e:
-            logger.error(f"Audio conversion error: {str(e)}")
+        except Exception as e:  # noqa: BLE001
+            logger.error(f"Audio conversion error: {e!s}")
             return audio_path
     
-    def _recognize_speech(self, wav_path: str, language: str = 'en-US') -> Dict[str, Any]:
+    def _recognize_speech(self, wav_path: str, language: str = 'en-US') -> dict[str, Any]:
         """Recognize speech from audio file"""
         try:
             with sr.AudioFile(wav_path) as source:
@@ -132,7 +133,7 @@ class AudioService:
             except sr.UnknownValueError:
                 recognition_results['google'] = {'error': 'Could not understand audio'}
             except sr.RequestError as e:
-                recognition_results['google'] = {'error': f'Request error: {str(e)}'}
+                recognition_results['google'] = {'error': f'Request error: {e!s}'}
             
             # Sphinx (offline recognition)
             try:
@@ -144,7 +145,7 @@ class AudioService:
             except sr.UnknownValueError:
                 recognition_results['sphinx'] = {'error': 'Could not understand audio'}
             except sr.RequestError as e:
-                recognition_results['sphinx'] = {'error': f'Sphinx error: {str(e)}'}
+                recognition_results['sphinx'] = {'error': f'Sphinx error: {e!s}'}
             
             # Determine best result
             best_result = self._select_best_recognition(recognition_results)
@@ -156,11 +157,11 @@ class AudioService:
                 'word_count': len(best_result.split()) if best_result else 0
             }
             
-        except Exception as e:
-            logger.error(f"Speech recognition error: {str(e)}")
+        except Exception as e:  # noqa: BLE001
+            logger.error(f"Speech recognition error: {e!s}")
             return {'error': str(e)}
     
-    def _select_best_recognition(self, results: Dict[str, Dict]) -> str:
+    def _select_best_recognition(self, results: dict[str, dict]) -> str:
         """Select the best recognition result from multiple methods"""
         # Priority order for recognition methods
         priority_methods = ['google', 'sphinx']
@@ -171,7 +172,7 @@ class AudioService:
         
         return ""
     
-    def _analyze_audio_features(self, wav_path: str) -> Dict[str, Any]:
+    def _analyze_audio_features(self, wav_path: str) -> dict[str, Any]:
         """Analyze audio features like volume, silence, etc."""
         try:
             audio = AudioSegment.from_wav(wav_path)
@@ -201,8 +202,8 @@ class AudioService:
             
             return features
             
-        except Exception as e:
-            logger.error(f"Audio features error: {str(e)}")
+        except Exception as e:  # noqa: BLE001
+            logger.error(f"Audio features error: {e!s}")
             return {'error': str(e)}
     
     def _calculate_zero_crossing_rate(self, samples: np.ndarray) -> float:
@@ -226,7 +227,7 @@ class AudioService:
         else:
             return 'very_quiet'
     
-    def _assess_audio_quality(self, features: Dict[str, float]) -> str:
+    def _assess_audio_quality(self, features: dict[str, float]) -> str:
         """Assess overall audio quality"""
         quality_score = 0
         
@@ -259,7 +260,7 @@ class AudioService:
         else:
             return 'low'
     
-    def _analyze_voice_characteristics(self, wav_path: str) -> Dict[str, Any]:
+    def _analyze_voice_characteristics(self, wav_path: str) -> dict[str, Any]:
         """Analyze voice characteristics (basic implementation)"""
         try:
             audio = AudioSegment.from_wav(wav_path)
@@ -279,11 +280,11 @@ class AudioService:
             
             return characteristics
             
-        except Exception as e:
-            logger.error(f"Voice analysis error: {str(e)}")
+        except Exception as e:  # noqa: BLE001
+            logger.error(f"Voice analysis error: {e!s}")
             return {'error': str(e)}
     
-    def _estimate_speaking_rate(self, samples: np.ndarray, sample_rate: int) -> Dict[str, Any]:
+    def _estimate_speaking_rate(self, samples: np.ndarray, sample_rate: int) -> dict[str, Any]:
         """Estimate speaking rate (words per minute)"""
         # Simplified estimation based on energy peaks
         duration_seconds = len(samples) / sample_rate
@@ -301,7 +302,7 @@ class AudioService:
             'classification': 'fast' if estimated_wpm > 150 else 'normal' if estimated_wpm > 100 else 'slow'
         }
     
-    def _estimate_pitch_variation(self, samples: np.ndarray) -> Dict[str, Any]:
+    def _estimate_pitch_variation(self, samples: np.ndarray) -> dict[str, Any]:
         """Estimate pitch variation in speech"""
         # Basic pitch variation estimation using autocorrelation
         # This is a simplified implementation
@@ -315,7 +316,7 @@ class AudioService:
             'classification': 'monotone' if pitch_variation < 0.1 else 'expressive'
         }
     
-    def _analyze_pauses(self, samples: np.ndarray, sample_rate: int) -> Dict[str, Any]:
+    def _analyze_pauses(self, samples: np.ndarray, sample_rate: int) -> dict[str, Any]:
         """Analyze speech pauses"""
         # Detect silence periods
         silence_threshold = np.max(np.abs(samples)) * 0.05
@@ -351,7 +352,7 @@ class AudioService:
                 'pause_frequency': 0.0
             }
     
-    def _estimate_speech_clarity(self, samples: np.ndarray) -> Dict[str, Any]:
+    def _estimate_speech_clarity(self, samples: np.ndarray) -> dict[str, Any]:
         """Estimate speech clarity based on audio characteristics"""
         # Signal-to-noise ratio estimation
         signal_power = np.mean(samples**2)
@@ -367,7 +368,7 @@ class AudioService:
             'classification': 'clear' if clarity_score > 70 else 'moderate' if clarity_score > 40 else 'unclear'
         }
     
-    def generate_audio_summary(self, analysis: Dict[str, Any]) -> str:
+    def generate_audio_summary(self, analysis: dict[str, Any]) -> str:
         """
         Generate natural language summary of audio analysis
         
@@ -413,7 +414,7 @@ class AudioService:
         
         return ' '.join(summary_parts) if summary_parts else "Unable to generate audio summary."
     
-    def extract_keywords(self, transcript: str) -> List[str]:
+    def extract_keywords(self, transcript: str) -> list[str]:
         """Extract keywords from transcript (basic implementation)"""
         if not transcript:
             return []

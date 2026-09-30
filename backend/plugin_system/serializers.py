@@ -1,5 +1,12 @@
 from rest_framework import serializers
-from .models import Plugin, PluginInstallation, CustomAgentPlugin, PluginReview, PluginAPIKey
+
+from .models import (
+    CustomAgentPlugin,
+    Plugin,
+    PluginAPIKey,
+    PluginInstallation,
+    PluginReview,
+)
 
 
 class PluginSerializer(serializers.ModelSerializer):
@@ -58,7 +65,7 @@ class PluginAPIKeySerializer(serializers.ModelSerializer):
     class Meta:
         model = PluginAPIKey
         fields = '__all__'
-        extra_kwargs = {
+        extra_kwargs = {  # noqa: RUF012
             'api_key': {'write_only': True},
             'api_secret': {'write_only': True}
         }

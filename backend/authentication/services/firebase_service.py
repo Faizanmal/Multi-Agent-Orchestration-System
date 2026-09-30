@@ -5,7 +5,6 @@ Never trust client-side Firebase state – always verify ID tokens on the backen
 """
 import logging
 import os
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -48,12 +47,12 @@ def _get_app():
         logger.info('Firebase Admin SDK initialised for project %s', project_id)
         return _firebase_app
 
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001
         logger.error('Firebase init error: %s', exc)
         return None
 
 
-def verify_firebase_token(id_token: str) -> Optional[dict]:
+def verify_firebase_token(id_token: str) -> dict | None:
     """
     Verify a Firebase ID token.
 
@@ -65,8 +64,8 @@ def verify_firebase_token(id_token: str) -> Optional[dict]:
         raise ValueError('Firebase authentication is not configured on this server.')
 
     try:
-        from firebase_admin import auth as firebase_auth
         from django.conf import settings
+        from firebase_admin import auth as firebase_auth
 
         check_revoked = getattr(settings, 'FIREBASE_CHECK_REVOKED', True)
         decoded = firebase_auth.verify_id_token(
@@ -74,7 +73,7 @@ def verify_firebase_token(id_token: str) -> Optional[dict]:
         )
         return decoded
 
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001
         code = getattr(exc, 'code', '')
         msg_map = {
             'ID_TOKEN_EXPIRED': 'Firebase token has expired.',
@@ -96,6 +95,7 @@ def get_or_create_user_from_firebase(decoded_token: dict, request=None):
     - Else create a new user.
     """
     from django.contrib.auth import get_user_model
+
     from authentication.models import AuthProvider
     from authentication.services.audit_service import log_event
 

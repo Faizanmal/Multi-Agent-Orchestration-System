@@ -2,17 +2,23 @@
 Webhook Service
 Manages webhook delivery and notification dispatch
 """
-import requests
 import json
-import time
-from typing import Dict, List, Optional
-from django.utils import timezone
-from datetime import timedelta
 import logging
+import time
+from datetime import timedelta
+
+import requests
+from django.utils import timezone
 
 from ..webhook_models import (
-    Webhook, WebhookDelivery, Notification, NotificationPreference,
-    AlertRule, AlertInstance, NotificationChannel, NotificationType
+    AlertInstance,
+    AlertRule,
+    Notification,
+    NotificationChannel,
+    NotificationPreference,
+    NotificationType,
+    Webhook,
+    WebhookDelivery,
 )
 
 logger = logging.getLogger(__name__)
@@ -22,7 +28,7 @@ class WebhookService:
     """Service for webhook management and delivery"""
     
     @staticmethod
-    def trigger_webhooks(event_type: str, event_data: Dict, event_id: str = None):
+    def trigger_webhooks(event_type: str, event_data: dict, event_id: str | None = None):
         """Trigger all webhooks subscribed to an event type"""
         from uuid import uuid4
         
@@ -37,7 +43,7 @@ class WebhookService:
                 WebhookService.deliver_webhook(webhook, event_type, event_data, event_id)
     
     @staticmethod
-    def deliver_webhook(webhook: Webhook, event_type: str, event_data: Dict, event_id: str):
+    def deliver_webhook(webhook: Webhook, event_type: str, event_data: dict, event_id: str):
         """Deliver a webhook"""
         
         # Prepare payload
@@ -82,7 +88,7 @@ class WebhookService:
         WebhookService._attempt_delivery(delivery, headers, payload_json, webhook.timeout_seconds)
     
     @staticmethod
-    def _attempt_delivery(delivery: WebhookDelivery, headers: Dict, payload: str, timeout: int):
+    def _attempt_delivery(delivery: WebhookDelivery, headers: dict, payload: str, timeout: int):
         """Attempt to deliver a webhook"""
         
         try:
@@ -129,7 +135,7 @@ class WebhookService:
             
             delivery.save()
             
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             delivery.status = 'failed'
             delivery.error_message = str(e)
             delivery.error_trace = str(e.__traceback__)
@@ -182,13 +188,13 @@ class NotificationService:
                           title: str,
                           message: str,
                           notification_type: str = NotificationType.INFO,
-                          channels: List[str] = None,
+                          channels: list[str] | None = None,
                           action_url: str = "",
                           action_text: str = "",
                           resource_type: str = "",
-                          resource_id: str = None,
+                          resource_id: str | None = None,
                           priority: int = 0,
-                          metadata: Dict = None) -> Notification:
+                          metadata: dict | None = None) -> Notification:
         """Create and deliver a notification"""
         
         # Get user preferences
@@ -206,15 +212,7 @@ class NotificationService:
         if prefs:
             filtered_channels = []
             for channel in channels:
-                if channel == NotificationChannel.EMAIL and prefs.enable_email:
-                    filtered_channels.append(channel)
-                elif channel == NotificationChannel.PUSH and prefs.enable_push:
-                    filtered_channels.append(channel)
-                elif channel == NotificationChannel.SMS and prefs.enable_sms:
-                    filtered_channels.append(channel)
-                elif channel == NotificationChannel.SLACK and prefs.enable_slack:
-                    filtered_channels.append(channel)
-                elif channel == NotificationChannel.IN_APP:
+                if channel == NotificationChannel.EMAIL and prefs.enable_email or channel == NotificationChannel.PUSH and prefs.enable_push or channel == NotificationChannel.SMS and prefs.enable_sms or channel == NotificationChannel.SLACK and prefs.enable_slack or channel == NotificationChannel.IN_APP:
                     filtered_channels.append(channel)
             
             channels = filtered_channels
@@ -255,8 +253,8 @@ class NotificationService:
                     NotificationService._send_slack(notification)
                 # IN_APP is automatically handled by database record
                 
-            except Exception as e:
-                logger.error(f"Failed to deliver notification via {channel}: {str(e)}")
+            except Exception as e:  # noqa: BLE001
+                logger.error(f"Failed to deliver notification via {channel}: {e!s}")
         
         notification.delivered_at = timezone.now()
         notification.save()
@@ -264,8 +262,8 @@ class NotificationService:
     @staticmethod
     def _send_email(notification: Notification):
         """Send email notification"""
-        from django.core.mail import send_mail
         from django.conf import settings
+        from django.core.mail import send_mail
         
         send_mail(
             subject=notification.title,
@@ -282,8 +280,8 @@ class NotificationService:
         Falls back gracefully if the channel layer is unavailable.
         """
         try:
-            from channels.layers import get_channel_layer
             from asgiref.sync import async_to_sync
+            from channels.layers import get_channel_layer
 
             channel_layer = get_channel_layer()
             if channel_layer is None:
@@ -302,7 +300,7 @@ class NotificationService:
                     'timestamp': timezone.now().isoformat(),
                 },
             )
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error(f'Push notification failed for user {notification.user.id}: {e}')
 
     @staticmethod
@@ -340,7 +338,7 @@ class NotificationService:
             )
             if resp.status_code not in (200, 201):
                 logger.error(f'Twilio SMS failed ({resp.status_code}): {resp.text[:200]}')
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error(f'SMS notification failed for user {notification.user.id}: {e}')
     
     @staticmethod
@@ -435,7 +433,7 @@ class AlertService:
             AlertService._trigger_alert(rule, current_value)
     
     @staticmethod
-    def _get_metric_value(metric: str) -> Optional[float]:
+    def _get_metric_value(metric: str) -> float | None:
         """
         Resolve a named metric to its current value by querying live DB data.
 
@@ -443,9 +441,11 @@ class AlertService:
           task_completion_rate, task_failure_rate, active_agents,
           active_sessions, pending_tasks, failed_tasks_1h, messages_1h
         """
-        from django.utils import timezone as tz
         from datetime import timedelta
-        from ..models import Task, TaskStatus, Agent, AgentStatus, Session, Message
+
+        from django.utils import timezone as tz
+
+        from ..models import Agent, AgentStatus, Message, Session, Task, TaskStatus
 
         try:
             now = tz.now()
@@ -490,7 +490,7 @@ class AlertService:
                 logger.warning(f"Unknown metric '{metric}' in AlertService._get_metric_value")
                 return None
 
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             logger.error(f"_get_metric_value failed for '{metric}': {exc}")
             return None
     

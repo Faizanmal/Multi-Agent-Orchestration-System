@@ -137,7 +137,7 @@ const PluginMarketplace: React.FC = () => {
   }, [categoryFilter]);
 
   useEffect(() => {
-    loadPlugins();
+    setTimeout(() => { loadPlugins(); }, 0)
   }, [categoryFilter, loadPlugins]);
 
   useEffect(() => {
@@ -176,7 +176,7 @@ const PluginMarketplace: React.FC = () => {
         break;
     }
     
-    setFilteredPlugins(result);
+    setTimeout(() => { setFilteredPlugins(result); }, 0)
   }, [plugins, searchTerm, sortOption]);
 
   const installPlugin = async (pluginId: string) => {

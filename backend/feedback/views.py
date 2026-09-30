@@ -3,17 +3,22 @@ User Feedback Views
 API endpoints for submitting and viewing feedback
 """
 
-from rest_framework import viewsets, status
-from rest_framework.decorators import action
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
-from django.shortcuts import get_object_or_404
-from django.db import models
-
-from .models import UserFeedback, AgentRating, FeedbackTrend
-from .serializers import UserFeedbackSerializer, AgentRatingSerializer, FeedbackTrendSerializer
-from .services import get_feedback_service
 import logging
+
+from django.db import models
+from django.shortcuts import get_object_or_404
+from rest_framework import status, viewsets
+from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+
+from .models import AgentRating, FeedbackTrend, UserFeedback
+from .serializers import (
+    AgentRatingSerializer,
+    FeedbackTrendSerializer,
+    UserFeedbackSerializer,
+)
+from .services import get_feedback_service
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +26,7 @@ logger = logging.getLogger(__name__)
 class UserFeedbackViewSet(viewsets.ModelViewSet):
     """ViewSet for user feedback"""
     serializer_class = UserFeedbackSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]  # noqa: RUF012
     
     def get_queryset(self):
         return UserFeedback.objects.filter(user=self.request.user)
@@ -55,7 +60,7 @@ class UserFeedbackViewSet(viewsets.ModelViewSet):
         if feedback:
             serializer.instance = feedback
         else:
-            raise Exception("Failed to submit feedback")
+            raise Exception("Failed to submit feedback")  # noqa: TRY002
     
     @action(detail=False, methods=['get'])
     def my_feedback(self, request):
@@ -124,7 +129,7 @@ class UserFeedbackViewSet(viewsets.ModelViewSet):
 class AgentRatingViewSet(viewsets.ReadOnlyModelViewSet):
     """ViewSet for agent ratings"""
     serializer_class = AgentRatingSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]  # noqa: RUF012
     
     def get_queryset(self):
         # Get ratings for user's agents
@@ -157,7 +162,7 @@ class AgentRatingViewSet(viewsets.ReadOnlyModelViewSet):
 class FeedbackTrendViewSet(viewsets.ReadOnlyModelViewSet):
     """ViewSet for feedback trends"""
     serializer_class = FeedbackTrendSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]  # noqa: RUF012
     
     def get_queryset(self):
         # Get trends for user's agents or system-wide

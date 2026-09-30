@@ -1,6 +1,6 @@
 """AWS S3 integration provider."""
 import json
-from typing import Any, Dict, List
+from typing import Any
 
 from ..models import APIIntegration
 from .base import IntegrationProvider
@@ -18,7 +18,7 @@ class S3Provider(IntegrationProvider):
         return "s3" in text or "aws" in text
 
     @classmethod
-    def tool_definitions(cls) -> List[Dict[str, Any]]:
+    def tool_definitions(cls) -> list[dict[str, Any]]:
         return [
             {"name": "s3.list_buckets", "description": "List S3 buckets", "parameters": {}},
             {"name": "s3.list_objects", "description": "List objects in a bucket", "parameters": {"bucket": "string", "prefix": "string"}},
@@ -46,17 +46,17 @@ class S3Provider(IntegrationProvider):
         )
 
     @classmethod
-    def test_connection(cls, integration: APIIntegration) -> Dict[str, Any]:
+    def test_connection(cls, integration: APIIntegration) -> dict[str, Any]:
         try:
             client = cls._client(integration)
             buckets = client.list_buckets()
             names = [b["Name"] for b in buckets.get("Buckets", [])[:5]]
             return {"status": "success", "message": f"Connected — {len(names)} bucket(s) visible", "data": {"buckets": names}}
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return {"status": "error", "message": str(e)}
 
     @classmethod
-    def execute_tool(cls, integration: APIIntegration, tool_name: str, params: Dict[str, Any]) -> Dict[str, Any]:
+    def execute_tool(cls, integration: APIIntegration, tool_name: str, params: dict[str, Any]) -> dict[str, Any]:
         try:
             client = cls._client(integration)
             if tool_name == "s3.list_buckets":
@@ -85,5 +85,5 @@ class S3Provider(IntegrationProvider):
                 return {"status": "success", "content": body}
 
             return {"status": "error", "message": f"Unknown S3 tool: {tool_name}"}
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return {"status": "error", "message": str(e)}

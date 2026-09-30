@@ -103,9 +103,10 @@ def _oauth_browser_redirect(user, provider: str, request, frontend_path: str):
     Issue tokens, then redirect to the frontend callback page with tokens in the query.
     API clients that send Accept: application/json still get JSON.
     """
+    from urllib.parse import urlencode
+
     from django.conf import settings
     from django.shortcuts import redirect
-    from urllib.parse import urlencode
 
     tokens = jwt_service.issue_token_pair(user, provider=provider, request=request)
     accept = (request.headers.get('Accept') or '').lower()
@@ -257,7 +258,7 @@ def token_refresh_view(request):
         clear_failure_record(identifier, 'token_refresh')
         audit_service.log_event('token_refresh', success=True, request=request)
         return Response(tokens, status=status.HTTP_200_OK)
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001
         record_failure(identifier, 'token_refresh')
         return Response({'error': str(exc)}, status=status.HTTP_401_UNAUTHORIZED)
 
@@ -306,7 +307,7 @@ def firebase_auth_view(request):
     identifier = get_client_identifier(request)
     try:
         decoded = firebase_service.verify_firebase_token(id_token)
-        user, created = firebase_service.get_or_create_user_from_firebase(decoded, request=request)
+        user, created = firebase_service.get_or_create_user_from_firebase(decoded, request=request)  # noqa: RUF059
         clear_failure_record(identifier, 'login')
         return _auth_response(user, 'firebase', request)
     except ValueError as exc:
@@ -349,22 +350,24 @@ def google_callback_view(request):
     error = request.GET.get('error', '')
 
     if error:
+        from urllib.parse import urlencode
+
         from django.conf import settings
         from django.shortcuts import redirect
-        from urllib.parse import urlencode
         frontend = getattr(settings, 'FRONTEND_URL', 'http://localhost:3000').rstrip('/')
         return redirect(f"{frontend}/google/callback?{urlencode({'error': error})}")
 
     if not code or not state:
+        from urllib.parse import urlencode
+
         from django.conf import settings
         from django.shortcuts import redirect
-        from urllib.parse import urlencode
         frontend = getattr(settings, 'FRONTEND_URL', 'http://localhost:3000').rstrip('/')
         return redirect(f"{frontend}/google/callback?{urlencode({'error': 'Missing code or state.'})}")
 
     identifier = get_client_identifier(request)
     try:
-        user, created = google_oauth_service.handle_callback(code, state, request=request)
+        user, created = google_oauth_service.handle_callback(code, state, request=request)  # noqa: RUF059
         clear_failure_record(identifier, 'google_callback')
         audit_service.log_event('login', user=user, provider='google', request=request)
         return _oauth_browser_redirect(user, 'google', request, '/google/callback')
@@ -372,9 +375,10 @@ def google_callback_view(request):
         record_failure(identifier, 'google_callback')
         audit_service.log_event('oauth_login_failed', success=False,
                                 provider='google', failure_reason=str(exc), request=request)
+        from urllib.parse import urlencode
+
         from django.conf import settings
         from django.shortcuts import redirect
-        from urllib.parse import urlencode
         frontend = getattr(settings, 'FRONTEND_URL', 'http://localhost:3000').rstrip('/')
         return redirect(f"{frontend}/google/callback?{urlencode({'error': str(exc)})}")
 
@@ -412,22 +416,24 @@ def github_callback_view(request):
     error = request.GET.get('error', '')
 
     if error:
+        from urllib.parse import urlencode
+
         from django.conf import settings
         from django.shortcuts import redirect
-        from urllib.parse import urlencode
         frontend = getattr(settings, 'FRONTEND_URL', 'http://localhost:3000').rstrip('/')
         return redirect(f"{frontend}/github/callback?{urlencode({'error': error})}")
 
     if not code or not state:
+        from urllib.parse import urlencode
+
         from django.conf import settings
         from django.shortcuts import redirect
-        from urllib.parse import urlencode
         frontend = getattr(settings, 'FRONTEND_URL', 'http://localhost:3000').rstrip('/')
         return redirect(f"{frontend}/github/callback?{urlencode({'error': 'Missing code or state.'})}")
 
     identifier = get_client_identifier(request)
     try:
-        user, created = github_oauth_service.handle_callback(code, state, request=request)
+        user, created = github_oauth_service.handle_callback(code, state, request=request)  # noqa: RUF059
         clear_failure_record(identifier, 'github_callback')
         audit_service.log_event('login', user=user, provider='github', request=request)
         return _oauth_browser_redirect(user, 'github', request, '/github/callback')
@@ -435,9 +441,10 @@ def github_callback_view(request):
         record_failure(identifier, 'github_callback')
         audit_service.log_event('oauth_login_failed', success=False,
                                 provider='github', failure_reason=str(exc), request=request)
+        from urllib.parse import urlencode
+
         from django.conf import settings
         from django.shortcuts import redirect
-        from urllib.parse import urlencode
         frontend = getattr(settings, 'FRONTEND_URL', 'http://localhost:3000').rstrip('/')
         return redirect(f"{frontend}/github/callback?{urlencode({'error': str(exc)})}")
 

@@ -1,5 +1,5 @@
 """Integration provider registry and tool router."""
-from typing import Any, Dict, List, Optional, Type
+from typing import Any
 
 from .models import APIIntegration
 from .providers import (
@@ -7,8 +7,8 @@ from .providers import (
     AnthropicProvider,
     DiscordProvider,
     DropboxProvider,
-    GmailProvider,
     GitHubProvider,
+    GmailProvider,
     GoogleCalendarProvider,
     GoogleDriveProvider,
     HubSpotProvider,
@@ -33,7 +33,7 @@ from .providers import (
     WhatsAppProvider,
 )
 
-ALL_PROVIDERS: List[Type[IntegrationProvider]] = [
+ALL_PROVIDERS: list[type[IntegrationProvider]] = [
     GmailProvider,
     SlackProvider,
     GitHubProvider,
@@ -68,26 +68,26 @@ class IntegrationToolRegistry:
     """Resolve integrations to providers and execute tools for agents."""
 
     @classmethod
-    def get_provider(cls, integration: APIIntegration) -> Optional[Type[IntegrationProvider]]:
+    def get_provider(cls, integration: APIIntegration) -> type[IntegrationProvider] | None:
         for provider in ALL_PROVIDERS:
             if provider.detect(integration):
                 return provider
         return None
 
     @classmethod
-    def get_provider_key(cls, integration: APIIntegration) -> Optional[str]:
+    def get_provider_key(cls, integration: APIIntegration) -> str | None:
         provider = cls.get_provider(integration)
         return provider.provider_key if provider else None
 
     @classmethod
-    def list_integrations(cls, user=None) -> List[APIIntegration]:
+    def list_integrations(cls, user=None) -> list[APIIntegration]:
         qs = APIIntegration.objects.filter(status="active")
         if user and getattr(user, "is_authenticated", False):
             qs = qs.filter(created_by=user)
         return list(qs)
 
     @classmethod
-    def all_tool_definitions(cls, user=None) -> List[Dict[str, Any]]:
+    def all_tool_definitions(cls, user=None) -> list[dict[str, Any]]:
         tools = []
         for integration in cls.list_integrations(user):
             provider = cls.get_provider(integration)
@@ -112,7 +112,7 @@ class IntegrationToolRegistry:
         return "\n".join(lines) if lines else "  (no integrations connected)"
 
     @classmethod
-    def execute(cls, tool_name: str, params: Dict[str, Any], user=None) -> Dict[str, Any]:
+    def execute(cls, tool_name: str, params: dict[str, Any], user=None) -> dict[str, Any]:
         """Execute a namespaced tool against the matching connected integration."""
         aliases = {"read_gmail": "gmail.read_inbox"}
         tool_name = aliases.get(tool_name, tool_name)
@@ -135,14 +135,14 @@ class IntegrationToolRegistry:
         }
 
     @classmethod
-    def test_integration(cls, integration: APIIntegration) -> Dict[str, Any]:
+    def test_integration(cls, integration: APIIntegration) -> dict[str, Any]:
         provider = cls.get_provider(integration)
         if not provider:
             return {"status": "error", "message": "No provider handler for this integration type"}
         return provider.test_connection(integration)
 
     @classmethod
-    def detect_intent(cls, content: str) -> Optional[str]:
+    def detect_intent(cls, content: str) -> str | None:
         """Map user message to likely provider key."""
         c = content.lower()
         if any(w in c for w in ("email", "gmail", "inbox", "mail")) and "outlook" not in c:

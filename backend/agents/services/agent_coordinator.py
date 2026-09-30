@@ -1,33 +1,33 @@
-from typing import List, Dict, Any, Optional
-import logging
 import json
+import logging
 import re
-from datetime import datetime
-from channels.layers import get_channel_layer
-from asgiref.sync import async_to_sync
-
-from ..models import Agent, Session, Task, Message, TaskStatus, AgentStatus
-from .groq_service import GroqService
-from .vision_service import VisionService
-from .audio_service import AudioService
-from .rag_system import VectorDatabase, RAGSystem
-from .agent_selector import SmartAgentSelector
+from datetime import datetime, timezone
+from typing import Any
 
 from api_integrations.registry import IntegrationToolRegistry
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
+
+from ..models import Agent, AgentStatus, Message, Session, Task, TaskStatus
+from .agent_selector import SmartAgentSelector
+from .audio_service import AudioService
+from .groq_service import GroqService
+from .rag_system import RAGSystem, VectorDatabase
+from .vision_service import VisionService
 
 logger = logging.getLogger(__name__)
 
 # Module-level RAG singleton — initialised lazily so startup isn't blocked
-_rag_system: Optional[RAGSystem] = None
+_rag_system: RAGSystem | None = None
 
-def _get_rag_system() -> Optional[RAGSystem]:
+def _get_rag_system() -> RAGSystem | None:
     """Return the shared RAGSystem, initialising it once on first call."""
     global _rag_system
     if _rag_system is None:
         try:
             _rag_system = RAGSystem(VectorDatabase())
             logger.info("RAG system initialised")
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.warning(f"RAG system unavailable: {e}")
     return _rag_system
 
@@ -199,7 +199,7 @@ class AgentCoordinator:
             agent = self.session.agents.filter(name__icontains=provider_key).first()
         return agent.name if agent else f"{provider_key.title()} Agent"
 
-    def _handle_integration_request(self, message: Message) -> Dict[str, Any]:
+    def _handle_integration_request(self, message: Message) -> dict[str, Any]:
         """Fast-path: call real integration API + LLM analysis."""
         intent = IntegrationToolRegistry.detect_intent(message.content)
         if not intent:
@@ -245,11 +245,11 @@ class AgentCoordinator:
             'tool_used': tool_name,
         }
 
-    def _handle_email_request(self, message: Message) -> Dict[str, Any]:
+    def _handle_email_request(self, message: Message) -> dict[str, Any]:
         """Backward-compatible alias for Gmail integration fast-path."""
         return self._handle_integration_request(message)
         
-    def process_message(self, message: Message) -> Dict[str, Any]:
+    def process_message(self, message: Message) -> dict[str, Any]:
         """
         Process incoming message and coordinate agent responses.
         Routes complex multi-step requests through the WorkflowOrchestrator (DAG),
@@ -282,7 +282,7 @@ class AgentCoordinator:
                         'response': result,
                         'routing': 'workflow_dag',
                     }
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 logger.warning(f"DAG routing failed, falling back to standard: {e}")
 
         # ── Standard multi-agent path ────────────────────────────────────────
@@ -323,13 +323,14 @@ class AgentCoordinator:
                 return True
         return False
 
-    def _route_through_workflow_dag(self, message: Message) -> Optional[Dict[str, Any]]:
+    def _route_through_workflow_dag(self, message: Message) -> dict[str, Any] | None:
         """
         Route a complex request through the WorkflowOrchestrator using an appropriate
         pre-built template. Maps message intent to the best matching template ID.
         """
-        from .workflow_orchestrator import WorkflowOrchestrator
         import asyncio
+
+        from .workflow_orchestrator import WorkflowOrchestrator
 
         # ── Pick the best matching template ──────────────────────────────────
         template_id = self._select_workflow_template(message.content)
@@ -365,11 +366,11 @@ class AgentCoordinator:
                 result['template_used'] = template_id
             return result
 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error(f"Workflow DAG execution error (template={template_id}): {e}")
             return None
 
-    def _select_workflow_template(self, content: str) -> Optional[str]:
+    def _select_workflow_template(self, content: str) -> str | None:
         """
         Map message content to the most appropriate workflow template ID.
         Returns None if no template is a good fit.
@@ -396,7 +397,7 @@ class AgentCoordinator:
             return 'onboarding_automation'
         return None
     
-    def process_multimodal_message(self, message: Message) -> Dict[str, Any]:
+    def process_multimodal_message(self, message: Message) -> dict[str, Any]:
         """
         Process multimodal message with appropriate specialized agents
         
@@ -434,7 +435,7 @@ class AgentCoordinator:
         
         return results
     
-    def execute_task(self, task: Task) -> Dict[str, Any]:
+    def execute_task(self, task: Task) -> dict[str, Any]:
         """
         Execute a specific task with the assigned agent
         
@@ -450,7 +451,7 @@ class AgentCoordinator:
         
         # Update task status
         task.status = TaskStatus.IN_PROGRESS
-        task.started_at = datetime.now()
+        task.started_at = datetime.now(timezone.utc)
         task.save()
         
         try:
@@ -471,13 +472,13 @@ class AgentCoordinator:
             # Update task with results
             task.output_data = result
             task.status = TaskStatus.COMPLETED
-            task.completed_at = datetime.now()
+            task.completed_at = datetime.now(timezone.utc)
             
-        except Exception as e:
-            logger.error(f"Task execution failed: {str(e)}")
+        except Exception as e:  # noqa: BLE001
+            logger.error(f"Task execution failed: {e!s}")
             task.error_message = str(e)
             task.status = TaskStatus.FAILED
-            task.completed_at = datetime.now()
+            task.completed_at = datetime.now(timezone.utc)
             result = {'error': str(e)}
         
         task.save()
@@ -490,7 +491,7 @@ class AgentCoordinator:
         
         return result
     
-    def _determine_relevant_agents(self, message: Message) -> List[Agent]:
+    def _determine_relevant_agents(self, message: Message) -> list[Agent]:
         """
         Determine which agents should process this message.
         1. LLM decides which agent *types* are needed (JSON array).
@@ -500,7 +501,7 @@ class AgentCoordinator:
         session_agents = self.session.agents.filter(is_active=True)
 
         # ── Step 1: LLM-driven type selection ───────────────────────────────
-        needed_types: List[str] = []
+        needed_types: list[str] = []
         try:
             agent_descriptions = [f"{a.name} (type={a.type})" for a in session_agents]
             planning_messages = [
@@ -528,11 +529,11 @@ class AgentCoordinator:
             match = re.search(r"\[.*?\]", content, re.DOTALL)
             if match:
                 needed_types = json.loads(match.group())
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.warning(f"LLM agent routing failed: {e}")
 
         # ── Step 2: SmartAgentSelector — pick best instance per type ────────
-        relevant_agents: List[Agent] = []
+        relevant_agents: list[Agent] = []
         if needed_types:
             for agent_type in needed_types:
                 candidates = list(session_agents.filter(type=agent_type))
@@ -554,7 +555,7 @@ class AgentCoordinator:
                             relevant_agents.append(best)
                         else:
                             relevant_agents.append(candidates[0])
-                    except Exception:
+                    except Exception:  # noqa: BLE001
                         relevant_agents.append(candidates[0])
             if relevant_agents:
                 return relevant_agents
@@ -610,7 +611,7 @@ class AgentCoordinator:
         
         return task
     
-    def _execute_tasks(self, tasks: List[Task]) -> Dict[str, Any]:
+    def _execute_tasks(self, tasks: list[Task]) -> dict[str, Any]:
         """Execute multiple tasks, handling dependencies"""
         results = {}
         
@@ -627,7 +628,7 @@ class AgentCoordinator:
         
         return results
     
-    def _synthesize_responses(self, results: Dict[str, Any]) -> Dict[str, Any]:
+    def _synthesize_responses(self, results: dict[str, Any]) -> dict[str, Any]:
         """
         Synthesise responses from all agents.
         Uses MultiModelOrchestrator for intelligent provider selection
@@ -674,8 +675,8 @@ class AgentCoordinator:
             mm = MultiModelOrchestrator()
             synthesis = mm.chat_completion(messages, priority='quality')
             model_used = synthesis.get('model', 'multi_model')
-        except Exception:
-            pass
+        except Exception as e:  # noqa: BLE001
+            logger.warning(f"Error during chat completion: {e}")
 
         if synthesis is None:
             synthesis = self.groq_service.chat_completion(messages)
@@ -688,7 +689,7 @@ class AgentCoordinator:
             'model_used': model_used,
         }
     
-    def _send_response_to_session(self, response: Dict[str, Any], original_message: Message):
+    def _send_response_to_session(self, response: dict[str, Any], original_message: Message):
         """Send response back to the session via WebSocket"""
         channel_layer = get_channel_layer()
         async_to_sync(channel_layer.group_send)(
@@ -697,15 +698,15 @@ class AgentCoordinator:
                 "type": "agent_response",
                 "response": response,
                 "original_message_id": str(original_message.id),
-                "timestamp": datetime.now().isoformat()
+                "timestamp": datetime.now(timezone.utc).isoformat()
             }
         )
     
-    def _get_agent_by_type(self, agent_type: str) -> Optional[Agent]:
+    def _get_agent_by_type(self, agent_type: str) -> Agent | None:
         """Get agent by type from session"""
         return self.session.agents.filter(type=agent_type, is_active=True).first()
     
-    def _execute_orchestrator_task(self, task: Task) -> Dict[str, Any]:
+    def _execute_orchestrator_task(self, task: Task) -> dict[str, Any]:
         """
         Execute orchestrator task using a real ReAct (Reason-Act-Observe) loop.
         The orchestrator LLM reasons about the goal, calls tools, observes results,
@@ -720,7 +721,7 @@ class AgentCoordinator:
             from ..models import AgentMemory
             memories = AgentMemory.objects.filter(session=self.session).order_by('-importance_score')[:5]
             memory_str = "\n".join(f"[{m.key}]: {str(m.value)[:120]}" for m in memories) or "(none)"
-        except Exception:
+        except Exception:  # noqa: BLE001
             memory_str = "(unavailable)"
 
         # Available specialist agents
@@ -755,7 +756,7 @@ class AgentCoordinator:
             "- Produce Final Answer only after gathering real data from tools."
         )
 
-        conversation: List[Dict[str, str]] = [
+        conversation: list[dict[str, str]] = [
             {"role": "system", "content": react_system},
             {
                 "role": "user",
@@ -767,7 +768,7 @@ class AgentCoordinator:
         ]
 
         # ── Simple tool execution map ────────────────────────────────────────
-        def _execute_tool(tool_name: str, tool_input: Dict) -> str:
+        def _execute_tool(tool_name: str, tool_input: dict) -> str:
             try:
                 if tool_name == "execute_agent_task":
                     from .langchain_coordinator import _invoke_agent_via_groq
@@ -780,7 +781,7 @@ class AgentCoordinator:
                 elif tool_name == "search_memory":
                     from ..models import AgentMemory
                     query = tool_input.get("query", "")
-                    filters: Dict[str, Any] = {}
+                    filters: dict[str, Any] = {}
                     if tool_input.get("session_id"):
                         filters["session_id"] = tool_input["session_id"]
                     mems = AgentMemory.objects.filter(
@@ -805,8 +806,8 @@ class AgentCoordinator:
                     AgentMemory.objects.create(
                         agent=agent,
                         session=self.session,
-                        key=tool_input.get("key", f"insight_{datetime.now().strftime('%H%M%S')}"),
-                        value={"content": tool_input.get("value", ""), "ts": datetime.now().isoformat()},
+                        key=tool_input.get("key", f"insight_{datetime.now(timezone.utc).strftime('%H%M%S')}"),
+                        value={"content": tool_input.get("value", ""), "ts": datetime.now(timezone.utc).isoformat()},
                         importance_score=float(tool_input.get("importance", 0.7)),
                     )
                     return json.dumps({"status": "success"})
@@ -847,7 +848,7 @@ class AgentCoordinator:
 
                 else:
                     return json.dumps({"error": f"Unknown tool: {tool_name}"})
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 return json.dumps({"error": str(e)})
 
         # ── ReAct loop ───────────────────────────────────────────────────────
@@ -913,7 +914,7 @@ class AgentCoordinator:
             "coordination_actions": steps_taken,
         }
     
-    def _execute_vision_task(self, task: Task) -> Dict[str, Any]:
+    def _execute_vision_task(self, task: Task) -> dict[str, Any]:
         """Execute vision-specific task"""
         input_data = task.input_data
         file_path = input_data.get('file_path')
@@ -936,7 +937,7 @@ class AgentCoordinator:
             'agent_type': 'vision'
         }
     
-    def _execute_reasoning_task(self, task: Task) -> Dict[str, Any]:
+    def _execute_reasoning_task(self, task: Task) -> dict[str, Any]:
         """Execute reasoning task with RAG retrieval, memory, and chain-of-thought."""
         input_data = task.input_data
         agent = task.assigned_agent
@@ -944,14 +945,14 @@ class AgentCoordinator:
 
         # ── RAG: retrieve relevant documents ─────────────────────────────────
         rag_context = ""
-        rag_sources: List[Dict] = []
+        rag_sources: list[dict] = []
         rag = _get_rag_system()
         if rag:
             try:
                 rag_context = rag.retrieve_context(query, top_k=3)
                 source_docs = rag.vector_db.search(query, top_k=3)
                 rag_sources = [{'id': d['id'], 'snippet': d['text'][:150]} for d in source_docs]
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 logger.debug(f"RAG retrieval failed: {e}")
 
         # ── Memory: retrieve relevant memories ──────────────────────────────
@@ -962,7 +963,7 @@ class AgentCoordinator:
         ]
 
         # ── Multi-turn reasoning: plan then execute ──────────────────────────
-        planning_msgs: List[Dict] = [
+        planning_msgs: list[dict] = [
             {"role": "system", "content": self.groq_service._get_reasoning_prompt()},
             {
                 "role": "user",
@@ -997,7 +998,7 @@ class AgentCoordinator:
             'rag_context_used': bool(rag_context),
         }
 
-    def _execute_action_task(self, task: Task) -> Dict[str, Any]:
+    def _execute_action_task(self, task: Task) -> dict[str, Any]:
         """
         Execute action task:
         1. Ask the Action LLM to identify which installed plugin (if any) fits the task.
@@ -1008,11 +1009,10 @@ class AgentCoordinator:
         query = input_data.get('content', '')
 
         # ── Discover installed plugins for this session/user ─────────────────
-        plugin_descriptions: List[Dict] = []
-        plugin_map: Dict[str, Any] = {}  # name → installation object
+        plugin_descriptions: list[dict] = []
+        plugin_map: dict[str, Any] = {}  # name → installation object
         try:
             from ..plugin_models import PluginInstallation
-            task.assigned_agent
             installations = PluginInstallation.objects.filter(
                 is_enabled=True
             ).select_related('plugin')[:20]
@@ -1024,11 +1024,11 @@ class AgentCoordinator:
                 }
                 plugin_descriptions.append(desc)
                 plugin_map[inst.plugin.name] = inst
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.debug(f"Plugin discovery failed: {e}")
 
         # ── Ask LLM which plugin to use (if any) ────────────────────────────
-        action_msgs: List[Dict] = [
+        action_msgs: list[dict] = [
             {"role": "system", "content": self.groq_service._get_action_prompt()},
             {
                 "role": "user",
@@ -1062,7 +1062,7 @@ class AgentCoordinator:
                     if not success:
                         logger.warning(f"Plugin '{chosen}' failed: {err}")
                         plugin_result = {'error': err}
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.debug(f"Plugin execution error: {e}")
 
         # ── Final action report with plugin output (if any) ─────────────────
@@ -1093,7 +1093,7 @@ class AgentCoordinator:
             'plugins_available': len(plugin_descriptions),
         }
     
-    def _execute_memory_task(self, task: Task) -> Dict[str, Any]:
+    def _execute_memory_task(self, task: Task) -> dict[str, Any]:
         """Execute memory-specific task"""
         input_data = task.input_data
         
@@ -1112,7 +1112,7 @@ class AgentCoordinator:
             'memory_operations': memory_operations
         }
     
-    def _execute_generic_task(self, task: Task) -> Dict[str, Any]:
+    def _execute_generic_task(self, task: Task) -> dict[str, Any]:
         """Execute generic task for custom agent types"""
         input_data = task.input_data
         
@@ -1145,7 +1145,7 @@ class AgentCoordinator:
         
         return priority
     
-    def _notify_task_completion(self, task: Task, result: Dict[str, Any]):
+    def _notify_task_completion(self, task: Task, result: dict[str, Any]):
         """Notify about task completion via WebSocket"""
         channel_layer = get_channel_layer()
         async_to_sync(channel_layer.group_send)(
@@ -1159,7 +1159,7 @@ class AgentCoordinator:
             }
         )
 
-    def _trigger_rl_update(self, task: Task, result: Dict[str, Any]):
+    def _trigger_rl_update(self, task: Task, result: dict[str, Any]):
         """
         Auto-trigger Q-learning update after every task completion.
         Feeds the outcome back into the agent's learning profile so the
@@ -1217,17 +1217,17 @@ class AgentCoordinator:
             new_q = engine.update_q_values(rl_state)
             logger.info(f"RL update: agent={agent.name}, success={success}, new_q={new_q:.3f}")
 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.debug(f"RL update skipped: {e}")
     
-    def _extract_reasoning_steps(self, response: Dict[str, Any]) -> List[str]:
+    def _extract_reasoning_steps(self, response: dict[str, Any]) -> list[str]:
         """Extract reasoning steps from response"""
         content = response.get('content', '')
         # Simple extraction - could be enhanced with NLP
         steps = [line.strip() for line in content.split('\n') if line.strip().startswith(('1.', '2.', '3.', '-', '*'))]
         return steps
     
-    def _handle_memory_operations(self, task: Task) -> Dict[str, Any]:
+    def _handle_memory_operations(self, task: Task) -> dict[str, Any]:
         """Handle memory storage and retrieval operations"""
         from ..models import AgentMemory
         
@@ -1302,12 +1302,12 @@ class AgentCoordinator:
         
         # Update access time
         for memory in memories:
-            memory.accessed_at = datetime.now()
+            memory.accessed_at = datetime.now(timezone.utc)
             memory.save(update_fields=['accessed_at'])
         
         return memories
     
-    def _store_reasoning_memory(self, agent: Agent, response: Dict[str, Any]):
+    def _store_reasoning_memory(self, agent: Agent, response: dict[str, Any]):
         """Store reasoning insights as memory"""
         from ..models import AgentMemory
         
@@ -1315,20 +1315,20 @@ class AgentCoordinator:
         
         # Extract key insights (simplified - could use NLP)
         if len(content) > 50:
-            memory_key = f"reasoning_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+            memory_key = f"reasoning_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}"
             AgentMemory.objects.create(
                 agent=agent,
                 session=self.session,
                 key=memory_key,
                 value={
                     'content': content[:500],  # Store first 500 chars
-                    'timestamp': datetime.now().isoformat(),
+                    'timestamp': datetime.now(timezone.utc).isoformat(),
                     'type': 'reasoning'
                 },
                 importance_score=0.8
             )
     
-    def _process_text_message(self, message: Message) -> Dict[str, Any]:
+    def _process_text_message(self, message: Message) -> dict[str, Any]:
         """Process text-only message"""
         return {
             'content': message.content,
@@ -1337,7 +1337,7 @@ class AgentCoordinator:
             'entities': []  # Could be enhanced with NER
         }
     
-    def _get_combined_analysis(self, results: Dict[str, Any], content: str) -> Dict[str, Any]:
+    def _get_combined_analysis(self, results: dict[str, Any], content: str) -> dict[str, Any]:
         """Get combined analysis from reasoning agent"""
         reasoning_prompt = f"""
         Analyze and combine the following multimodal processing results:
@@ -1355,7 +1355,7 @@ class AgentCoordinator:
         
         return self.groq_service.chat_completion(messages)
     
-    def _orchestrate_final_response(self, results: Dict[str, Any], message: Message) -> Dict[str, Any]:
+    def _orchestrate_final_response(self, results: dict[str, Any], message: Message) -> dict[str, Any]:
         """Orchestrate final response combining all analyses"""
         orchestration_prompt = f"""
         Create a comprehensive response based on the following multimodal analysis:

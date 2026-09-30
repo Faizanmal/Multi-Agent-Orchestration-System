@@ -18,10 +18,12 @@ export function AppLayout({ children }: AppLayoutProps) {
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
-    setIsMounted(true);
+    setTimeout(() => { setIsMounted(true); }, 0)
     const saved = localStorage.getItem('sidebar-collapsed');
     if (saved) {
-      setSidebarCollapsed(JSON.parse(saved));
+      setTimeout(() => {
+          setSidebarCollapsed(JSON.parse(saved));
+        }, 0)
     }
 
     // Listen for storage changes

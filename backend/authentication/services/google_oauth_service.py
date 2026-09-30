@@ -12,7 +12,6 @@ import os
 import secrets
 import uuid
 from datetime import timedelta
-from typing import Optional, Tuple
 
 import requests as http_requests
 from django.conf import settings
@@ -54,8 +53,8 @@ def _callback_url() -> str:
 
 def build_authorization_url(
     request=None,
-    link_user_id: Optional[str] = None,
-) -> Tuple[str, str]:
+    link_user_id: str | None = None,
+) -> tuple[str, str]:
     """
     Return (authorization_url, state).
     Persists an OAuthState record for CSRF validation.
@@ -143,21 +142,22 @@ def _exchange_code(code: str, redirect_uri: str) -> dict:
 def _verify_id_token(id_token: str) -> dict:
     """Verify Google ID token using google-auth library."""
     try:
-        from google.oauth2 import id_token as google_id_token
         from google.auth.transport import requests as google_requests
+        from google.oauth2 import id_token as google_id_token
 
         request_obj = google_requests.Request()
         info = google_id_token.verify_oauth2_token(
             id_token, request_obj, _client_id()
         )
         return info
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001
         logger.warning('Google ID token verification failed: %s', exc)
         raise ValueError(f'Google ID token is invalid: {exc}')
 
 
 def _resolve_user(user_info: dict, link_user_id=None, request=None):
     from django.contrib.auth import get_user_model
+
     from authentication.models import AuthProvider
     from authentication.services.audit_service import log_event
 
@@ -241,7 +241,7 @@ def _resolve_user(user_info: dict, link_user_id=None, request=None):
     return user, created
 
 
-def _get_ip(request) -> Optional[str]:
+def _get_ip(request) -> str | None:
     if request is None:
         return None
     xff = request.META.get('HTTP_X_FORWARDED_FOR', '')

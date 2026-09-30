@@ -1,18 +1,24 @@
-from rest_framework import viewsets, status
-from rest_framework.decorators import action
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
-from django.utils import timezone
 from datetime import timedelta
 
+from django.utils import timezone
+from rest_framework import status, viewsets
+from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+
 from .models import (
-    PerformanceMetric, CostAnalysis, WorkflowOptimization,
-    AnomalyDetection, PredictiveAnalytics
+    AnomalyDetection,
+    CostAnalysis,
+    PerformanceMetric,
+    PredictiveAnalytics,
+    WorkflowOptimization,
 )
 from .serializers import (
-    PerformanceMetricSerializer, CostAnalysisSerializer,
-    WorkflowOptimizationSerializer, AnomalyDetectionSerializer,
-    PredictiveAnalyticsSerializer
+    AnomalyDetectionSerializer,
+    CostAnalysisSerializer,
+    PerformanceMetricSerializer,
+    PredictiveAnalyticsSerializer,
+    WorkflowOptimizationSerializer,
 )
 from .services import AnalyticsService
 
@@ -21,7 +27,7 @@ class PerformanceMetricViewSet(viewsets.ModelViewSet):
     """ViewSet for performance metrics"""
     queryset = PerformanceMetric.objects.all()
     serializer_class = PerformanceMetricSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = (IsAuthenticated,)
     
     @action(detail=False, methods=['get'])
     def trends(self, request):
@@ -51,7 +57,7 @@ class CostAnalysisViewSet(viewsets.ModelViewSet):
     """ViewSet for cost analysis"""
     queryset = CostAnalysis.objects.all()
     serializer_class = CostAnalysisSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = (IsAuthenticated,)
     
     def get_queryset(self):
         """Filter by user"""
@@ -120,7 +126,7 @@ class WorkflowOptimizationViewSet(viewsets.ModelViewSet):
     """ViewSet for workflow optimization suggestions"""
     queryset = WorkflowOptimization.objects.all()
     serializer_class = WorkflowOptimizationSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = (IsAuthenticated,)
     
     @action(detail=False, methods=['post'])
     def generate(self, request):
@@ -165,7 +171,7 @@ class AnomalyDetectionViewSet(viewsets.ModelViewSet):
     """ViewSet for anomaly detection"""
     queryset = AnomalyDetection.objects.all()
     serializer_class = AnomalyDetectionSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = (IsAuthenticated,)
     
     @action(detail=False, methods=['post'])
     def detect(self, request):
@@ -214,7 +220,7 @@ class PredictiveAnalyticsViewSet(viewsets.ModelViewSet):
     """ViewSet for predictive analytics"""
     queryset = PredictiveAnalytics.objects.all()
     serializer_class = PredictiveAnalyticsSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = (IsAuthenticated,)
     
     @action(detail=False, methods=['post'])
     def forecast(self, request):

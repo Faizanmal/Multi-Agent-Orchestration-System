@@ -1,11 +1,12 @@
-from django.db import models
-from django.conf import settings
 import uuid
+
+from django.conf import settings
+from django.db import models
 
 
 class Report(models.Model):
     """Model for storing reports"""
-    REPORT_TYPES = [
+    REPORT_TYPES = [  # noqa: RUF012
         ('agent_performance', 'Agent Performance'),
         ('system_metrics', 'System Metrics'),
         ('usage_analytics', 'Usage Analytics'),
@@ -13,7 +14,7 @@ class Report(models.Model):
         ('custom', 'Custom Report'),
     ]
     
-    STATUS_CHOICES = [
+    STATUS_CHOICES = [  # noqa: RUF012
         ('draft', 'Draft'),
         ('published', 'Published'),
         ('archived', 'Archived'),
@@ -43,7 +44,7 @@ class Report(models.Model):
     
     class Meta:
         db_table = 'reporting_reports'
-        ordering = ['-created_at']
+        ordering = ['-created_at']  # noqa: RUF012
     
     def __str__(self):
         return f"{self.name} ({self.report_type})"
@@ -51,7 +52,7 @@ class Report(models.Model):
 
 class ReportTemplate(models.Model):
     """Pre-built report templates"""
-    CATEGORIES = [
+    CATEGORIES = [  # noqa: RUF012
         ('performance', 'Performance'),
         ('analytics', 'Analytics'),
         ('financial', 'Financial'),
@@ -117,7 +118,7 @@ class Dashboard(models.Model):
 
 class Widget(models.Model):
     """Dashboard widgets"""
-    WIDGET_TYPES = [
+    WIDGET_TYPES = [  # noqa: RUF012
         ('chart', 'Chart'),
         ('metric', 'Metric'),
         ('table', 'Table'),
@@ -127,7 +128,7 @@ class Widget(models.Model):
         ('map', 'Map'),
     ]
     
-    CHART_TYPES = [
+    CHART_TYPES = [  # noqa: RUF012
         ('line', 'Line Chart'),
         ('bar', 'Bar Chart'),
         ('pie', 'Pie Chart'),
@@ -163,7 +164,7 @@ class Widget(models.Model):
 
 class ReportSchedule(models.Model):
     """Scheduled report generation"""
-    FREQUENCY_CHOICES = [
+    FREQUENCY_CHOICES = [  # noqa: RUF012
         ('daily', 'Daily'),
         ('weekly', 'Weekly'),
         ('monthly', 'Monthly'),
@@ -199,14 +200,14 @@ class ReportSchedule(models.Model):
 
 class ReportExport(models.Model):
     """Track report exports"""
-    EXPORT_FORMATS = [
+    EXPORT_FORMATS = [  # noqa: RUF012
         ('pdf', 'PDF'),
         ('excel', 'Excel'),
         ('csv', 'CSV'),
         ('json', 'JSON'),
     ]
     
-    STATUS_CHOICES = [
+    STATUS_CHOICES = [  # noqa: RUF012
         ('pending', 'Pending'),
         ('processing', 'Processing'),
         ('completed', 'Completed'),
@@ -235,7 +236,7 @@ class ReportExport(models.Model):
     
     class Meta:
         db_table = 'reporting_exports'
-        ordering = ['-created_at']
+        ordering = ['-created_at']  # noqa: RUF012
     
     def __str__(self):
         return f"{self.report.name} export ({self.format})"

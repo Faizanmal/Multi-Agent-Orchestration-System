@@ -1,9 +1,10 @@
 """
 Encryption utilities for securing sensitive data
 """
+import base64
+
 from cryptography.fernet import Fernet
 from django.conf import settings
-import base64
 
 
 class EncryptionUtil:

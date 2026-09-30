@@ -1,14 +1,18 @@
+from datetime import timezone
+
 """
 Improved WebSocket Consumer with Enhanced Stability
 """
+import asyncio
 import json
 import logging
-import asyncio
-from channels.generic.websocket import AsyncWebsocketConsumer
-from channels.db import database_sync_to_async
-from django.contrib.auth import get_user_model
-from agents.models import Agent, Session, Message
 from datetime import datetime
+
+from channels.db import database_sync_to_async
+from channels.generic.websocket import AsyncWebsocketConsumer
+from django.contrib.auth import get_user_model
+
+from agents.models import Agent, Message, Session
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
@@ -63,14 +67,14 @@ class ImprovedAgentConsumer(AsyncWebsocketConsumer):
             await self.send(text_data=json.dumps({
                 'type': 'connection_established',
                 'session_id': self.session_id,
-                'timestamp': datetime.now().isoformat(),
+                'timestamp': datetime.now(timezone.utc).isoformat(),
                 'message': 'Connected successfully'
             }))
             
             logger.info(f"WebSocket connected: session={self.session_id}, user={self.user}")
         
-        except Exception as e:
-            logger.error(f"Connection error: {str(e)}", exc_info=True)
+        except Exception:
+            logger.exception("Connection error")
             await self.close(code=4000)
     
     async def disconnect(self, close_code):
@@ -91,8 +95,8 @@ class ImprovedAgentConsumer(AsyncWebsocketConsumer):
             
             logger.info(f"WebSocket disconnected: session={self.session_id}, code={close_code}")
         
-        except Exception as e:
-            logger.error(f"Disconnect error: {str(e)}", exc_info=True)
+        except Exception:
+            logger.exception("Disconnect error")
     
     async def receive(self, text_data):
         """Handle incoming WebSocket messages"""
@@ -111,18 +115,18 @@ class ImprovedAgentConsumer(AsyncWebsocketConsumer):
                 await self.send_error(f"Unknown message type: {message_type}")
         
         except json.JSONDecodeError as e:
-            logger.error(f"JSON decode error: {str(e)}")
+            logger.error(f"JSON decode error: {e!s}")
             await self.send_error("Invalid JSON format")
         
         except Exception as e:
-            logger.error(f"Receive error: {str(e)}", exc_info=True)
-            await self.send_error(f"Error processing message: {str(e)}")
+            logger.exception("Receive error")
+            await self.send_error(f"Error processing message: {e!s}")
     
     async def handle_ping(self, data):
         """Handle ping messages"""
         await self.send(text_data=json.dumps({
             'type': 'pong',
-            'timestamp': datetime.now().isoformat()
+            'timestamp': datetime.now(timezone.utc).isoformat()
         }))
     
     async def handle_message(self, data):
@@ -151,8 +155,8 @@ class ImprovedAgentConsumer(AsyncWebsocketConsumer):
             )
         
         except Exception as e:
-            logger.error(f"Handle message error: {str(e)}", exc_info=True)
-            await self.send_error(f"Error handling message: {str(e)}")
+            logger.exception("Handle message error")
+            await self.send_error(f"Error handling message: {e!s}")
     
     async def handle_agent_command(self, data):
         """Handle agent commands"""
@@ -173,12 +177,12 @@ class ImprovedAgentConsumer(AsyncWebsocketConsumer):
                 'agent_id': agent_id,
                 'command': command,
                 'result': result,
-                'timestamp': datetime.now().isoformat()
+                'timestamp': datetime.now(timezone.utc).isoformat()
             }))
         
         except Exception as e:
-            logger.error(f"Agent command error: {str(e)}", exc_info=True)
-            await self.send_error(f"Error executing agent command: {str(e)}")
+            logger.exception("Agent command error")
+            await self.send_error(f"Error executing agent command: {e!s}")
     
     async def chat_message(self, event):
         """Send chat message to WebSocket"""
@@ -187,8 +191,8 @@ class ImprovedAgentConsumer(AsyncWebsocketConsumer):
                 'type': 'message',
                 'data': event['message']
             }))
-        except Exception as e:
-            logger.error(f"Send message error: {str(e)}", exc_info=True)
+        except Exception:
+            logger.exception("Send message error")
     
     async def agent_update(self, event):
         """Send agent update to WebSocket"""
@@ -197,8 +201,8 @@ class ImprovedAgentConsumer(AsyncWebsocketConsumer):
                 'type': 'agent_update',
                 'data': event['update']
             }))
-        except Exception as e:
-            logger.error(f"Send update error: {str(e)}", exc_info=True)
+        except Exception:
+            logger.exception("Send update error")
     
     async def send_error(self, error_message):
         """Send error message to client"""
@@ -206,10 +210,10 @@ class ImprovedAgentConsumer(AsyncWebsocketConsumer):
             await self.send(text_data=json.dumps({
                 'type': 'error',
                 'error': error_message,
-                'timestamp': datetime.now().isoformat()
+                'timestamp': datetime.now(timezone.utc).isoformat()
             }))
-        except Exception as e:
-            logger.error(f"Send error failed: {str(e)}", exc_info=True)
+        except Exception:
+            logger.exception("Send error failed")
     
     async def send_heartbeat(self):
         """Send periodic heartbeat to keep connection alive"""
@@ -219,19 +223,19 @@ class ImprovedAgentConsumer(AsyncWebsocketConsumer):
                 if self.is_connected:
                     await self.send(text_data=json.dumps({
                         'type': 'heartbeat',
-                        'timestamp': datetime.now().isoformat()
+                        'timestamp': datetime.now(timezone.utc).isoformat()
                     }))
         except asyncio.CancelledError:
             pass
-        except Exception as e:
-            logger.error(f"Heartbeat error: {str(e)}", exc_info=True)
+        except Exception:
+            logger.exception("Heartbeat error")
     
     @database_sync_to_async
     def check_session_exists(self, session_id):
         """Check if session exists"""
         try:
             return Session.objects.filter(id=session_id).exists()
-        except Exception:
+        except Exception:  # noqa: BLE001
             return False
     
     @database_sync_to_async
@@ -245,8 +249,8 @@ class ImprovedAgentConsumer(AsyncWebsocketConsumer):
                 content=content
             )
             return message
-        except Exception as e:
-            logger.error(f"Save message error: {str(e)}", exc_info=True)
+        except Exception:
+            logger.exception("Save message error")
             raise
     
     @database_sync_to_async
@@ -266,7 +270,7 @@ class ImprovedAgentConsumer(AsyncWebsocketConsumer):
                 'error': 'Agent not found'
             }
         except Exception as e:
-            logger.error(f"Process command error: {str(e)}", exc_info=True)
+            logger.exception("Process command error")
             return {
                 'status': 'error',
                 'error': str(e)

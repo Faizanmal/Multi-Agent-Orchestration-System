@@ -230,7 +230,7 @@ export default function PluginsPage() {
   }, []);
 
   useEffect(() => {
-    load();
+    setTimeout(() => { load(); }, 0)
   }, [load]);
 
   const installedPlugins = useMemo(

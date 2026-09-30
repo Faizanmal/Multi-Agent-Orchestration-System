@@ -1,5 +1,5 @@
 """Airtable integration provider."""
-from typing import Any, Dict, List
+from typing import Any
 
 import requests
 
@@ -19,7 +19,7 @@ class AirtableProvider(IntegrationProvider):
         return "airtable" in text
 
     @classmethod
-    def tool_definitions(cls) -> List[Dict[str, Any]]:
+    def tool_definitions(cls) -> list[dict[str, Any]]:
         return [
             {"name": "airtable.list_records", "description": "List records from a table", "parameters": {"base_id": "string", "table": "string", "max_records": "int"}},
             {"name": "airtable.create_record", "description": "Create a record in a table", "parameters": {"base_id": "string", "table": "string", "fields": "object"}},
@@ -27,14 +27,14 @@ class AirtableProvider(IntegrationProvider):
         ]
 
     @classmethod
-    def _headers(cls, integration: APIIntegration) -> Dict[str, str]:
+    def _headers(cls, integration: APIIntegration) -> dict[str, str]:
         token = cls._token(integration)
         if not token:
             raise ValueError("Airtable personal access token required")
         return {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
 
     @classmethod
-    def test_connection(cls, integration: APIIntegration) -> Dict[str, Any]:
+    def test_connection(cls, integration: APIIntegration) -> dict[str, Any]:
         try:
             resp = requests.get(
                 "https://api.airtable.com/v0/meta/bases",
@@ -45,11 +45,11 @@ class AirtableProvider(IntegrationProvider):
                 return {"status": "error", "message": resp.text[:200]}
             bases = resp.json().get("bases", [])
             return {"status": "success", "message": f"Connected — {len(bases)} base(s) accessible", "data": {"count": len(bases)}}
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return {"status": "error", "message": str(e)}
 
     @classmethod
-    def execute_tool(cls, integration: APIIntegration, tool_name: str, params: Dict[str, Any]) -> Dict[str, Any]:
+    def execute_tool(cls, integration: APIIntegration, tool_name: str, params: dict[str, Any]) -> dict[str, Any]:
         try:
             headers = cls._headers(integration)
             auth = cls._auth(integration)
@@ -88,5 +88,5 @@ class AirtableProvider(IntegrationProvider):
                 return {"status": "success" if resp.ok else "error", "record": resp.json() if resp.ok else {}, "message": "" if resp.ok else resp.text[:200]}
 
             return {"status": "error", "message": f"Unknown Airtable tool: {tool_name}"}
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return {"status": "error", "message": str(e)}

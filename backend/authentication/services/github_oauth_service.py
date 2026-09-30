@@ -11,7 +11,6 @@ import os
 import secrets
 import uuid
 from datetime import timedelta
-from typing import Optional, Tuple
 
 import requests as http_requests
 from django.conf import settings
@@ -53,8 +52,8 @@ def _callback_url() -> str:
 
 def build_authorization_url(
     request=None,
-    link_user_id: Optional[str] = None,
-) -> Tuple[str, str]:
+    link_user_id: str | None = None,
+) -> tuple[str, str]:
     from authentication.models import OAuthState
 
     state = secrets.token_urlsafe(32)
@@ -145,7 +144,7 @@ def _fetch_user(access_token: str) -> dict:
     return resp.json()
 
 
-def _get_primary_verified_email(access_token: str, user_data: dict) -> Optional[str]:
+def _get_primary_verified_email(access_token: str, user_data: dict) -> str | None:
     """
     Fetch the primary verified email from GitHub.
     Falls back to the public email field, which may be None.
@@ -171,14 +170,15 @@ def _get_primary_verified_email(access_token: str, user_data: dict) -> Optional[
             for e in emails:
                 if e.get('verified'):
                     return e['email'].lower().strip()
-    except Exception:
+    except Exception:  # noqa: BLE001, S110
         pass
 
     return public_email.lower().strip() if public_email else None
 
 
-def _resolve_user(github_user: dict, email: Optional[str], link_user_id=None, request=None):
+def _resolve_user(github_user: dict, email: str | None, link_user_id=None, request=None):
     from django.contrib.auth import get_user_model
+
     from authentication.models import AuthProvider
     from authentication.services.audit_service import log_event
 
@@ -262,7 +262,7 @@ def _resolve_user(github_user: dict, email: Optional[str], link_user_id=None, re
     return user, created
 
 
-def _get_ip(request) -> Optional[str]:
+def _get_ip(request) -> str | None:
     if request is None:
         return None
     xff = request.META.get('HTTP_X_FORWARDED_FOR', '')

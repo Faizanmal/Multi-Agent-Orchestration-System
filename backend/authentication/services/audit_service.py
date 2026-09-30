@@ -3,7 +3,6 @@ Audit logging service – write immutable audit records.
 Never logs: passwords, tokens, secrets, or any credential material.
 """
 import logging
-from typing import Optional
 
 from authentication.services.session_service import parse_device_info
 
@@ -18,7 +17,7 @@ def log_event(
     success: bool = True,
     failure_reason: str = '',
     request=None,
-    metadata: Optional[dict] = None,
+    metadata: dict | None = None,
 ) -> None:
     """
     Persist an AuditLog record. Safe to call from any thread; any exceptions
@@ -58,5 +57,5 @@ def log_event(
             failure_reason,
             device.get('ip_address'),
         )
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001
         logger.error('Failed to write audit log for action=%s: %s', action, exc)

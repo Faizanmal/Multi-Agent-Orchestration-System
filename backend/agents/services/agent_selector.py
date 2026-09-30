@@ -1,9 +1,10 @@
 # agents/services/agent_selector.py
 
 import logging
-from typing import Dict, List, Optional, Tuple
+
 from django.db.models import Q
-from ..models import Agent, AgentType, AgentStatus
+
+from ..models import Agent, AgentStatus, AgentType
 from .performance_tracker import PerformanceTracker
 
 logger = logging.getLogger(__name__)
@@ -22,9 +23,9 @@ class SmartAgentSelector:
         self, 
         task_type: str, 
         task_description: str, 
-        requirements: Dict = None,
-        exclude_agents: List[str] = None
-    ) -> Optional[Agent]:
+        requirements: dict | None = None,
+        exclude_agents: list[str] | None = None
+    ) -> Agent | None:
         """
         Select the best available agent for a given task.
         
@@ -62,7 +63,7 @@ class SmartAgentSelector:
         logger.info(f"Selected agent {best_agent.name} for task type {task_type} (score: {scored_agents[0][1]:.3f})")
         return best_agent
     
-    def _get_available_agents(self, task_type: str, exclude_agents: List[str]) -> List[Agent]:
+    def _get_available_agents(self, task_type: str, exclude_agents: list[str]) -> list[Agent]:
         """Get all available agents that can handle the task type."""
         
         # Map task types to agent types
@@ -99,7 +100,7 @@ class SmartAgentSelector:
         agent: Agent, 
         task_type: str, 
         task_description: str, 
-        requirements: Dict
+        requirements: dict
     ) -> float:
         """Calculate a comprehensive score for agent suitability."""
         
@@ -172,7 +173,7 @@ class SmartAgentSelector:
             
             return min(performance_score, 1.0)
             
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.warning(f"Error scoring performance for agent {agent.id}: {e}")
             return 0.5
     
@@ -188,7 +189,7 @@ class SmartAgentSelector:
         
         return status_scores.get(agent.status, 0.0)
     
-    def _score_requirements(self, agent: Agent, requirements: Dict) -> float:
+    def _score_requirements(self, agent: Agent, requirements: dict) -> float:
         """Score agent based on specific requirements."""
         if not requirements:
             return 1.0
@@ -224,7 +225,7 @@ class SmartAgentSelector:
         task_type: str, 
         task_description: str, 
         count: int = 3
-    ) -> List[Tuple[Agent, float]]:
+    ) -> list[tuple[Agent, float]]:
         """Get top N agent recommendations with scores."""
         
         available_agents = self._get_available_agents(task_type, [])
@@ -244,8 +245,8 @@ class SmartAgentSelector:
         agent: Agent, 
         task_type: str, 
         task_description: str, 
-        requirements: Dict = None
-    ) -> Dict:
+        requirements: dict | None = None
+    ) -> dict:
         """Provide detailed explanation of why this agent was selected."""
         
         requirements = requirements or {}

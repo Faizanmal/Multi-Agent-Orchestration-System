@@ -245,11 +245,13 @@ export function Sidebar() {
   };
 
   useEffect(() => {
-    setIsMounted(true);
+    setTimeout(() => { setIsMounted(true); }, 0)
     // Check localStorage for saved preference
     const saved = localStorage.getItem('sidebar-collapsed');
     if (saved) {
-      setIsCollapsed(JSON.parse(saved));
+      setTimeout(() => {
+          setIsCollapsed(JSON.parse(saved));
+        }, 0)
     }
   }, []);
 

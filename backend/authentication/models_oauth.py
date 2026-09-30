@@ -1,11 +1,14 @@
+from datetime import timezone
+
 """
 OAuth2 and API Key Models
 """
 
-from django.db import models
-from django.contrib.auth import get_user_model
 import uuid
 from datetime import datetime, timedelta
+
+from django.contrib.auth import get_user_model
+from django.db import models
 
 User = get_user_model()
 
@@ -62,7 +65,7 @@ class OAuthAuthorizationCode(models.Model):
     
     def save(self, *args, **kwargs):
         if not self.expires_at:
-            self.expires_at = datetime.utcnow() + timedelta(minutes=10)
+            self.expires_at = datetime.now(timezone.utc) + timedelta(minutes=10)
         super().save(*args, **kwargs)
 
 
@@ -91,7 +94,7 @@ class APIKey(models.Model):
     
     class Meta:
         db_table = 'api_keys'
-        ordering = ['-created_at']
+        ordering = ['-created_at']  # noqa: RUF012
     
     def __str__(self):
         return f"{self.name} - {self.key_prefix}..."

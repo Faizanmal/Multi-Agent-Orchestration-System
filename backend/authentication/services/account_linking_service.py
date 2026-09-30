@@ -62,8 +62,8 @@ def delete_user_account(user, request=None) -> None:
     Permanently delete user and all associated data.
     Revokes all tokens first.
     """
-    from authentication.services.jwt_service import revoke_all_user_tokens
     from authentication.services.audit_service import log_event
+    from authentication.services.jwt_service import revoke_all_user_tokens
 
     email = user.email
     revoke_all_user_tokens(user, reason='account_deleted')

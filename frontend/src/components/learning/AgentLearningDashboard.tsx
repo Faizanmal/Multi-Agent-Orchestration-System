@@ -59,11 +59,6 @@ export default function AgentLearningDashboard() {
   const [topStrategies, setTopStrategies] = useState<Strategy[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedProfile, setSelectedProfile] = useState<LearningProfile | null>(null);
-
-  useEffect(() => {
-    loadData();
-  }, []);
-
   const loadData = async () => {
     try {
       setLoading(true);
@@ -86,6 +81,12 @@ export default function AgentLearningDashboard() {
     }
   };
 
+  useEffect(() => {
+    setTimeout(() => {
+      loadData();
+    }, 0);
+  }, []);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -96,6 +97,7 @@ export default function AgentLearningDashboard() {
       </div>
     );
   }
+
 
   return (
     <div className="container mx-auto p-6 space-y-6">

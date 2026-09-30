@@ -1,12 +1,13 @@
 """
 Caching Utilities for Performance Optimization
 """
-from django.core.cache import cache
-from django.conf import settings
-from functools import wraps
 import hashlib
 import json
 import logging
+from functools import wraps
+
+from django.conf import settings
+from django.core.cache import cache
 
 logger = logging.getLogger(__name__)
 
@@ -73,8 +74,8 @@ def invalidate_cache(pattern):
             logger.info(f"Cache invalidated: {pattern}")
         else:
             logger.warning("Cache backend doesn't support pattern deletion")
-    except Exception as e:
-        logger.error(f"Cache invalidation error: {str(e)}")
+    except Exception as e:  # noqa: BLE001
+        logger.error(f"Cache invalidation error: {e!s}")
 
 
 class CacheManager:
@@ -152,8 +153,8 @@ class CacheManager:
             stats['working'] = test_result == 'test'
             
             return stats
-        except Exception as e:
-            logger.error(f"Cache stats error: {str(e)}")
+        except Exception as e:  # noqa: BLE001
+            logger.error(f"Cache stats error: {e!s}")
             return {
                 'status': 'error',
                 'error': str(e)

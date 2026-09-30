@@ -1,11 +1,13 @@
 """
 Advanced caching decorators and utilities
 """
-from functools import wraps
-from django.core.cache import cache
 import hashlib
 import logging
-from typing import Any, Callable, Optional
+from collections.abc import Callable
+from functools import wraps
+from typing import Any
+
+from django.core.cache import cache
 
 logger = logging.getLogger(__name__)
 
@@ -113,7 +115,7 @@ def invalidate_cache(patterns: list):
     return decorator
 
 
-def cache_page_vary_on_params(timeout: int = 300, params: list = None):
+def cache_page_vary_on_params(timeout: int = 300, params: list | None = None):
     """
     Cache entire page response, varying on specific query parameters
     
@@ -225,7 +227,7 @@ class CacheManager:
         
         return value
     
-    def set(self, key: str, value: Any, timeout: Optional[int] = 300):
+    def set(self, key: str, value: Any, timeout: int | None = 300):
         """Set value in cache"""
         cache.set(key, value, timeout)
     
@@ -264,8 +266,8 @@ class CacheManager:
                 data = loader_func()
                 self.set(cache_key, data, timeout)
                 logger.info(f"Warmed up cache: {cache_key}")
-            except Exception as e:
-                logger.error(f"Failed to warm up cache {cache_key}: {str(e)}")
+            except Exception as e:  # noqa: BLE001
+                logger.error(f"Failed to warm up cache {cache_key}: {e!s}")
         
         logger.info("Cache warm-up completed")
 

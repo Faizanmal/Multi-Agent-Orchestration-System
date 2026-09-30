@@ -1,7 +1,9 @@
+import uuid
+
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.utils import timezone
-import uuid
+
 
 class CustomUser(AbstractUser):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -48,7 +50,7 @@ class CustomUser(AbstractUser):
     language = models.CharField(max_length=10, default='en')
     
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['username']
+    REQUIRED_FIELDS = ['username']  # noqa: RUF012
     
     def get_permissions(self):
         """Get user permissions based on role"""
@@ -156,7 +158,7 @@ class UserRoleAssignment(models.Model):
     is_active = models.BooleanField(default=True)
     
     class Meta:
-        unique_together = ['user', 'role']
+        unique_together = ['user', 'role']  # noqa: RUF012
     
     def __str__(self):
         return f"{self.user.username} - {self.role.name}"
@@ -208,8 +210,8 @@ class AuthProvider(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        unique_together = [('provider', 'provider_user_id')]
-        indexes = [
+        unique_together = [('provider', 'provider_user_id')]  # noqa: RUF012
+        indexes = [  # noqa: RUF012
             models.Index(fields=['user', 'provider']),
             models.Index(fields=['provider', 'provider_user_id']),
         ]
@@ -234,7 +236,7 @@ class OAuthState(models.Model):
         return not self.used and timezone.now() < self.expires_at
 
     class Meta:
-        indexes = [models.Index(fields=['state', 'provider'])]
+        indexes = [models.Index(fields=['state', 'provider'])]  # noqa: RUF012
 
 
 class EnterpriseRefreshToken(models.Model):
@@ -264,7 +266,7 @@ class EnterpriseRefreshToken(models.Model):
     expires_at = models.DateTimeField()
 
     class Meta:
-        indexes = [
+        indexes = [  # noqa: RUF012
             models.Index(fields=['user', 'is_active']),
             models.Index(fields=['family']),
         ]
@@ -304,8 +306,8 @@ class AuditLog(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True, db_index=True)
 
     class Meta:
-        ordering = ['-timestamp']
-        indexes = [
+        ordering = ['-timestamp']  # noqa: RUF012
+        indexes = [  # noqa: RUF012
             models.Index(fields=['user', 'timestamp']),
             models.Index(fields=['action', 'timestamp']),
             models.Index(fields=['ip_address', 'timestamp']),
@@ -325,7 +327,7 @@ class BruteForceRecord(models.Model):
     locked_until = models.DateTimeField(null=True, blank=True)
 
     def is_locked(self):
-        if self.locked_until and timezone.now() < self.locked_until:
+        if self.locked_until and timezone.now() < self.locked_until:  # noqa: SIM103
             return True
         return False
 
@@ -335,7 +337,7 @@ class BruteForceRecord(models.Model):
         self.save(update_fields=['attempt_count', 'locked_until'])
 
     class Meta:
-        indexes = [models.Index(fields=['key', 'endpoint'])]
+        indexes = [models.Index(fields=['key', 'endpoint'])]  # noqa: RUF012
 
 
 class Workspace(models.Model):
@@ -365,7 +367,7 @@ class WorkspaceMembership(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:
-        unique_together = ['workspace', 'user']
+        unique_together = ['workspace', 'user']  # noqa: RUF012
         
     def __str__(self):
         return f"{self.user.username} - {self.workspace.name} ({self.role})"

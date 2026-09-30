@@ -154,29 +154,6 @@ const SmartAgentDashboard: React.FC = () => {
     'action', 'execution', 'memory', 'storage', 
     'orchestration', 'coordination'
   ]
-
-  useEffect(() => {
-    const initData = async () => {
-      setLoading(true)
-      try {
-        await Promise.all([
-          loadAgents(),
-          loadDashboardData()
-        ])
-      } catch (error) {
-        console.error('Failed to load dashboard data:', error)
-        toast({
-          title: 'Error',
-          description: 'Failed to load dashboard data',
-          variant: 'destructive',
-        })
-      } finally {
-        setLoading(false)
-      }
-    }
-    initData()
-  }, [toast])
-
   const loadInitialData = async () => {
     setLoading(true)
     try {
@@ -357,6 +334,27 @@ const SmartAgentDashboard: React.FC = () => {
       default: return <Clock className="w-4 h-4" />
     }
   }
+    useEffect(() => {
+        const initData = async () => {
+          setLoading(true)
+          try {
+            await Promise.all([
+              loadAgents(),
+              loadDashboardData()
+            ])
+          } catch (error) {
+            console.error('Failed to load dashboard data:', error)
+            toast({
+              title: 'Error',
+              description: 'Failed to load dashboard data',
+              variant: 'destructive',
+            })
+          } finally {
+            setLoading(false)
+          }
+        }
+        initData()
+      }, [toast])
 
   if (loading && !dashboardData) {
     return (

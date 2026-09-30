@@ -1,5 +1,5 @@
 """Linear issue tracker integration provider."""
-from typing import Any, Dict, List
+from typing import Any
 
 import requests
 
@@ -19,7 +19,7 @@ class LinearProvider(IntegrationProvider):
         return "linear" in text
 
     @classmethod
-    def tool_definitions(cls) -> List[Dict[str, Any]]:
+    def tool_definitions(cls) -> list[dict[str, Any]]:
         return [
             {"name": "linear.viewer", "description": "Get authenticated Linear user", "parameters": {}},
             {"name": "linear.list_issues", "description": "List recent Linear issues", "parameters": {"first": "int"}},
@@ -27,14 +27,14 @@ class LinearProvider(IntegrationProvider):
         ]
 
     @classmethod
-    def _headers(cls, integration: APIIntegration) -> Dict[str, str]:
+    def _headers(cls, integration: APIIntegration) -> dict[str, str]:
         token = cls._token(integration)
         if not token:
             raise ValueError("Linear API key required")
         return {"Authorization": token, "Content-Type": "application/json"}
 
     @classmethod
-    def _gql(cls, integration: APIIntegration, query: str, variables: Dict[str, Any] | None = None) -> Dict[str, Any]:
+    def _gql(cls, integration: APIIntegration, query: str, variables: dict[str, Any] | None = None) -> dict[str, Any]:
         resp = requests.post(
             "https://api.linear.app/graphql",
             headers=cls._headers(integration),
@@ -47,16 +47,16 @@ class LinearProvider(IntegrationProvider):
         return data.get("data") or {}
 
     @classmethod
-    def test_connection(cls, integration: APIIntegration) -> Dict[str, Any]:
+    def test_connection(cls, integration: APIIntegration) -> dict[str, Any]:
         try:
             data = cls._gql(integration, "{ viewer { id name email } }")
             viewer = data.get("viewer") or {}
             return {"status": "success", "message": f"Connected as {viewer.get('name') or viewer.get('email')}", "data": viewer}
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return {"status": "error", "message": str(e)}
 
     @classmethod
-    def execute_tool(cls, integration: APIIntegration, tool_name: str, params: Dict[str, Any]) -> Dict[str, Any]:
+    def execute_tool(cls, integration: APIIntegration, tool_name: str, params: dict[str, Any]) -> dict[str, Any]:
         try:
             if tool_name == "linear.viewer":
                 data = cls._gql(integration, "{ viewer { id name email } }")
@@ -102,5 +102,5 @@ class LinearProvider(IntegrationProvider):
                 return {"status": "success" if created.get("success") else "error", "issue": created.get("issue")}
 
             return {"status": "error", "message": f"Unknown Linear tool: {tool_name}"}
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return {"status": "error", "message": str(e)}

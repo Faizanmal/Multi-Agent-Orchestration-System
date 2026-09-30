@@ -11,13 +11,13 @@
  * directly from the backend JSON response to the dashboard via a fetch.
  */
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Loader2, CheckCircle2, XCircle } from 'lucide-react';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
 
-export default function GoogleCallbackPage() {
+function GoogleCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
@@ -36,22 +36,24 @@ export default function GoogleCallbackPage() {
       localStorage.setItem('access_token', accessToken);
       localStorage.setItem('auth_token', accessToken);
       localStorage.setItem('refresh_token', refreshToken);
-      setStatus('success');
-      setMessage('Signed in successfully!');
+      setTimeout(() => { setStatus('success'); }, 0)
+      setTimeout(() => {
+          setMessage('Signed in successfully!');
+        }, 0)
       setTimeout(() => router.push('/dashboard'), 1000);
       return;
     }
 
     if (error) {
-      setStatus('error');
-      setMessage(`Google sign-in was denied: ${error}`);
+      setTimeout(() => setStatus('error'), 0);
+      setTimeout(() => setMessage(`Google sign-in was denied: ${error}`), 0);
       setTimeout(() => router.push('/login'), 3000);
       return;
     }
 
     if (!code || !state) {
-      setStatus('error');
-      setMessage('Invalid callback parameters.');
+      setTimeout(() => setStatus('error'), 0);
+      setTimeout(() => setMessage('Invalid callback parameters.'), 0);
       setTimeout(() => router.push('/login'), 3000);
       return;
     }
@@ -114,5 +116,17 @@ export default function GoogleCallbackPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function GoogleCallbackPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
+      </div>
+    }>
+      <GoogleCallbackContent />
+    </Suspense>
   );
 }

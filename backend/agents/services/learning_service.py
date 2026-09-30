@@ -2,19 +2,24 @@
 Agent Learning Service
 Implements reinforcement learning algorithms and adaptive coordination
 """
-from decimal import Decimal
-import random
-import numpy as np
-from typing import Dict, List, Tuple, Any, Optional
-from django.utils import timezone
-from django.db.models import Q
 import json
+import random
+from decimal import Decimal
+from typing import Any
 
-from ..models import Agent, Session
+import numpy as np
+from django.db.models import Q
+from django.utils import timezone
+
 from ..learning_models import (
-    AgentLearningProfile, AgentExperience, AdaptiveCoordinationRule,
-    AgentSkillEvolution, LearningSession, LearningStrategy
+    AdaptiveCoordinationRule,
+    AgentExperience,
+    AgentLearningProfile,
+    AgentSkillEvolution,
+    LearningSession,
+    LearningStrategy,
 )
+from ..models import Agent, Session
 
 
 class AgentLearningService:
@@ -25,15 +30,15 @@ class AgentLearningService:
         self.profile, _ = AgentLearningProfile.objects.get_or_create(agent=agent)
     
     def record_experience(self, 
-                         state: Dict,
-                         action: Dict,
+                         state: dict,
+                         action: dict,
                          reward: float,
-                         next_state: Dict,
+                         next_state: dict,
                          task_type: str,
                          done: bool = False,
-                         session: Optional[Session] = None,
+                         session: Session | None = None,
                          coordination_strategy: str = "",
-                         execution_time_ms: Optional[int] = None) -> AgentExperience:
+                         execution_time_ms: int | None = None) -> AgentExperience:
         """Record a new experience for learning"""
         experience = AgentExperience.objects.create(
             agent=self.agent,
@@ -73,8 +78,8 @@ class AgentLearningService:
         
         return experience
     
-    def _update_q_table(self, state: Dict, action: Dict, reward: float, 
-                       next_state: Dict, done: bool):
+    def _update_q_table(self, state: dict, action: dict, reward: float, 
+                       next_state: dict, done: bool):
         """Update Q-table using Q-learning algorithm"""
         state_key = json.dumps(state, sort_keys=True)
         action_key = json.dumps(action, sort_keys=True)
@@ -106,7 +111,7 @@ class AgentLearningService:
         self.profile.last_training_at = timezone.now()
         self.profile.save()
     
-    def select_action(self, state: Dict, available_actions: List[Dict]) -> Dict:
+    def select_action(self, state: dict, available_actions: list[dict]) -> dict:
         """Select action using epsilon-greedy policy"""
         if not self.profile.is_learning_enabled or not available_actions:
             return random.choice(available_actions)
@@ -151,7 +156,7 @@ class AgentLearningService:
         self.profile.skill_matrix = skill_matrix
         self.profile.save()
     
-    def get_specialized_tasks(self) -> List[str]:
+    def get_specialized_tasks(self) -> list[str]:
         """Get tasks the agent excels at"""
         threshold = 0.75  # Proficiency threshold for specialization
         
@@ -164,7 +169,7 @@ class AgentLearningService:
     
     def start_learning_session(self, session_type: str, 
                               initial_performance: float,
-                              config: Dict = None) -> LearningSession:
+                              config: dict | None = None) -> LearningSession:
         """Start a new learning session"""
         return LearningSession.objects.create(
             agent=self.agent,
@@ -186,7 +191,7 @@ class AgentLearningService:
         self.profile.current_performance_score = session.final_performance
         self.profile.save()
     
-    def batch_learn(self, batch_size: int = 32, epochs: int = 10) -> Dict:
+    def batch_learn(self, batch_size: int = 32, epochs: int = 10) -> dict:
         """Perform batch learning from recent experiences"""
         # Get recent experiences
         recent_experiences = AgentExperience.objects.filter(
@@ -244,7 +249,7 @@ class AdaptiveCoordinationService:
     def recommend_strategy(task_type: str, 
                           agent_count: int,
                           task_complexity: int,
-                          context: Dict = None) -> Tuple[str, Dict]:
+                          context: dict | None = None) -> tuple[str, dict]:
         """Recommend coordination strategy based on learned rules"""
         
         # Find applicable rules
@@ -290,9 +295,9 @@ class AdaptiveCoordinationService:
     
     @staticmethod
     def create_learned_rule(name: str,
-                           task_types: List[str],
-                           complexity_range: Tuple[int, int],
-                           agent_count_range: Tuple[int, int],
+                           task_types: list[str],
+                           complexity_range: tuple[int, int],
+                           agent_count_range: tuple[int, int],
                            recommended_strategy: str,
                            creator,
                            description: str = "") -> AdaptiveCoordinationRule:
@@ -316,10 +321,13 @@ class AdaptiveCoordinationService:
         Analyze historical coordination sessions and auto-generate rules
         for strategy combinations that show consistently high success rates.
         """
-        from Multi_agents_cordination.models import AgentCoordinationSession, CoordinationMetric
         from django.db.models import Avg, Count
+        from Multi_agents_cordination.models import (
+            AgentCoordinationSession,
+            CoordinationMetric,
+        )
 
-        generated_rules: List[AdaptiveCoordinationRule] = []
+        generated_rules: list[AdaptiveCoordinationRule] = []
 
         # ── Aggregate completed sessions grouped by strategy ──────────────────
         strategy_stats = (
@@ -412,7 +420,7 @@ class SkillEvolutionTracker:
     """Tracks and analyzes skill evolution across agents"""
     
     @staticmethod
-    def get_agent_expertise(agent: Agent) -> Dict[str, Any]:
+    def get_agent_expertise(agent: Agent) -> dict[str, Any]:
         """Get comprehensive expertise profile for agent"""
         skills = AgentSkillEvolution.objects.filter(agent=agent).order_by('-proficiency_level')
         
@@ -455,7 +463,7 @@ class SkillEvolutionTracker:
         return entropy / max_entropy if max_entropy > 0 else 0.0
     
     @staticmethod
-    def recommend_training(agent: Agent) -> List[Dict]:
+    def recommend_training(agent: Agent) -> list[dict]:
         """Recommend training areas for agent improvement"""
         skills = AgentSkillEvolution.objects.filter(agent=agent)
         

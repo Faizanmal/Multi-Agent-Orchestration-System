@@ -1,5 +1,6 @@
-from django.db import models
 import uuid
+
+from django.db import models
 
 
 class MonthlyUsage(models.Model):
@@ -16,13 +17,13 @@ class MonthlyUsage(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        constraints = [
+        constraints = [  # noqa: RUF012
             models.UniqueConstraint(
                 fields=['workspace', 'period'],
                 name='unique_workspace_usage_period',
             ),
         ]
-        ordering = ['-period']
+        ordering = ['-period']  # noqa: RUF012
 
     def __str__(self):
         return f"{self.workspace.name} - {self.period:%Y-%m}: {self.message_count}"

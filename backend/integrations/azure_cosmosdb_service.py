@@ -1,16 +1,19 @@
+from datetime import timezone
+
 """
 Azure CosmosDB Integration Service
 Following Azure best practices for scalable, globally-distributed data storage
 """
 
 import logging
-from typing import Dict, List, Any, Optional
+import os
+from datetime import datetime
+from typing import Any
+
 from azure.cosmos import CosmosClient, PartitionKey, exceptions
 from azure.cosmos.container import Container
 from azure.cosmos.database import Database
 from django.conf import settings
-import os
-from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +27,7 @@ class CosmosDBConfig:
     DATABASE_NAME = getattr(settings, 'COSMOS_DATABASE', 'MultiAgentSystem')
     
     # Container definitions with hierarchical partition keys
-    CONTAINERS = {
+    CONTAINERS = {  # noqa: RUF012
         'sessions': {
             'partition_key': ['/tenantId', '/userId', '/sessionId'],  # Hierarchical
             'unique_key_policy': {'uniqueKeys': [{'paths': ['/sessionId']}]},
@@ -132,7 +135,7 @@ class CosmosDBService:
             
             logger.info("CosmosDB service initialized successfully")
             
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error(f"Failed to initialize CosmosDB: {e}")
             self.client = None
             self.database = None
@@ -148,7 +151,7 @@ class CosmosDBService:
             logger.error(f"Database creation failed: {e}")
             raise
     
-    def _ensure_containers(self) -> Dict[str, Container]:
+    def _ensure_containers(self) -> dict[str, Container]:
         """Ensure all containers exist with proper configuration"""
         containers = {}
         
@@ -185,13 +188,13 @@ class CosmosDBService:
                 
                 logger.info(f"Container '{container_name}' ready")
                 
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 logger.error(f"Failed to create container '{container_name}': {e}")
         
         return containers
     
-    def create_item(self, container_name: str, item: Dict[str, Any],
-                   tenant_id: str, partition_values: List[str]) -> Dict[str, Any]:
+    def create_item(self, container_name: str, item: dict[str, Any],
+                   tenant_id: str, partition_values: list[str]) -> dict[str, Any]:
         """
         Create item in container with proper partitioning
         
@@ -205,7 +208,7 @@ class CosmosDBService:
             Created item
         """
         if not self.client:
-            raise Exception("CosmosDB not initialized")
+            raise Exception("CosmosDB not initialized")  # noqa: TRY002
         
         container = self.containers.get(container_name)
         if not container:
@@ -217,7 +220,7 @@ class CosmosDBService:
             
             # Add timestamp for tracking
             if 'timestamp' not in item:
-                item['timestamp'] = datetime.utcnow().isoformat()
+                item['timestamp'] = datetime.now(timezone.utc).isoformat()
             
             # Generate ID if not provided
             if 'id' not in item:
@@ -241,7 +244,7 @@ class CosmosDBService:
             raise
     
     def read_item(self, container_name: str, item_id: str, 
-                  partition_key_values: List[Any]) -> Optional[Dict[str, Any]]:
+                  partition_key_values: list[Any]) -> dict[str, Any] | None:
         """
         Read item by ID and partition key
         
@@ -254,7 +257,7 @@ class CosmosDBService:
             Item or None
         """
         if not self.client:
-            raise Exception("CosmosDB not initialized")
+            raise Exception("CosmosDB not initialized")  # noqa: TRY002
         
         container = self.containers.get(container_name)
         if not container:
@@ -274,9 +277,9 @@ class CosmosDBService:
             raise
     
     def query_items(self, container_name: str, query: str, 
-                   parameters: Optional[List[Dict]] = None,
-                   partition_key: Optional[List[Any]] = None,
-                   max_item_count: int = 100) -> List[Dict[str, Any]]:
+                   parameters: list[dict] | None = None,
+                   partition_key: list[Any] | None = None,
+                   max_item_count: int = 100) -> list[dict[str, Any]]:
         """
         Query items with SQL-like syntax
         
@@ -291,7 +294,7 @@ class CosmosDBService:
             List of items
         """
         if not self.client:
-            raise Exception("CosmosDB not initialized")
+            raise Exception("CosmosDB not initialized")  # noqa: TRY002
         
         container = self.containers.get(container_name)
         if not container:
@@ -320,7 +323,7 @@ class CosmosDBService:
             raise
     
     def update_item(self, container_name: str, item_id: str,
-                   partition_key_values: List[Any], updates: Dict[str, Any]) -> Dict[str, Any]:
+                   partition_key_values: list[Any], updates: dict[str, Any]) -> dict[str, Any]:
         """
         Update item with patch operations
         
@@ -334,7 +337,7 @@ class CosmosDBService:
             Updated item
         """
         if not self.client:
-            raise Exception("CosmosDB not initialized")
+            raise Exception("CosmosDB not initialized")  # noqa: TRY002
         
         container = self.containers.get(container_name)
         if not container:
@@ -348,7 +351,7 @@ class CosmosDBService:
             
             # Apply updates
             item.update(updates)
-            item['lastModified'] = datetime.utcnow().isoformat()
+            item['lastModified'] = datetime.now(timezone.utc).isoformat()
             
             # Replace item
             updated_item = container.replace_item(
@@ -364,7 +367,7 @@ class CosmosDBService:
             raise
     
     def delete_item(self, container_name: str, item_id: str,
-                   partition_key_values: List[Any]):
+                   partition_key_values: list[Any]):
         """
         Delete item
         
@@ -374,7 +377,7 @@ class CosmosDBService:
             partition_key_values: Partition key values
         """
         if not self.client:
-            raise Exception("CosmosDB not initialized")
+            raise Exception("CosmosDB not initialized")  # noqa: TRY002
         
         container = self.containers.get(container_name)
         if not container:
@@ -393,8 +396,8 @@ class CosmosDBService:
             logger.error(f"Failed to delete item: {e}")
             raise
     
-    def batch_create_items(self, container_name: str, items: List[Dict[str, Any]],
-                          tenant_id: str) -> List[Dict[str, Any]]:
+    def batch_create_items(self, container_name: str, items: list[dict[str, Any]],
+                          tenant_id: str) -> list[dict[str, Any]]:
         """
         Batch create multiple items (transactional batch)
         
@@ -407,7 +410,7 @@ class CosmosDBService:
             List of created items
         """
         if not self.client:
-            raise Exception("CosmosDB not initialized")
+            raise Exception("CosmosDB not initialized")  # noqa: TRY002
         
         container = self.containers.get(container_name)
         if not container:
@@ -424,7 +427,7 @@ class CosmosDBService:
                 for item in batch:
                     item['tenantId'] = tenant_id
                     if 'timestamp' not in item:
-                        item['timestamp'] = datetime.utcnow().isoformat()
+                        item['timestamp'] = datetime.now(timezone.utc).isoformat()
                     if 'id' not in item:
                         import uuid
                         item['id'] = str(uuid.uuid4())
@@ -440,10 +443,10 @@ class CosmosDBService:
         
         return created_items
     
-    def get_container_metrics(self, container_name: str) -> Dict[str, Any]:
+    def get_container_metrics(self, container_name: str) -> dict[str, Any]:
         """Get container usage metrics"""
         if not self.client:
-            raise Exception("CosmosDB not initialized")
+            raise Exception("CosmosDB not initialized")  # noqa: TRY002
         
         container = self.containers.get(container_name)
         if not container:
@@ -460,7 +463,7 @@ class CosmosDBService:
                 'default_ttl': properties.get('defaultTtl'),
                 'analytical_storage_enabled': properties.get('analyticalStorageTtl') is not None
             }
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error(f"Failed to get container metrics: {e}")
             return {}
 

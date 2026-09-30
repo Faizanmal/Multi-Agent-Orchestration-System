@@ -1,5 +1,5 @@
 """Generic outbound webhook integration provider."""
-from typing import Any, Dict, List
+from typing import Any
 
 import requests
 
@@ -19,7 +19,7 @@ class WebhookProvider(IntegrationProvider):
         return "webhook" in text or integration.type == "Webhook"
 
     @classmethod
-    def tool_definitions(cls) -> List[Dict[str, Any]]:
+    def tool_definitions(cls) -> list[dict[str, Any]]:
         return [
             {"name": "webhook.post", "description": "POST JSON payload to the webhook URL", "parameters": {"payload": "object", "path": "string"}},
             {"name": "webhook.get", "description": "GET from the webhook/base URL", "parameters": {"path": "string"}},
@@ -33,7 +33,7 @@ class WebhookProvider(IntegrationProvider):
         return base
 
     @classmethod
-    def _headers(cls, integration: APIIntegration) -> Dict[str, str]:
+    def _headers(cls, integration: APIIntegration) -> dict[str, str]:
         headers = {"Content-Type": "application/json", **(integration.headers or {})}
         token = cls._token(integration)
         if token:
@@ -44,7 +44,7 @@ class WebhookProvider(IntegrationProvider):
         return headers
 
     @classmethod
-    def test_connection(cls, integration: APIIntegration) -> Dict[str, Any]:
+    def test_connection(cls, integration: APIIntegration) -> dict[str, Any]:
         try:
             url = cls._url(integration)
             # Prefer HEAD/GET; many webhooks only accept POST — treat 405 as reachable
@@ -52,11 +52,11 @@ class WebhookProvider(IntegrationProvider):
             if resp.status_code in (200, 201, 202, 204, 401, 403, 405):
                 return {"status": "success", "message": f"Endpoint reachable ({resp.status_code})", "data": {"status_code": resp.status_code}}
             return {"status": "error", "message": f"HTTP {resp.status_code}: {resp.text[:200]}"}
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return {"status": "error", "message": str(e)}
 
     @classmethod
-    def execute_tool(cls, integration: APIIntegration, tool_name: str, params: Dict[str, Any]) -> Dict[str, Any]:
+    def execute_tool(cls, integration: APIIntegration, tool_name: str, params: dict[str, Any]) -> dict[str, Any]:
         try:
             path = params.get("path", "")
             url = cls._url(integration, path)
@@ -66,7 +66,7 @@ class WebhookProvider(IntegrationProvider):
                 resp = requests.get(url, headers=headers, timeout=30)
                 try:
                     body = resp.json()
-                except Exception:
+                except Exception:  # noqa: BLE001
                     body = {"raw": resp.text[:2000]}
                 return {"status": "success" if resp.ok else "error", "status_code": resp.status_code, "body": body}
 
@@ -77,10 +77,10 @@ class WebhookProvider(IntegrationProvider):
                 resp = requests.post(url, headers=headers, json=payload, timeout=30)
                 try:
                     body = resp.json()
-                except Exception:
+                except Exception:  # noqa: BLE001
                     body = {"raw": resp.text[:2000]}
                 return {"status": "success" if resp.ok else "error", "status_code": resp.status_code, "body": body}
 
             return {"status": "error", "message": f"Unknown Webhook tool: {tool_name}"}
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return {"status": "error", "message": str(e)}

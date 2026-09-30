@@ -214,7 +214,7 @@ const SmartVersionControl: React.FC<SmartVersionControlProps> = ({
 
   useEffect(() => {
     if (selectedVersions.length === 2) {
-      generateComparison(selectedVersions[0], selectedVersions[1])
+      setTimeout(() => { generateComparison(selectedVersions[0], selectedVersions[1]) }, 0)
     }
   }, [selectedVersions, generateComparison])
 

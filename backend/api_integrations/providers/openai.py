@@ -1,5 +1,5 @@
 """OpenAI integration provider."""
-from typing import Any, Dict, List
+from typing import Any
 
 import requests
 
@@ -19,21 +19,21 @@ class OpenAIProvider(IntegrationProvider):
         return "openai" in text or "gpt" in text
 
     @classmethod
-    def tool_definitions(cls) -> List[Dict[str, Any]]:
+    def tool_definitions(cls) -> list[dict[str, Any]]:
         return [
             {"name": "openai.chat", "description": "Send a chat completion request", "parameters": {"messages": "array", "model": "string"}},
             {"name": "openai.list_models", "description": "List available models", "parameters": {}},
         ]
 
     @classmethod
-    def _headers(cls, integration: APIIntegration) -> Dict[str, str]:
+    def _headers(cls, integration: APIIntegration) -> dict[str, str]:
         token = cls._token(integration)
         if not token:
             raise ValueError("OpenAI API key required (sk-...)")
         return {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
 
     @classmethod
-    def test_connection(cls, integration: APIIntegration) -> Dict[str, Any]:
+    def test_connection(cls, integration: APIIntegration) -> dict[str, Any]:
         try:
             resp = requests.get(
                 "https://api.openai.com/v1/models",
@@ -44,11 +44,11 @@ class OpenAIProvider(IntegrationProvider):
                 raise ValueError(resp.json().get("error", {}).get("message", resp.text))
             models = [m["id"] for m in resp.json().get("data", [])[:5]]
             return {"status": "success", "message": "OpenAI API connected", "data": {"sample_models": models}}
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return {"status": "error", "message": str(e)}
 
     @classmethod
-    def execute_tool(cls, integration: APIIntegration, tool_name: str, params: Dict[str, Any]) -> Dict[str, Any]:
+    def execute_tool(cls, integration: APIIntegration, tool_name: str, params: dict[str, Any]) -> dict[str, Any]:
         try:
             if tool_name == "openai.list_models":
                 resp = requests.get("https://api.openai.com/v1/models", headers=cls._headers(integration), timeout=30)
@@ -70,5 +70,5 @@ class OpenAIProvider(IntegrationProvider):
                 return {"status": "success", "content": content, "model": model}
 
             return {"status": "error", "message": f"Unknown OpenAI tool: {tool_name}"}
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return {"status": "error", "message": str(e)}

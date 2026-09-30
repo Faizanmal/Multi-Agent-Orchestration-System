@@ -2,13 +2,14 @@
 Webhook and Notification Models
 Real-time event notifications and external integrations
 """
-from django.db import models
-from django.contrib.auth import get_user_model
-from django.conf import settings
-from django.core.validators import URLValidator
-import uuid
 import hashlib
 import hmac
+import uuid
+
+from django.conf import settings
+from django.contrib.auth import get_user_model
+from django.core.validators import URLValidator
+from django.db import models
 
 User = get_user_model()
 
@@ -102,8 +103,8 @@ class Webhook(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
-        ordering = ['-created_at']
-        indexes = [
+        ordering = ['-created_at']  # noqa: RUF012
+        indexes = [  # noqa: RUF012
             models.Index(fields=['user', 'is_active']),
             models.Index(fields=['-last_triggered_at']),
         ]
@@ -136,7 +137,7 @@ class Webhook(models.Model):
         
         return True
     
-    def update_stats(self, success: bool, response_time_ms: int = None):
+    def update_stats(self, success: bool, response_time_ms: int | None = None):
         """Update delivery statistics"""
         from django.utils import timezone
         
@@ -205,8 +206,8 @@ class WebhookDelivery(models.Model):
     delivered_at = models.DateTimeField(null=True, blank=True)
     
     class Meta:
-        ordering = ['-created_at']
-        indexes = [
+        ordering = ['-created_at']  # noqa: RUF012
+        indexes = [  # noqa: RUF012
             models.Index(fields=['webhook', '-created_at']),
             models.Index(fields=['status', 'next_retry_at']),
             models.Index(fields=['event_type', '-created_at']),
@@ -276,8 +277,8 @@ class Notification(models.Model):
     delivered_at = models.DateTimeField(null=True, blank=True)
     
     class Meta:
-        ordering = ['-priority', '-created_at']
-        indexes = [
+        ordering = ['-priority', '-created_at']  # noqa: RUF012
+        indexes = [  # noqa: RUF012
             models.Index(fields=['user', 'is_read', '-created_at']),
             models.Index(fields=['user', '-priority', '-created_at']),
             models.Index(fields=['expires_at']),
@@ -343,8 +344,8 @@ class NotificationPreference(models.Model):
         if not self.enable_quiet_hours or not self.quiet_hours_start or not self.quiet_hours_end:
             return False
         
-        from django.utils import timezone
         import pytz
+        from django.utils import timezone
         
         tz = pytz.timezone(self.quiet_hours_timezone)
         now = timezone.now().astimezone(tz).time()
@@ -411,8 +412,8 @@ class AlertRule(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
-        ordering = ['-created_at']
-        indexes = [
+        ordering = ['-created_at']  # noqa: RUF012
+        indexes = [  # noqa: RUF012
             models.Index(fields=['user', 'is_active']),
             models.Index(fields=['is_active', 'last_evaluated_at']),
         ]
@@ -435,8 +436,9 @@ class AlertRule(models.Model):
     
     def can_trigger(self) -> bool:
         """Check if alert is out of cooldown"""
-        from django.utils import timezone
         from datetime import timedelta
+
+        from django.utils import timezone
         
         if not self.is_active:
             return False
@@ -479,8 +481,8 @@ class AlertInstance(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:
-        ordering = ['-created_at']
-        indexes = [
+        ordering = ['-created_at']  # noqa: RUF012
+        indexes = [  # noqa: RUF012
             models.Index(fields=['rule', 'status', '-created_at']),
             models.Index(fields=['status', '-created_at']),
         ]

@@ -2,16 +2,17 @@
 GDPR Compliance Models
 """
 
-from django.db import models
-from django.contrib.auth import get_user_model
 import uuid
+
+from django.contrib.auth import get_user_model
+from django.db import models
 
 User = get_user_model()
 
 
 class UserConsent(models.Model):
     """Track user consent for GDPR compliance"""
-    CONSENT_TYPES = [
+    CONSENT_TYPES = [  # noqa: RUF012
         ('necessary', 'Necessary'),
         ('analytics', 'Analytics'),
         ('marketing', 'Marketing'),
@@ -37,8 +38,8 @@ class UserConsent(models.Model):
     
     class Meta:
         db_table = 'user_consents'
-        ordering = ['-created_at']
-        indexes = [
+        ordering = ['-created_at']  # noqa: RUF012
+        indexes = [  # noqa: RUF012
             models.Index(fields=['user', 'consent_type', 'created_at']),
         ]
     
@@ -48,7 +49,7 @@ class UserConsent(models.Model):
 
 class UserDataExport(models.Model):
     """Track data export requests (GDPR Right to Data Portability)"""
-    STATUS_CHOICES = [
+    STATUS_CHOICES = [  # noqa: RUF012
         ('pending', 'Pending'),
         ('processing', 'Processing'),
         ('completed', 'Completed'),
@@ -70,7 +71,7 @@ class UserDataExport(models.Model):
     
     class Meta:
         db_table = 'user_data_exports'
-        ordering = ['-created_at']
+        ordering = ['-created_at']  # noqa: RUF012
     
     def __str__(self):
         return f"Export for {self.user.username} - {self.status}"
@@ -95,7 +96,7 @@ class UserDeletionLog(models.Model):
     
     class Meta:
         db_table = 'user_deletion_logs'
-        ordering = ['-created_at']
+        ordering = ['-created_at']  # noqa: RUF012
     
     def __str__(self):
         return f"Deletion: {self.username} at {self.created_at}"

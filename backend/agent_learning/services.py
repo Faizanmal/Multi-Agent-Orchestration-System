@@ -1,7 +1,6 @@
 """
 Service classes for reinforcement learning and strategy optimization
 """
-from typing import Dict
 import logging
 
 logger = logging.getLogger(__name__)
@@ -41,11 +40,11 @@ class RLEngine:
             
             return new_q
             
-        except Exception as e:
-            logger.error(f"Error updating Q-values: {str(e)}")
+        except Exception as e:  # noqa: BLE001
+            logger.error(f"Error updating Q-values: {e!s}")
             return 0.0
     
-    def _estimate_max_q(self, state: Dict) -> float:
+    def _estimate_max_q(self, state: dict) -> float:
         """Estimate maximum Q-value for a state"""
         # Simplified: return average of recent Q-values
         from .models import ReinforcementState
@@ -72,7 +71,7 @@ class RLEngine:
         
         self.profile.save()
     
-    def get_best_action(self, state: Dict) -> Dict:
+    def get_best_action(self, state: dict) -> dict:
         """Get best action for current state"""
         try:
             from .models import ReinforcementState
@@ -100,15 +99,15 @@ class RLEngine:
                 'confidence': confidence
             }
             
-        except Exception as e:
-            logger.error(f"Error getting best action: {str(e)}")
+        except Exception as e:  # noqa: BLE001
+            logger.error(f"Error getting best action: {e!s}")
             return {'action': {}, 'q_value': 0.0, 'confidence': 0.0}
 
 
 class StrategyOptimizer:
     """Optimize coordination strategies based on historical performance"""
     
-    def recommend_strategy(self, task_description: str, complexity: str, agents: list) -> Dict:
+    def recommend_strategy(self, task_description: str, complexity: str, agents: list) -> dict:
         """Recommend best coordination strategy"""
         try:
             from .models import AdaptiveStrategy
@@ -150,15 +149,15 @@ class StrategyOptimizer:
                 'description': f"Default {preferred_type} strategy"
             }
             
-        except Exception as e:
-            logger.error(f"Error recommending strategy: {str(e)}")
+        except Exception as e:  # noqa: BLE001
+            logger.error(f"Error recommending strategy: {e!s}")
             return {
                 'strategy_type': 'parallel',
                 'confidence': 0.3,
                 'description': 'Fallback parallel strategy'
             }
     
-    def _generate_default_roles(self, strategy_type: str, agents: list) -> Dict:
+    def _generate_default_roles(self, strategy_type: str, agents: list) -> dict:
         """Generate default agent roles for strategy"""
         if not agents:
             return {}

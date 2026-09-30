@@ -1,19 +1,26 @@
-from rest_framework import viewsets, status
-from rest_framework.decorators import action
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated, AllowAny
-from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
+import json
+import logging
+
+from agents.services.groq_service import GroqService
+from agents.services.multimodal_processor import MultiModalProcessor
+from asgiref.sync import async_to_sync
 from django.conf import settings
 from django.utils import timezone
-from asgiref.sync import async_to_sync
-import logging
-import json
+from rest_framework import status, viewsets
+from rest_framework.decorators import action
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
 
-from .models import AIModelConfig, MultiModalSession, ModalityResult, CrossModalInsight, ModelCoordinationRun
 from .catalog import seed_default_ai_models
 from .coordination import get_coordination_service
-from agents.services.multimodal_processor import MultiModalProcessor
-from agents.services.groq_service import GroqService
+from .models import (
+    AIModelConfig,
+    CrossModalInsight,
+    ModalityResult,
+    ModelCoordinationRun,
+    MultiModalSession,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +48,7 @@ class AIModelConfigViewSet(viewsets.ViewSet):
 
             data = [self._serialize(config) for config in queryset[:100]]
             return Response({'models': data, 'count': len(data)})
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error(f"Error listing AI models: {e}")
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
@@ -83,7 +90,7 @@ class AIModelConfigViewSet(viewsets.ViewSet):
                 {**self._serialize(config), 'message': 'AI model configuration created successfully'},
                 status=status.HTTP_201_CREATED,
             )
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error(f"Error creating AI model config: {e}")
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
@@ -132,7 +139,7 @@ class AIModelConfigViewSet(viewsets.ViewSet):
     @staticmethod
     def _serialize(config: AIModelConfig) -> dict:
         safe_config = dict(config.config or {})
-        if 'api_key' in safe_config and safe_config['api_key']:
+        if safe_config.get('api_key'):
             safe_config['api_key'] = '••••••••'
         return {
             'id': str(config.id),
@@ -152,7 +159,7 @@ class AIModelConfigViewSet(viewsets.ViewSet):
 class MultiModalIntelligenceViewSet(viewsets.ViewSet):
     """Multi-modal intelligence processing"""
     permission_classes = [AllowAny] if settings.DEBUG else [IsAuthenticated]
-    parser_classes = [MultiPartParser, FormParser, JSONParser]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]  # noqa: RUF012
     
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -244,7 +251,7 @@ class MultiModalIntelligenceViewSet(viewsets.ViewSet):
                 'status': 'completed'
             })
             
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error(f"Error in multi-modal processing: {e}")
             if 'session' in locals():
                 session.status = 'failed'
@@ -283,7 +290,7 @@ class MultiModalIntelligenceViewSet(viewsets.ViewSet):
                 'insight_count': len(insights)
             })
             
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error(f"Error in cross-modal analysis: {e}")
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
@@ -312,7 +319,7 @@ class MultiModalIntelligenceViewSet(viewsets.ViewSet):
             } for session in sessions]
             
             return Response({'sessions': data, 'count': len(data)})
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error(f"Error listing sessions: {e}")
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
@@ -322,7 +329,7 @@ class MultiModalIntelligenceViewSet(viewsets.ViewSet):
         try:
             session = MultiModalSession.objects.get(id=pk)
             
-            if not request.user.is_authenticated or session.user != request.user:
+            if not request.user.is_authenticated or session.user != request.user:  # noqa: SIM102
                 if not settings.DEBUG:
                     return Response(
                         {'error': 'Unauthorized'},
@@ -360,7 +367,7 @@ class MultiModalIntelligenceViewSet(viewsets.ViewSet):
                 {'error': 'Session not found'},
                 status=status.HTTP_404_NOT_FOUND
             )
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error(f"Error fetching session detail: {e}")
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
@@ -406,7 +413,7 @@ class MultiModalIntelligenceViewSet(viewsets.ViewSet):
                 'confidence': 0.85
             })
             
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error(f"Error generating cross-modal insights: {e}")
         
         return insights
@@ -441,7 +448,7 @@ class MultiModelViewSet(viewsets.ViewSet):
         }
         """
         try:
-            from .services import get_orchestrator, TaskComplexity
+            from .services import TaskComplexity, get_orchestrator
             orchestrator = get_orchestrator()
             
             messages = request.data.get('messages', [])
@@ -476,7 +483,7 @@ class MultiModelViewSet(viewsets.ViewSet):
             
             return Response(result)
             
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error(f"Chat completion error: {e}")
             return Response(
                 {'error': str(e)},
@@ -506,8 +513,8 @@ class MultiModelViewSet(viewsets.ViewSet):
     @action(detail=False, methods=['get'])
     def performance(self, request):
         """Get performance insights"""
-        from .services import get_orchestrator
         from .models import ModelExecution
+        from .services import get_orchestrator
         
         orchestrator = get_orchestrator()
         insights = orchestrator.get_performance_insights()
@@ -553,7 +560,7 @@ class MultiModelViewSet(viewsets.ViewSet):
                 })
         
         elif request.method == 'PUT':
-            pref, created = ModelPreference.objects.get_or_create(user=request.user)
+            pref, created = ModelPreference.objects.get_or_create(user=request.user)  # noqa: RUF059
             
             # Update fields
             if 'default_priority' in request.data:
@@ -671,7 +678,7 @@ class MultiModelViewSet(viewsets.ViewSet):
                 error_message=result.get('error'),
                 priority=metadata.get('priority', 'balanced')
             )
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error(f"Failed to log execution: {e}")
 
 

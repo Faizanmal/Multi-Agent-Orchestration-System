@@ -180,7 +180,7 @@ export default function MCPPage() {
   }, [selectedToolId]);
 
   useEffect(() => {
-    loadTools();
+    setTimeout(() => { loadTools(); }, 0)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -234,11 +234,11 @@ export default function MCPPage() {
 
     setIsExecuting(true);
     setExecutionResult(null);
-    const started = Date.now();
+    const started = new Date().getTime();
 
     try {
       const res = await executeMCPTool(selectedToolId, parameters);
-      const durationMs = Math.round((Date.now() - started) * 10) / 10;
+      const durationMs = Math.round((new Date().getTime() - started) * 10) / 10;
       const duration =
         typeof res.result?.execution_time === 'number'
           ? `${Math.round(Number(res.result.execution_time) * 1000)}ms`
@@ -265,7 +265,7 @@ export default function MCPPage() {
         ...prev,
       ]);
     } catch (err) {
-      const duration = `${Date.now() - started}ms`;
+      const duration = `${new Date().getTime() - started}ms`;
       const message = err instanceof Error ? err.message : 'Execution failed';
       setExecutionResult({
         success: false,

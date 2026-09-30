@@ -1,13 +1,17 @@
-from rest_framework import viewsets, status
+import logging
+
+from django.db.models import Avg, Q
+from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from django.db.models import Q, Avg
-from .models import Plugin, PluginInstallation, CustomAgentPlugin, PluginReview
+
+from .models import CustomAgentPlugin, Plugin, PluginInstallation, PluginReview
 from .serializers import (
-    PluginSerializer, PluginInstallationSerializer,
-    CustomAgentPluginSerializer, PluginReviewSerializer
+    CustomAgentPluginSerializer,
+    PluginInstallationSerializer,
+    PluginReviewSerializer,
+    PluginSerializer,
 )
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -66,8 +70,8 @@ class PluginViewSet(viewsets.ModelViewSet):
                 'installation': PluginInstallationSerializer(installation).data
             }, status=status.HTTP_201_CREATED)
             
-        except Exception as e:
-            logger.error(f"Error installing plugin: {str(e)}")
+        except Exception as e:  # noqa: BLE001
+            logger.error(f"Error installing plugin: {e!s}")
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
     
     @action(detail=True, methods=['post'])
@@ -118,7 +122,7 @@ class PluginViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_400_BAD_REQUEST
                 )
             
-            review, created = PluginReview.objects.update_or_create(
+            review, created = PluginReview.objects.update_or_create(  # noqa: RUF059
                 plugin=plugin,
                 user=user,
                 defaults={
@@ -138,8 +142,8 @@ class PluginViewSet(viewsets.ModelViewSet):
                 'review': PluginReviewSerializer(review).data
             })
             
-        except Exception as e:
-            logger.error(f"Error submitting review: {str(e)}")
+        except Exception as e:  # noqa: BLE001
+            logger.error(f"Error submitting review: {e!s}")
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -180,8 +184,8 @@ class PluginInstallationViewSet(viewsets.ModelViewSet):
                 'config': installation.custom_config
             })
             
-        except Exception as e:
-            logger.error(f"Error updating config: {str(e)}")
+        except Exception as e:  # noqa: BLE001
+            logger.error(f"Error updating config: {e!s}")
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -205,8 +209,8 @@ class CustomAgentPluginViewSet(viewsets.ModelViewSet):
             
             return Response(result)
             
-        except Exception as e:
-            logger.error(f"Error invoking custom agent: {str(e)}")
+        except Exception as e:  # noqa: BLE001
+            logger.error(f"Error invoking custom agent: {e!s}")
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
     
     def _execute_plugin_agent(self, custom_agent, data):

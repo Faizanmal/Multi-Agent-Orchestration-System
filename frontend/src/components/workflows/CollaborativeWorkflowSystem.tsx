@@ -32,6 +32,32 @@ import {
 import { useToast } from '@/hooks/use-toast'
 import apiClient from '@/lib/api'
 
+export interface RawMember {
+  id?: string;
+  name?: string;
+  email?: string;
+  avatar?: string;
+  role?: string;
+  status?: string;
+  last_active?: string;
+  lastActive?: string;
+  permissions?: string[];
+}
+
+export interface RawComment {
+  id?: string;
+  author_id?: string;
+  authorId?: string;
+  author_name?: string;
+  authorName?: string;
+  content?: string;
+  timestamp?: string;
+  created_at?: string;
+  resolved?: boolean;
+  is_resolved?: boolean;
+  node_id?: string;
+}
+
 interface TeamMember {
   id: string
   name: string
@@ -107,7 +133,7 @@ const CollaborativeWorkflowSystem: React.FC<CollaborativeWorkflowSystemProps> = 
         if (!cancelled && membersRes.status === 'fulfilled') {
           const raw = membersRes.value?.members ?? (membersRes.value as { members?: unknown[] })?.members ?? []
           const list = Array.isArray(raw) ? raw : []
-          setTeamMembers(list.map((m: Record<string, unknown>, i: number) => ({
+          setTeamMembers((list as RawMember[]).map((m, i: number) => ({
             id: String(m.id ?? `member-${i}`),
             name: String(m.name || m.email || 'Member'),
             email: String(m.email || ''),
@@ -126,7 +152,7 @@ const CollaborativeWorkflowSystem: React.FC<CollaborativeWorkflowSystemProps> = 
         if (!cancelled && commentsRes.status === 'fulfilled') {
           const raw = commentsRes.value?.comments ?? []
           const list = Array.isArray(raw) ? raw : []
-          setComments(list.map((c: Record<string, unknown>, i: number) => ({
+          setComments((list as RawComment[]).map((c, i: number) => ({
             id: String(c.id ?? `comment-${i}`),
             authorId: String(c.author_id || c.authorId || ''),
             authorName: String(c.author_name || c.authorName || 'User'),
@@ -167,7 +193,7 @@ const CollaborativeWorkflowSystem: React.FC<CollaborativeWorkflowSystemProps> = 
         if (membersRes.status === 'fulfilled') {
           const raw = membersRes.value?.members ?? []
           if (Array.isArray(raw)) {
-            setTeamMembers(raw.map((m: Record<string, unknown>, i: number) => ({
+            setTeamMembers((raw as RawMember[]).map((m, i: number) => ({
               id: String(m.id ?? `member-${i}`),
               name: String(m.name || m.email || 'Member'),
               email: String(m.email || ''),
@@ -186,7 +212,7 @@ const CollaborativeWorkflowSystem: React.FC<CollaborativeWorkflowSystemProps> = 
         if (commentsRes.status === 'fulfilled') {
           const raw = commentsRes.value?.comments ?? []
           if (Array.isArray(raw)) {
-            setComments(raw.map((c: Record<string, unknown>, i: number) => ({
+            setComments((raw as RawComment[]).map((c, i: number) => ({
               id: String(c.id ?? `comment-${i}`),
               authorId: String(c.author_id || c.authorId || ''),
               authorName: String(c.author_name || c.authorName || 'User'),

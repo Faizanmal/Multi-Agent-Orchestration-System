@@ -123,7 +123,7 @@ export const AdvancedReportingDashboard: React.FC = () => {
   const [selectedReport, setSelectedReport] = useState<CustomReport | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [dateRange, setDateRange] = useState({
-    from: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // 30 days ago
+    from: new Date(new Date().getTime() - 30 * 24 * 60 * 60 * 1000), // 30 days ago
     to: new Date()
   });
   const [filters, setFilters] = useState({
@@ -169,7 +169,7 @@ export const AdvancedReportingDashboard: React.FC = () => {
   }, [dateRange]);
 
   useEffect(() => {
-    loadDashboardData();
+    setTimeout(() => { loadDashboardData(); }, 0)
   }, [dateRange, filters, loadDashboardData]);
 
   const generateReport = async (templateId: string) => {

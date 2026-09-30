@@ -18,7 +18,7 @@ export default function SessionHistory() {
     {
       id: 'session-1',
       name: 'Image Analysis Workflow',
-      timestamp: new Date(Date.now() - 3600000),
+      timestamp: new Date(new Date().getTime() - 3600000),
       messageCount: 8,
       agentsUsed: ['claude-vision', 'gpt-4'],
       status: 'completed'
@@ -26,7 +26,7 @@ export default function SessionHistory() {
     {
       id: 'session-2', 
       name: 'Voice Processing Task',
-      timestamp: new Date(Date.now() - 7200000),
+      timestamp: new Date(new Date().getTime() - 7200000),
       messageCount: 12,
       agentsUsed: ['whisper', 'groq-fast'],
       status: 'completed'
@@ -34,7 +34,7 @@ export default function SessionHistory() {
     {
       id: 'session-3',
       name: 'Multi-Modal Research',
-      timestamp: new Date(Date.now() - 86400000),
+      timestamp: new Date(new Date().getTime() - 86400000),
       messageCount: 24,
       agentsUsed: ['gpt-4', 'claude-vision', 'whisper', 'groq-fast'],
       status: 'completed'

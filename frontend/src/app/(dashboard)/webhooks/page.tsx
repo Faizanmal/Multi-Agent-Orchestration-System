@@ -288,7 +288,7 @@ export default function WebhooksPage() {
   }, [loadDeliveries]);
 
   useEffect(() => {
-    loadWebhooks();
+    setTimeout(() => { loadWebhooks(); }, 0)
   }, [loadWebhooks]);
 
   const filteredWebhooks = useMemo(() => {
@@ -425,7 +425,7 @@ export default function WebhooksPage() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="icon" onClick={loadWebhooks} disabled={loading}>
+            <Button variant="outline" size="icon" onClick={() => loadWebhooks()} disabled={loading}>
               <RefreshCw className={cn('h-4 w-4', loading && 'animate-spin')} />
             </Button>
             <Button onClick={() => setShowCreateDialog(true)} className="gap-2">
@@ -492,7 +492,7 @@ export default function WebhooksPage() {
                 <CardContent className="flex flex-col items-center justify-center py-12 text-center">
                   <AlertCircle className="h-12 w-12 text-destructive mb-4" />
                   <h3 className="font-semibold">{error}</h3>
-                  <Button variant="outline" className="mt-4" onClick={loadWebhooks}>
+                  <Button variant="outline" className="mt-4" onClick={() => loadWebhooks()}>
                     Try again
                   </Button>
                 </CardContent>

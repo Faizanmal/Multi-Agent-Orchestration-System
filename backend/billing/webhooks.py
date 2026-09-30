@@ -3,12 +3,12 @@ from datetime import datetime, timezone
 from decimal import Decimal
 
 import stripe
+from authentication.models import Workspace
 from django.conf import settings
 from django.http import HttpResponse
-from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
 
-from authentication.models import Workspace
 from .models import Invoice, Subscription
 from .services import tier_for_price
 

@@ -197,12 +197,12 @@ function deriveModelUsage(dashboard: Record<string, unknown>, costSummary: Recor
   const taskAnalytics = asRecord(dashboard.task_analytics);
   const typeStats = asArray(taskAnalytics.task_type_distribution ?? taskAnalytics.by_type);
   if (typeStats.length > 0) {
-    const total = typeStats.reduce((sum, item) => sum + num(asRecord(item).count), 0) || 1;
+    const total = typeStats.reduce((sum: number, item) => sum + num(asRecord(item).count), 0) || 1;
     return typeStats.slice(0, 6).map((item, i) => {
       const row = asRecord(item);
       return {
         name: String(row.task_type || row.name || `Type ${i + 1}`),
-        value: Math.round((num(row.count) / total) * 100),
+        value: Math.round((num(row.count) / (total as number)) * 100),
         color: MODEL_COLORS[i % MODEL_COLORS.length],
       };
     });
@@ -354,7 +354,7 @@ export default function AnalyticsPage() {
   }, [timeRange]);
 
   useEffect(() => {
-    loadData();
+    setTimeout(() => { loadData(); }, 0)
   }, [loadData]);
 
   const statsCards = useMemo(

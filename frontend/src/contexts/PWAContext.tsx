@@ -32,72 +32,7 @@ export const PWAProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [pendingActions, setPendingActions] = useState(0);
   const [serviceWorker, setServiceWorker] = useState<ServiceWorker | null>(null);
 
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    // Check if app is running in standalone mode
-    const checkStandalone = () => {
-      const isStandaloneMode = window.matchMedia('(display-mode: standalone)').matches ||
-                             (window.navigator as unknown as { standalone?: boolean }).standalone ||
-                             document.referrer.includes('android-app://');
-      setIsStandalone(Boolean(isStandaloneMode));
-      setIsInstalled(Boolean(isStandaloneMode));
-    };
-
-    checkStandalone();
-
-    // Listen for display mode changes
-    window.matchMedia('(display-mode: standalone)').addEventListener('change', checkStandalone);
-
-    // Register service worker
-    if ('serviceWorker' in navigator) {
-      registerServiceWorker();
-    }
-
-    // Listen for beforeinstallprompt event
-    const handleBeforeInstallPrompt = (e: Event) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-      setIsInstallable(true);
-      console.log('PWA: Install prompt ready');
-    };
-
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-
-    // Listen for app installed event
-    const handleAppInstalled = () => {
-      setIsInstalled(true);
-      setIsInstallable(false);
-      setDeferredPrompt(null);
-      console.log('PWA: App installed');
-    };
-
-    window.addEventListener('appinstalled', handleAppInstalled);
-
-    // Listen for online/offline events
-    const handleOnline = () => {
-      setIsOnline(true);
-      triggerBackgroundSync();
-    };
-
-    const handleOffline = () => {
-      setIsOnline(false);
-    };
-
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-
-    // Cleanup
-    return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-      window.removeEventListener('appinstalled', handleAppInstalled);
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-      window.matchMedia('(display-mode: standalone)').removeEventListener('change', checkStandalone);
-    };
-  }, []);
-
-  const registerServiceWorker = async () => {
+  async function registerServiceWorker() {
     try {
       const registration = await navigator.serviceWorker.register('/sw.js', {
         scope: '/'
@@ -175,7 +110,7 @@ export const PWAProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  const triggerBackgroundSync = () => {
+  function triggerBackgroundSync() {
     if ('serviceWorker' in navigator && 'sync' in window.ServiceWorkerRegistration.prototype) {
       navigator.serviceWorker.ready.then((registration) => {
         setSyncStatus('syncing');
@@ -244,6 +179,70 @@ export const PWAProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
     return null;
   };
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+
+        // Check if app is running in standalone mode
+        const checkStandalone = () => {
+          const isStandaloneMode = window.matchMedia('(display-mode: standalone)').matches ||
+                                 (window.navigator as unknown as { standalone?: boolean }).standalone ||
+                                 document.referrer.includes('android-app://');
+          setIsStandalone(Boolean(isStandaloneMode));
+          setIsInstalled(Boolean(isStandaloneMode));
+        };
+
+        checkStandalone();
+
+        // Listen for display mode changes
+        window.matchMedia('(display-mode: standalone)').addEventListener('change', checkStandalone);
+
+        // Register service worker
+        if ('serviceWorker' in navigator) {
+          setTimeout(() => registerServiceWorker(), 0);
+        }
+
+        // Listen for beforeinstallprompt event
+        const handleBeforeInstallPrompt = (e: Event) => {
+          e.preventDefault();
+          setDeferredPrompt(e);
+          setIsInstallable(true);
+          console.log('PWA: Install prompt ready');
+        };
+
+        window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+        // Listen for app installed event
+        const handleAppInstalled = () => {
+          setIsInstalled(true);
+          setIsInstallable(false);
+          setDeferredPrompt(null);
+          console.log('PWA: App installed');
+        };
+
+        window.addEventListener('appinstalled', handleAppInstalled);
+
+        // Listen for online/offline events
+        const handleOnline = () => {
+          setIsOnline(true);
+          triggerBackgroundSync();
+        };
+
+        const handleOffline = () => {
+          setIsOnline(false);
+        };
+
+        window.addEventListener('online', handleOnline);
+        window.addEventListener('offline', handleOffline);
+
+        // Cleanup
+        return () => {
+          window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+          window.removeEventListener('appinstalled', handleAppInstalled);
+          window.removeEventListener('online', handleOnline);
+          window.removeEventListener('offline', handleOffline);
+          window.matchMedia('(display-mode: standalone)').removeEventListener('change', checkStandalone);
+        };
+      }, []);
 
   const contextValue: PWAContextType = {
     isInstallable,

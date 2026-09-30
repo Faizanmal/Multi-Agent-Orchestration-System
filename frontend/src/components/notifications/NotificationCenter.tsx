@@ -213,11 +213,6 @@ export const NotificationCenter: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
-
-  useEffect(() => {
-    loadNotificationData();
-  }, []);
-
   const loadNotificationData = async () => {
     try {
       const [notificationsRes, templatesRes, campaignsRes, rulesRes, settingsRes] = await Promise.all([
@@ -374,6 +369,9 @@ export const NotificationCenter: React.FC = () => {
     
     return matchesSearch && matchesType && matchesStatus;
   });
+    useEffect(() => {
+        setTimeout(() => loadNotificationData(), 0);
+      }, []);
 
   return (
     <div className="p-6 space-y-6">

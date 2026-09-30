@@ -1,5 +1,6 @@
-import time
 import logging
+import time
+
 from django.utils.deprecation import MiddlewareMixin
 
 logger = logging.getLogger(__name__)
@@ -12,7 +13,6 @@ class PerformanceTrackingMiddleware(MiddlewareMixin):
     def process_request(self, request):
         """Record the start time of the request"""
         request.start_time = time.time()
-        return None
     
     def process_response(self, request, response):
         """Calculate and log the response time"""
@@ -50,6 +50,5 @@ class PerformanceTrackingMiddleware(MiddlewareMixin):
                 f"Method: {request.method}, "
                 f"Path: {request.path}, "
                 f"Duration: {duration:.4f}s, "
-                f"Exception: {str(exception)}"
+                f"Exception: {exception!s}"
             )
-        return None

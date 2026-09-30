@@ -1,14 +1,22 @@
 # Collaboration Views
 
-from rest_framework import viewsets, status
-from rest_framework.decorators import action
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from datetime import timedelta
+
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.utils import timezone
-from datetime import timedelta
-from .collaboration_models import CollaborationSession, TeamMember, Comment, ActivityLog, Notification
+from rest_framework import status, viewsets
+from rest_framework.decorators import action
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
+
+from .collaboration_models import (
+    ActivityLog,
+    CollaborationSession,
+    Comment,
+    Notification,
+    TeamMember,
+)
 
 # Get the custom user model
 User = get_user_model()
@@ -51,7 +59,7 @@ class CollaborationViewSet(viewsets.ViewSet):
                 'created_at': session.created_at.isoformat()
             })
             
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return Response(
                 {'error': str(e)}, 
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -124,7 +132,7 @@ class CollaborationViewSet(viewsets.ViewSet):
                 {'error': 'Session not found'}, 
                 status=status.HTTP_404_NOT_FOUND
             )
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return Response(
                 {'error': str(e)}, 
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -162,7 +170,7 @@ class CollaborationViewSet(viewsets.ViewSet):
                 {'error': 'Session not found'}, 
                 status=status.HTTP_404_NOT_FOUND
             )
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return Response(
                 {'error': str(e)}, 
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -215,7 +223,7 @@ class CollaborationViewSet(viewsets.ViewSet):
                 {'error': 'Session not found'}, 
                 status=status.HTTP_404_NOT_FOUND
             )
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return Response(
                 {'error': str(e)}, 
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -257,7 +265,7 @@ class CollaborationViewSet(viewsets.ViewSet):
                 {'error': 'Session not found'}, 
                 status=status.HTTP_404_NOT_FOUND
             )
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return Response(
                 {'error': str(e)}, 
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -293,7 +301,7 @@ class CollaborationViewSet(viewsets.ViewSet):
                 {'error': 'Session not found'}, 
                 status=status.HTTP_404_NOT_FOUND
             )
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return Response(
                 {'error': str(e)}, 
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -327,7 +335,7 @@ class CollaborationViewSet(viewsets.ViewSet):
                 {'error': 'Session not found'}, 
                 status=status.HTTP_404_NOT_FOUND
             )
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return Response(
                 {'error': str(e)}, 
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -382,7 +390,7 @@ class NotificationViewSet(viewsets.ViewSet):
                 {'error': 'Notification not found'}, 
                 status=status.HTTP_404_NOT_FOUND
             )
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return Response(
                 {'error': str(e)}, 
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR

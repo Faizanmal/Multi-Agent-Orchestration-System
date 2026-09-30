@@ -1,9 +1,11 @@
-import os
-from groq import Groq
-from typing import List, Dict, Any, Generator
 import json
 import logging
+import os
+from collections.abc import Generator
+from typing import Any
+
 from django.conf import settings
+from groq import Groq
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +20,7 @@ class GroqService:
         self.default_temperature = settings.GROQ_CONFIG.get('TEMPERATURE', 0.7)
         self.default_max_tokens = settings.GROQ_CONFIG.get('MAX_TOKENS', 2048)
     
-    def chat_completion(self, messages: List[Dict], model: str = None, **kwargs) -> Dict[str, Any]:
+    def chat_completion(self, messages: list[dict], model: str | None = None, **kwargs) -> dict[str, Any]:
         """
         Get chat completion from Groq API with enhanced performance and error handling
         
@@ -100,14 +102,14 @@ Please format ALL your responses this way. Never use plain text paragraphs."""
                 'response_time': response.usage.completion_tokens / 1000  # Approximate response time
             }
             
-        except Exception as e:
-            logger.error(f"Groq API error: {str(e)}")
+        except Exception as e:  # noqa: BLE001
+            logger.error(f"Groq API error: {e!s}")
             return {
                 'error': str(e),
                 'content': None
             }
     
-    def stream_completion(self, messages: List[Dict], session_id: str = None, model: str = None) -> Generator:
+    def stream_completion(self, messages: list[dict], session_id: str | None = None, model: str | None = None) -> Generator:
         """
         Stream chat completion from Groq API
         
@@ -151,15 +153,15 @@ Please format ALL your responses this way. Never use plain text paragraphs."""
                 'done': True
             }
             
-        except Exception as e:
-            logger.error(f"Groq streaming error: {str(e)}")
+        except Exception as e:  # noqa: BLE001
+            logger.error(f"Groq streaming error: {e!s}")
             yield {
                 'error': str(e),
                 'content': '',
                 'done': True
             }
     
-    def _handle_stream_response(self, stream) -> Dict[str, Any]:
+    def _handle_stream_response(self, stream) -> dict[str, Any]:
         """Handle streaming response"""
         content = ""
         for chunk in stream:
@@ -173,8 +175,8 @@ Please format ALL your responses this way. Never use plain text paragraphs."""
     
     def _send_stream_update(self, session_id: str, chunk: str, full_content: str):
         """Send streaming update via WebSocket"""
-        from channels.layers import get_channel_layer
         from asgiref.sync import async_to_sync
+        from channels.layers import get_channel_layer
         
         channel_layer = get_channel_layer()
         async_to_sync(channel_layer.group_send)(
@@ -186,7 +188,7 @@ Please format ALL your responses this way. Never use plain text paragraphs."""
             }
         )
     
-    def generate_agent_response(self, agent_type: str, context: Dict, user_input: str) -> Dict[str, Any]:
+    def generate_agent_response(self, agent_type: str, context: dict, user_input: str) -> dict[str, Any]:
         """
         Generate response based on agent type and context
         
@@ -218,9 +220,9 @@ Please format ALL your responses this way. Never use plain text paragraphs."""
     def generate_response(
         self,
         prompt: str,
-        model: str = None,
-        temperature: float = None,
-        max_tokens: int = None
+        model: str | None = None,
+        temperature: float | None = None,
+        max_tokens: int | None = None
     ) -> str:
         """
         Compatibility helper for workflow orchestrators that expect a raw string response.
@@ -296,7 +298,7 @@ Please format ALL your responses this way. Never use plain text paragraphs."""
         return """You are an AI assistant that provides helpful, accurate, and contextual responses.
         Analyze the given context and user input to provide the most appropriate response."""
     
-    def analyze_multimodal_input(self, content: str, file_type: str = None, file_path: str = None) -> Dict[str, Any]:
+    def analyze_multimodal_input(self, content: str, file_type: str | None = None, file_path: str | None = None) -> dict[str, Any]:
         """
         Analyze multimodal input (text, image, audio, etc.)
         
@@ -337,17 +339,17 @@ Please format ALL your responses this way. Never use plain text paragraphs."""
         
         return analysis
     
-    def _analyze_file(self, file_path: str, file_type: str) -> Dict[str, Any]:
+    def _analyze_file(self, file_path: str, file_type: str) -> dict[str, Any]:
         """
         Analyze an uploaded file using Groq.
         - Text/CSV/JSON: read content and pass to Groq for analysis.
         - Images: describe via Groq vision prompt with base64 encoding.
         - Other binary files: summarise file metadata only.
         """
-        import os
         import base64
+        import os
 
-        result: Dict[str, Any] = {
+        result: dict[str, Any] = {
             'file_type': file_type,
             'file_path': file_path,
             'analysis': None,
@@ -435,8 +437,8 @@ Please format ALL your responses this way. Never use plain text paragraphs."""
                     'Content analysis is not supported for this format.'
                 )
 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error(f'File analysis error for {file_path}: {e}')
-            result['analysis'] = f'Analysis error: {str(e)}'
+            result['analysis'] = f'Analysis error: {e!s}'
 
         return result

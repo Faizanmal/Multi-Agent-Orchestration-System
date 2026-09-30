@@ -1,5 +1,5 @@
 """Stripe API integration (customer ops — invoices, customers, subscriptions)."""
-from typing import Any, Dict, List
+from typing import Any
 
 import requests
 
@@ -19,7 +19,7 @@ class StripeProvider(IntegrationProvider):
         return "stripe" in text
 
     @classmethod
-    def tool_definitions(cls) -> List[Dict[str, Any]]:
+    def tool_definitions(cls) -> list[dict[str, Any]]:
         return [
             {"name": "stripe.list_customers", "description": "List Stripe customers", "parameters": {"limit": "int"}},
             {"name": "stripe.list_invoices", "description": "List recent invoices", "parameters": {"limit": "int", "customer": "string"}},
@@ -35,7 +35,7 @@ class StripeProvider(IntegrationProvider):
         return (token, "")
 
     @classmethod
-    def test_connection(cls, integration: APIIntegration) -> Dict[str, Any]:
+    def test_connection(cls, integration: APIIntegration) -> dict[str, Any]:
         try:
             resp = requests.get(
                 "https://api.stripe.com/v1/balance",
@@ -45,11 +45,11 @@ class StripeProvider(IntegrationProvider):
             if resp.status_code >= 400:
                 return {"status": "error", "message": resp.text[:300]}
             return {"status": "success", "message": "Connected to Stripe", "data": resp.json()}
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return {"status": "error", "message": str(e)}
 
     @classmethod
-    def execute_tool(cls, integration: APIIntegration, tool_name: str, params: Dict[str, Any]) -> Dict[str, Any]:
+    def execute_tool(cls, integration: APIIntegration, tool_name: str, params: dict[str, Any]) -> dict[str, Any]:
         try:
             auth = cls._auth_header(integration)
             limit = min(int(params.get("limit", 10)), 50)
@@ -85,5 +85,5 @@ class StripeProvider(IntegrationProvider):
                 return {"status": "success" if resp.ok else "error", "subscriptions": data.get("data", []) if resp.ok else [], "message": "" if resp.ok else data.get("error", {}).get("message", resp.text[:300])}
 
             return {"status": "error", "message": f"Unknown Stripe tool: {tool_name}"}
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return {"status": "error", "message": str(e)}

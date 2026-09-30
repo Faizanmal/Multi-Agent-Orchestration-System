@@ -141,11 +141,7 @@ export default function WorkflowDashboard() {
   const [inputData, setInputData] = useState<Record<string, unknown>>({});
   const [activeTab, setActiveTab] = useState('quick-start');
 
-  useEffect(() => {
-    loadTemplates();
-  }, []);
-
-  const loadTemplates = async () => {
+  async function loadTemplates() {
     try {
       const response = await fetch('http://localhost:8000/api/agents/api/workflows/templates/');
       const data = await response.json();
@@ -274,6 +270,9 @@ export default function WorkflowDashboard() {
         return 'bg-gray-100 text-gray-800';
     }
   };
+    useEffect(() => {
+        setTimeout(() => loadTemplates(), 0);
+      }, []);
 
   return (
     <div className="container mx-auto p-6 space-y-6">

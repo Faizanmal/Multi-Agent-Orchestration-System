@@ -6,21 +6,22 @@ parallel execution, error handling, and result aggregation.
 """
 
 import asyncio
+import json
 import logging
-from typing import Dict, List, Any, Optional, Set, Callable
+from collections import defaultdict
+from collections.abc import Callable
+from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from dataclasses import dataclass, field
-from collections import defaultdict
-import json
+from typing import Any
 
-from django.utils import timezone
 from asgiref.sync import sync_to_async
+from django.utils import timezone
 
-from ..models import Agent, Task, TaskStatus, TaskPriority, Session
-from .workflow_templates import get_template
+from ..models import Agent, Session, Task, TaskPriority, TaskStatus
 from .groq_service import GroqService
 from .multimodal_processor import MultiModalProcessor
+from .workflow_templates import get_template
 
 logger = logging.getLogger(__name__)
 
@@ -43,17 +44,17 @@ class WorkflowStep:
     name: str
     type: str
     agent_type: str
-    config: Dict[str, Any]
-    dependencies: List[str] = field(default_factory=list)
+    config: dict[str, Any]
+    dependencies: list[str] = field(default_factory=list)
     status: StepStatus = StepStatus.PENDING
-    result: Optional[Dict[str, Any]] = None
-    error: Optional[str] = None
-    start_time: Optional[datetime] = None
-    end_time: Optional[datetime] = None
+    result: dict[str, Any] | None = None
+    error: str | None = None
+    start_time: datetime | None = None
+    end_time: datetime | None = None
     retry_count: int = 0
-    assigned_agent: Optional[Agent] = None
-    task_id: Optional[str] = None
-    outputs: List[str] = field(default_factory=list)
+    assigned_agent: Agent | None = None
+    task_id: str | None = None
+    outputs: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -62,15 +63,15 @@ class WorkflowExecution:
     workflow_id: str
     workflow_name: str
     user_id: str
-    session_id: Optional[str]
-    input_data: Dict[str, Any]
-    steps: Dict[str, WorkflowStep]
-    results: Dict[str, Any] = field(default_factory=dict)
+    session_id: str | None
+    input_data: dict[str, Any]
+    steps: dict[str, WorkflowStep]
+    results: dict[str, Any] = field(default_factory=dict)
     status: str = "initializing"
     start_time: datetime = field(default_factory=timezone.now)
-    end_time: Optional[datetime] = None
-    error: Optional[str] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    end_time: datetime | None = None
+    error: str | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 class WorkflowOrchestrator:
@@ -89,18 +90,18 @@ class WorkflowOrchestrator:
     def __init__(self):
         self.groq_service = GroqService()
         self.multimodal_processor = MultiModalProcessor()
-        self.active_workflows: Dict[str, WorkflowExecution] = {}
+        self.active_workflows: dict[str, WorkflowExecution] = {}
         self.step_executors = self._register_step_executors()
         self.cross_modal_context = {}  # Store cross-modal insights
     
     async def execute_workflow(
         self,
         workflow_id: str,
-        input_data: Dict[str, Any],
+        input_data: dict[str, Any],
         user_id: str,
-        session_id: Optional[str] = None,
-        callback: Optional[Callable] = None
-    ) -> Dict[str, Any]:
+        session_id: str | None = None,
+        callback: Callable | None = None
+    ) -> dict[str, Any]:
         """
         Execute a complete workflow with intelligent orchestration.
         
@@ -121,7 +122,7 @@ class WorkflowOrchestrator:
                 raise ValueError(f"Workflow template '{workflow_id}' not found")
             
             # Create workflow execution
-            execution_id = f"{workflow_id}_{int(datetime.now().timestamp())}"
+            execution_id = f"{workflow_id}_{int(datetime.now(timezone.utc).timestamp())}"
             execution = self._create_workflow_execution(
                 execution_id, template, input_data, user_id, session_id
             )
@@ -143,7 +144,7 @@ class WorkflowOrchestrator:
             return result
             
         except Exception as e:
-            logger.error(f"Error executing workflow: {e}", exc_info=True)
+            logger.exception("Error executing workflow")
             if execution:
                 execution.error = str(e)
                 execution.status = "failed"
@@ -156,10 +157,10 @@ class WorkflowOrchestrator:
     def _create_workflow_execution(
         self,
         execution_id: str,
-        template: Dict,
-        input_data: Dict,
+        template: dict,
+        input_data: dict,
         user_id: str,
-        session_id: Optional[str]
+        session_id: str | None
     ) -> WorkflowExecution:
         """Create a workflow execution from template"""
         
@@ -195,7 +196,7 @@ class WorkflowOrchestrator:
     async def _execute_workflow_steps(
         self,
         execution: WorkflowExecution,
-        callback: Optional[Callable] = None
+        callback: Callable | None = None
     ):
         """
         Execute workflow steps with dependency management and parallel execution.
@@ -203,8 +204,8 @@ class WorkflowOrchestrator:
         execution.status = "running"
         
         # Execute steps in topological order with parallelism
-        completed_steps: Set[str] = set()
-        failed_steps: Set[str] = set()
+        completed_steps: set[str] = set()
+        failed_steps: set[str] = set()
         
         while len(completed_steps) + len(failed_steps) < len(execution.steps):
             # Find steps that are ready to execute
@@ -233,7 +234,7 @@ class WorkflowOrchestrator:
                     await task
                     completed_steps.add(step_id)
                     logger.info(f"Step {step_id} completed successfully")
-                except Exception as e:
+                except Exception as e:  # noqa: BLE001
                     logger.error(f"Step {step_id} failed: {e}")
                     failed_steps.add(step_id)
                     
@@ -252,7 +253,7 @@ class WorkflowOrchestrator:
         self,
         step: WorkflowStep,
         execution: WorkflowExecution,
-        callback: Optional[Callable] = None
+        callback: Callable | None = None
     ):
         """Execute a single workflow step"""
         
@@ -312,9 +313,9 @@ class WorkflowOrchestrator:
         self,
         step: WorkflowStep,
         agent: Agent,
-        context: Dict[str, Any],
+        context: dict[str, Any],
         execution: WorkflowExecution
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Execute a task using an AI agent"""
         
         # Build task prompt
@@ -348,7 +349,7 @@ class WorkflowOrchestrator:
     def _build_task_prompt(
         self,
         step: WorkflowStep,
-        context: Dict[str, Any],
+        context: dict[str, Any],
         execution: WorkflowExecution
     ) -> str:
         """Build a comprehensive prompt for the agent task"""
@@ -387,7 +388,7 @@ class WorkflowOrchestrator:
         
         return "\n".join(prompt_parts)
     
-    def _parse_agent_response(self, response: str, step: WorkflowStep) -> Dict[str, Any]:
+    def _parse_agent_response(self, response: str, step: WorkflowStep) -> dict[str, Any]:
         """Parse agent response into structured result"""
         
         try:
@@ -469,7 +470,7 @@ class WorkflowOrchestrator:
         self,
         step: WorkflowStep,
         execution: WorkflowExecution
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Gather context from dependency step results"""
         
         context = {}
@@ -483,8 +484,8 @@ class WorkflowOrchestrator:
     
     def _build_dependency_graph(
         self,
-        steps: Dict[str, WorkflowStep]
-    ) -> Dict[str, Set[str]]:
+        steps: dict[str, WorkflowStep]
+    ) -> dict[str, set[str]]:
         """Build dependency graph for topological execution"""
         
         graph = defaultdict(set)
@@ -497,10 +498,10 @@ class WorkflowOrchestrator:
     
     def _get_ready_steps(
         self,
-        steps: Dict[str, WorkflowStep],
-        completed: Set[str],
-        failed: Set[str]
-    ) -> List[str]:
+        steps: dict[str, WorkflowStep],
+        completed: set[str],
+        failed: set[str]
+    ) -> list[str]:
         """Get steps that are ready to execute"""
         
         ready = []
@@ -548,7 +549,7 @@ class WorkflowOrchestrator:
         
         return task
     
-    def _update_task_completed(self, task: Task, result: Dict):
+    def _update_task_completed(self, task: Task, result: dict):
         """Update task as completed"""
         task.status = TaskStatus.COMPLETED
         task.output_data = result
@@ -565,7 +566,7 @@ class WorkflowOrchestrator:
     def _compile_workflow_results(
         self,
         execution: WorkflowExecution
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Compile final workflow results"""
         
         completed_steps = [
@@ -619,7 +620,7 @@ class WorkflowOrchestrator:
         self,
         execution: WorkflowExecution,
         callback: Callable,
-        completed_steps: Set[str]
+        completed_steps: set[str]
     ):
         """Send progress update via callback"""
         
@@ -640,17 +641,17 @@ class WorkflowOrchestrator:
                 await callback(progress)
             else:
                 callback(progress)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.warning(f"Error sending progress update: {e}")
     
-    def _register_step_executors(self) -> Dict[str, Callable]:
+    def _register_step_executors(self) -> dict[str, Callable]:
         """Register step executor functions"""
         return {
             'agent_task': self._execute_agent_task,
             # Add more step types as needed
         }
     
-    def get_workflow_status(self, execution_id: str) -> Optional[Dict]:
+    def get_workflow_status(self, execution_id: str) -> dict | None:
         """Get current status of a workflow execution"""
         execution = self.active_workflows.get(execution_id)
         if not execution:
@@ -672,10 +673,10 @@ class WorkflowOrchestrator:
     async def execute_multimodal_workflow(
         self,
         workflow_id: str,
-        multimodal_input: Dict[str, Any],
+        multimodal_input: dict[str, Any],
         user_id: str,
-        session_id: Optional[str] = None
-    ) -> Dict[str, Any]:
+        session_id: str | None = None
+    ) -> dict[str, Any]:
         """
         Execute workflow with multimodal input processing.
         Processes different modalities and passes insights to agents.
@@ -690,7 +691,7 @@ class WorkflowOrchestrator:
             )
             
             # Store cross-modal context
-            execution_id = f"{workflow_id}_{int(datetime.now().timestamp())}"
+            execution_id = f"{workflow_id}_{int(datetime.now(timezone.utc).timestamp())}"
             self.cross_modal_context[execution_id] = {
                 'modalities': multimodal_results.get('input_types', []),
                 'results': multimodal_results.get('results', {}),
@@ -717,15 +718,15 @@ class WorkflowOrchestrator:
             
             return result
             
-        except Exception as e:
-            logger.error(f"Error in multimodal workflow execution: {e}", exc_info=True)
+        except Exception:
+            logger.exception("Error in multimodal workflow execution")
             raise
     
     def _pass_cross_modal_context(
         self,
         step: WorkflowStep,
         execution: WorkflowExecution
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Pass cross-modal context to workflow steps.
         Enables agents to access insights from different modalities.
@@ -750,7 +751,7 @@ class WorkflowOrchestrator:
         
         return context
     
-    def _extract_actionable_insights(self, cross_modal_data: Dict[str, Any]) -> List[str]:
+    def _extract_actionable_insights(self, cross_modal_data: dict[str, Any]) -> list[str]:
         """Extract actionable insights from cross-modal analysis"""
         insights = []
         

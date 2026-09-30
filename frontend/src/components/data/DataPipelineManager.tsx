@@ -224,11 +224,6 @@ export const DataPipelineManager: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
-
-  useEffect(() => {
-    loadPipelineData();
-  }, []);
-
   const loadPipelineData = async () => {
     try {
       setIsLoading(true);
@@ -396,6 +391,9 @@ export const DataPipelineManager: React.FC = () => {
     
     return matchesSearch && matchesStatus && matchesType;
   });
+    useEffect(() => {
+        setTimeout(() => loadPipelineData(), 0);
+      }, []);
 
   return (
     <div className="p-6 space-y-6">

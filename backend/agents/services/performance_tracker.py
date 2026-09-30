@@ -2,11 +2,13 @@
 
 import logging
 from datetime import datetime, timedelta
-from typing import Dict, List
+
 from django.db.models import Avg, Q
 from django.utils import timezone
-from ..models import Agent, TaskExecution
+
 from agents import models
+
+from ..models import Agent, TaskExecution
 
 logger = logging.getLogger(__name__)
 
@@ -24,9 +26,9 @@ class PerformanceTracker:
         start_time: datetime,
         end_time: datetime,
         success: bool,
-        accuracy: float = None,
-        error_message: str = None,
-        resource_usage: Dict = None
+        accuracy: float | None = None,
+        error_message: str | None = None,
+        resource_usage: dict | None = None
     ):
         """Track a single task execution for performance analysis."""
         
@@ -53,15 +55,15 @@ class PerformanceTracker:
             
             logger.info(f"Tracked execution for agent {agent_id}: {execution_time:.2f}s, success={success}")
             
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error(f"Error tracking task execution: {e}")
     
     def get_agent_performance(
         self, 
         agent_id: str, 
-        task_type: str = None, 
+        task_type: str | None = None, 
         days: int = 30
-    ) -> Dict:
+    ) -> dict:
         """Get comprehensive performance metrics for an agent."""
         
         try:
@@ -122,11 +124,11 @@ class PerformanceTracker:
                 'last_updated': timezone.now().isoformat()
             }
             
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error(f"Error getting agent performance: {e}")
             return {}
     
-    def get_system_performance(self, days: int = 7) -> Dict:
+    def get_system_performance(self, days: int = 7) -> dict:
         """Get overall system performance metrics."""
         
         try:
@@ -189,11 +191,11 @@ class PerformanceTracker:
                 'generated_at': timezone.now().isoformat()
             }
             
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error(f"Error getting system performance: {e}")
             return {}
     
-    def get_performance_recommendations(self, agent_id: str) -> List[Dict]:
+    def get_performance_recommendations(self, agent_id: str) -> list[dict]:
         """Get performance improvement recommendations for an agent."""
         
         recommendations = []
@@ -274,7 +276,7 @@ class PerformanceTracker:
             
             return recommendations
             
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error(f"Error generating recommendations: {e}")
             return []
     
@@ -284,7 +286,7 @@ class PerformanceTracker:
         task_type: str, 
         execution_time: float, 
         success: bool, 
-        accuracy: float = None
+        accuracy: float | None = None
     ):
         """Update real-time agent performance metrics."""
         
@@ -322,7 +324,7 @@ class PerformanceTracker:
             agent.configuration = config
             agent.save(update_fields=['configuration'])
             
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error(f"Error updating agent metrics: {e}")
     
     def _get_trend_comparison(
@@ -331,7 +333,7 @@ class PerformanceTracker:
         task_type: str, 
         recent_days: int, 
         comparison_days: int
-    ) -> Dict:
+    ) -> dict:
         """Compare recent performance with previous period."""
         
         try:
@@ -370,7 +372,7 @@ class PerformanceTracker:
                 'trend': 'improving' if recent_success_rate > comparison_success_rate else 'declining'
             }
             
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error(f"Error calculating trend comparison: {e}")
             return {}
     
@@ -403,7 +405,7 @@ class PerformanceTracker:
         else:
             return 'other'
     
-    def _calculate_resource_usage(self, executions) -> Dict:
+    def _calculate_resource_usage(self, executions) -> dict:
         """Calculate resource utilization metrics."""
         
         try:
@@ -426,6 +428,6 @@ class PerformanceTracker:
                 'total_executions': execution_count
             }
             
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error(f"Error calculating resource usage: {e}")
             return {}

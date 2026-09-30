@@ -1,13 +1,14 @@
-from django.db import models
-from django.contrib.auth import get_user_model
 import uuid
+
+from django.contrib.auth import get_user_model
+from django.db import models
 
 User = get_user_model()
 
 
 class ModelExecution(models.Model):
     """Track model execution history and performance"""
-    PROVIDER_CHOICES = [
+    PROVIDER_CHOICES = [  # noqa: RUF012
         ('nvidia', 'NVIDIA'),
         ('groq', 'Groq'),
         ('google', 'Google'),
@@ -15,7 +16,7 @@ class ModelExecution(models.Model):
         ('openai', 'OpenAI'),
     ]
     
-    COMPLEXITY_CHOICES = [
+    COMPLEXITY_CHOICES = [  # noqa: RUF012
         ('simple', 'Simple'),
         ('moderate', 'Moderate'),
         ('complex', 'Complex'),
@@ -53,12 +54,12 @@ class ModelExecution(models.Model):
     
     class Meta:
         db_table = 'multimodel_executions'
-        indexes = [
+        indexes = [  # noqa: RUF012
             models.Index(fields=['user', 'created_at']),
             models.Index(fields=['provider', 'model_name']),
             models.Index(fields=['complexity', 'created_at']),
         ]
-        ordering = ['-created_at']
+        ordering = ['-created_at']  # noqa: RUF012
     
     def __str__(self):
         return f"{self.provider}/{self.model_name} - {self.complexity}"
@@ -141,8 +142,8 @@ class ModelPerformanceMetrics(models.Model):
     
     class Meta:
         db_table = 'multimodel_performance_metrics'
-        unique_together = ['provider', 'model_name', 'period_start']
-        indexes = [
+        unique_together = ['provider', 'model_name', 'period_start']  # noqa: RUF012
+        indexes = [  # noqa: RUF012
             models.Index(fields=['provider', 'model_name', 'period_start']),
         ]
     
@@ -174,7 +175,7 @@ class ModelFallbackLog(models.Model):
     
     class Meta:
         db_table = 'multimodel_fallback_logs'
-        ordering = ['-created_at']
+        ordering = ['-created_at']  # noqa: RUF012
     
     def __str__(self):
         return f"Fallback: {self.original_provider} -> {self.fallback_provider}"
@@ -218,7 +219,7 @@ class AIModelConfig(models.Model):
     
     class Meta:
         db_table = 'multimodel_ai_configs'
-        ordering = ['-created_at']
+        ordering = ['-created_at']  # noqa: RUF012
     
     def __str__(self):
         return f"{self.name} ({self.provider}/{self.model_id})"
@@ -227,7 +228,7 @@ class AIModelConfig(models.Model):
 class MultiModalSession(models.Model):
     """Session for multimodal interactions"""
     
-    STATUS_CHOICES = [
+    STATUS_CHOICES = [  # noqa: RUF012
         ('pending', 'Pending'),
         ('processing', 'Processing'),
         ('completed', 'Completed'),
@@ -252,7 +253,7 @@ class MultiModalSession(models.Model):
     
     class Meta:
         db_table = 'multimodal_sessions'
-        ordering = ['-created_at']
+        ordering = ['-created_at']  # noqa: RUF012
     
     def __str__(self):
         return f"{self.name} - {self.status}"
@@ -283,7 +284,7 @@ class ModalityResult(models.Model):
     
     class Meta:
         db_table = 'multimodal_modality_results'
-        ordering = ['created_at']
+        ordering = ['created_at']  # noqa: RUF012
     
     def __str__(self):
         return f"{self.session.name} - {self.modality_type}"
@@ -304,7 +305,7 @@ class CrossModalInsight(models.Model):
     
     class Meta:
         db_table = 'multimodal_cross_insights'
-        ordering = ['-confidence', '-created_at']
+        ordering = ['-confidence', '-created_at']  # noqa: RUF012
 
     def __str__(self):
         return f"{self.insight_type} ({self.confidence:.2f})"
@@ -313,13 +314,13 @@ class CrossModalInsight(models.Model):
 class ModelCoordinationRun(models.Model):
     """Audit log for multi-model coordination runs (route/collaborate/debate/pipeline)."""
 
-    MODE_CHOICES = [
+    MODE_CHOICES = [  # noqa: RUF012
         ('route', 'Smart Route'),
         ('collaborative', 'Collaborative'),
         ('debate', 'Debate / Consensus'),
         ('pipeline', 'Sequential Pipeline'),
     ]
-    STATUS_CHOICES = [
+    STATUS_CHOICES = [  # noqa: RUF012
         ('pending', 'Pending'),
         ('running', 'Running'),
         ('completed', 'Completed'),
@@ -343,7 +344,7 @@ class ModelCoordinationRun(models.Model):
 
     class Meta:
         db_table = 'multimodel_coordination_runs'
-        ordering = ['-created_at']
+        ordering = ['-created_at']  # noqa: RUF012
 
     def __str__(self):
         return f"{self.mode} ({self.status})"

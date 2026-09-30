@@ -119,15 +119,17 @@ export default function AgentChatInterface() {
           };
           
           console.log('Created agent message:', agentMessage);
-          setMessages(prev => [...prev, agentMessage]);
-          setIsLoading(false);
+          setTimeout(() => { setMessages(prev => [...prev, agentMessage]); }, 0)
+          setTimeout(() => {
+              setIsLoading(false);
+            }, 0)
         } else if (data.type === 'error') {
           toast({
             title: "Error",
             description: data.message || "An error occurred",
             variant: "destructive"
           });
-          setIsLoading(false);
+          setTimeout(() => setIsLoading(false), 0);
         }
       } catch (error) {
         console.error('Failed to parse WebSocket message:', error);

@@ -20,8 +20,9 @@ def start_scheduler():
         return
 
     from django.utils import timezone
-    from .models import ScheduledAutomation
+
     from .automation_runner import run_automation
+    from .models import ScheduledAutomation
 
     def tick():
         from django.db import close_old_connections

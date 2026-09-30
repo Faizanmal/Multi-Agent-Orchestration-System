@@ -1,22 +1,23 @@
-from django.db import models
-from django.contrib.auth import get_user_model
-from django.conf import settings
-import uuid
 import logging
+import uuid
+
 from authentication.encryption_utils import encryption_util
+from django.conf import settings
+from django.contrib.auth import get_user_model
+from django.db import models
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
 
 class APIIntegration(models.Model):
-    TYPE_CHOICES = [
+    TYPE_CHOICES = [  # noqa: RUF012
         ('REST', 'REST API'),
         ('GraphQL', 'GraphQL'),
         ('WebSocket', 'WebSocket'),
         ('Webhook', 'Webhook'),
     ]
     
-    CATEGORY_CHOICES = [
+    CATEGORY_CHOICES = [  # noqa: RUF012
         ('Database', 'Database'),
         ('Cloud', 'Cloud Services'),
         ('Payment', 'Payment Processing'),
@@ -26,7 +27,7 @@ class APIIntegration(models.Model):
         ('Other', 'Other'),
     ]
     
-    AUTH_CHOICES = [
+    AUTH_CHOICES = [  # noqa: RUF012
         ('none', 'None'),
         ('api_key', 'API Key'),
         ('bearer', 'Bearer Token'),
@@ -34,7 +35,7 @@ class APIIntegration(models.Model):
         ('oauth2', 'OAuth 2.0'),
     ]
     
-    STATUS_CHOICES = [
+    STATUS_CHOICES = [  # noqa: RUF012
         ('active', 'Active'),
         ('inactive', 'Inactive'),
         ('error', 'Error'),
@@ -64,7 +65,7 @@ class APIIntegration(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ['-created_at']
+        ordering = ['-created_at']  # noqa: RUF012
     
     def set_auth_data(self, auth_data):
         """Encrypt and store authentication data"""
@@ -93,16 +94,16 @@ class APIIntegration(models.Model):
                     try:
                         return ast.literal_eval(decrypted_string)
                     except (ValueError, SyntaxError) as e:
-                        logger.error(f"Failed to parse auth data with ast: {str(e)}")
+                        logger.error(f"Failed to parse auth data with ast: {e!s}")
                         return {}
                         
-            except Exception as e:
-                logger.error(f"Error retrieving auth data: {str(e)}")
+            except Exception as e:  # noqa: BLE001
+                logger.error(f"Error retrieving auth data: {e!s}")
                 return {}
         return {}
 
 class APICallResult(models.Model):
-    STATUS_CHOICES = [
+    STATUS_CHOICES = [  # noqa: RUF012
         ('success', 'Success'),
         ('error', 'Error'),
         ('timeout', 'Timeout'),
@@ -118,7 +119,7 @@ class APICallResult(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
 
 class APITemplate(models.Model):
-    CATEGORY_CHOICES = [
+    CATEGORY_CHOICES = [  # noqa: RUF012
         ('popular', 'Popular APIs'),
         ('database', 'Database APIs'),
         ('cloud', 'Cloud Services'),
@@ -154,7 +155,7 @@ class IntegrationUsage(models.Model):
     total_data_transferred = models.BigIntegerField(default=0)  # in bytes
 
 class IntegrationAlert(models.Model):
-    SEVERITY_CHOICES = [
+    SEVERITY_CHOICES = [  # noqa: RUF012
         ('low', 'Low'),
         ('medium', 'Medium'),
         ('high', 'High'),
@@ -176,13 +177,13 @@ class IntegrationAlert(models.Model):
 class ScheduledAutomation(models.Model):
     """Scheduled automation jobs — inbox digest, Slack alerts, workflow runs."""
 
-    AUTOMATION_TYPES = [
+    AUTOMATION_TYPES = [  # noqa: RUF012
         ('inbox_digest', 'Daily Inbox Digest'),
         ('slack_alert', 'Slack Alert'),
         ('workflow_run', 'Run Workflow'),
         ('integration_check', 'Integration Health Check'),
     ]
-    FREQUENCY_CHOICES = [
+    FREQUENCY_CHOICES = [  # noqa: RUF012
         ('hourly', 'Every Hour'),
         ('daily', 'Daily'),
         ('weekly', 'Weekly'),
@@ -208,4 +209,4 @@ class ScheduledAutomation(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ['-created_at']
+        ordering = ['-created_at']  # noqa: RUF012

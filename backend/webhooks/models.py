@@ -1,7 +1,8 @@
-from django.db import models
-from django.contrib.auth import get_user_model
-from agents.models import Session, Task
 import uuid
+
+from agents.models import Session, Task
+from django.contrib.auth import get_user_model
+from django.db import models
 
 User = get_user_model()
 
@@ -55,7 +56,7 @@ class WebhookEndpoint(models.Model):
     
     class Meta:
         db_table = 'webhook_endpoint'
-        ordering = ['-created_at']
+        ordering = ['-created_at']  # noqa: RUF012
     
     def __str__(self):
         return f"{self.name} - {self.url}"
@@ -86,8 +87,8 @@ class WebhookDelivery(models.Model):
     
     class Meta:
         db_table = 'webhook_delivery'
-        ordering = ['-created_at']
-        indexes = [
+        ordering = ['-created_at']  # noqa: RUF012
+        indexes = [  # noqa: RUF012
             models.Index(fields=['webhook', '-created_at']),
             models.Index(fields=['event_type', 'success']),
         ]
@@ -115,7 +116,7 @@ class NotificationChannel(models.Model):
     
     class Meta:
         db_table = 'notification_channel'
-        ordering = ['-created_at']
+        ordering = ['-created_at']  # noqa: RUF012
     
     def __str__(self):
         return f"{self.channel_type} - {self.channel_name}"
@@ -149,8 +150,8 @@ class WebhookNotification(models.Model):
     
     class Meta:
         db_table = 'webhook_notification'
-        ordering = ['-created_at']
-        indexes = [
+        ordering = ['-created_at']  # noqa: RUF012
+        indexes = [  # noqa: RUF012
             models.Index(fields=['user', '-created_at']),
             models.Index(fields=['is_read', 'user']),
         ]
@@ -178,8 +179,8 @@ class EventLog(models.Model):
     
     class Meta:
         db_table = 'event_log'
-        ordering = ['-created_at']
-        indexes = [
+        ordering = ['-created_at']  # noqa: RUF012
+        indexes = [  # noqa: RUF012
             models.Index(fields=['event_type', '-created_at']),
             models.Index(fields=['session', '-created_at']),
         ]

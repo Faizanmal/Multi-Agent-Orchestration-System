@@ -1,10 +1,12 @@
 import json
 import logging
-from datetime import datetime
-from channels.generic.websocket import AsyncWebsocketConsumer
+from datetime import datetime, timezone
+
 from channels.db import database_sync_to_async
+from channels.generic.websocket import AsyncWebsocketConsumer
 from django.contrib.auth import get_user_model
-from .models import Agent, Session, Message
+
+from .models import Agent, Message, Session
 
 # Get the custom user model
 User = get_user_model()
@@ -23,7 +25,7 @@ class AgentPresenceTracker:
         self.online_agents[agent_id] = {
             'channel_name': channel_name,
             'status': 'available',
-            'last_seen': datetime.now().isoformat()
+            'last_seen': datetime.now(timezone.utc).isoformat()
         }
     
     def agent_offline(self, agent_id):
@@ -35,7 +37,7 @@ class AgentPresenceTracker:
         """Update agent status"""
         if agent_id in self.online_agents:
             self.online_agents[agent_id]['status'] = status
-            self.online_agents[agent_id]['last_seen'] = datetime.now().isoformat()
+            self.online_agents[agent_id]['last_seen'] = datetime.now(timezone.utc).isoformat()
     
     def get_online_agents(self):
         """Get list of online agents"""
@@ -111,9 +113,9 @@ class SessionConsumer(AsyncWebsocketConsumer):
                 
         except json.JSONDecodeError:
             await self.send_error('Invalid JSON format')
-        except Exception as e:
-            logger.error(f"WebSocket receive error: {str(e)}")
-            await self.send_error(f'Processing error: {str(e)}')
+        except Exception as e:  # noqa: BLE001
+            logger.error(f"WebSocket receive error: {e!s}")
+            await self.send_error(f'Processing error: {e!s}')
     
     async def handle_chat_message(self, data):
         """Handle incoming chat message"""
@@ -170,7 +172,7 @@ class SessionConsumer(AsyncWebsocketConsumer):
         try:
             result = await self.process_with_agents(session, message_id, content, self.session_group_name)
             print(f"DEBUG: process_with_agents completed successfully with result: {result}")
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             print(f"DEBUG: process_with_agents failed with error: {e}")
             import traceback
             traceback.print_exc()
@@ -205,8 +207,10 @@ class SessionConsumer(AsyncWebsocketConsumer):
 
         import asyncio
         from concurrent.futures import ThreadPoolExecutor
-        from .services.groq_service import GroqService
+
         from django.conf import settings
+
+        from .services.groq_service import GroqService
 
         if not settings.GROQ_API_KEY:
             await self.send(text_data=json.dumps({
@@ -237,9 +241,8 @@ class SessionConsumer(AsyncWebsocketConsumer):
         def _run_stream():
             chunks = []
             try:
-                for chunk in groq_service.stream_completion(messages_payload, model=model):
-                    chunks.append(chunk)
-            except Exception as exc:
+                chunks.extend(list(groq_service.stream_completion(messages_payload, model=model)))
+            except Exception as exc:  # noqa: BLE001
                 chunks.append({'error': str(exc), 'content': '', 'done': True})
             return chunks
 
@@ -273,7 +276,7 @@ class SessionConsumer(AsyncWebsocketConsumer):
                 'done': True,
             }))
 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error(f'Streaming error: {e}')
             await self.send(text_data=json.dumps({
                 'type': 'stream_end',
@@ -371,7 +374,7 @@ class SessionConsumer(AsyncWebsocketConsumer):
         
         # Get or create a default user for WebSocket sessions
         # Note: CustomUser uses email as USERNAME_FIELD
-        default_user, created = User.objects.get_or_create(
+        default_user, _ = User.objects.get_or_create(
             email='websocket@example.com',
             defaults={
                 'username': 'websocket_user',
@@ -529,8 +532,9 @@ class SessionConsumer(AsyncWebsocketConsumer):
         Routes through LangchainAgentCoordinator (ReAct loop) for real agent reasoning,
         then sends the response back over WebSocket.
         """
-        from .services.groq_service import GroqService
         from django.conf import settings
+
+        from .services.groq_service import GroqService
 
         if not settings.GROQ_API_KEY:
             await self._async_send_fallback_response(message_id, group_name, "Groq API key not configured")
@@ -542,14 +546,16 @@ class SessionConsumer(AsyncWebsocketConsumer):
             from concurrent.futures import ThreadPoolExecutor
 
             def _run_coordinator():
-                from .models import Session, Message as AgentMessage
-                from .services.langchain_coordinator import LangchainAgentCoordinator
                 import uuid as uuid_module
+
+                from .models import Message as AgentMessage
+                from .models import Session
+                from .services.langchain_coordinator import LangchainAgentCoordinator
 
                 try:
                     session_uuid = uuid_module.UUID(session_data['id'])
                     session_obj = Session.objects.get(id=session_uuid)
-                except Exception:
+                except Exception:  # noqa: BLE001
                     # Fallback to simple Groq call if session can't be loaded
                     return None, None
 
@@ -557,7 +563,7 @@ class SessionConsumer(AsyncWebsocketConsumer):
                 try:
                     msg_uuid = uuid_module.UUID(message_id)
                     message_obj = AgentMessage.objects.get(id=msg_uuid)
-                except Exception:
+                except Exception:  # noqa: BLE001
                     return None, None
 
                 coordinator = LangchainAgentCoordinator(session_obj)
@@ -566,7 +572,7 @@ class SessionConsumer(AsyncWebsocketConsumer):
 
             loop = asyncio.get_event_loop()
             with ThreadPoolExecutor(max_workers=1) as executor:
-                result, error = await loop.run_in_executor(executor, _run_coordinator)
+                result, _ = await loop.run_in_executor(executor, _run_coordinator)
 
             if result is None:
                 # Coordinator failed — fall back to direct Groq call
@@ -589,7 +595,7 @@ class SessionConsumer(AsyncWebsocketConsumer):
             )
             agent_id = await self.get_first_active_agent_id(session_data['id'])
 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.warning(f"Full coordinator failed, using direct Groq: {e}")
             # Direct Groq fallback
             try:
@@ -605,7 +611,7 @@ class SessionConsumer(AsyncWebsocketConsumer):
                 groq_response = groq_service.chat_completion(messages_history)
                 response_content = groq_response.get('content', 'Unable to process request.')
                 agent_id = await self.get_first_active_agent_id(session_data['id'])
-            except Exception as e2:
+            except Exception as e2:  # noqa: BLE001
                 await self._async_send_fallback_response(message_id, group_name, str(e2))
                 return {"status": "error", "error": str(e2)}
 
@@ -620,7 +626,7 @@ class SessionConsumer(AsyncWebsocketConsumer):
                     "agent_id": agent_id,
                 },
                 "original_message_id": message_id,
-                "timestamp": datetime.now().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
         )
         return {"status": "processed", "agent": agent_name}
@@ -640,7 +646,7 @@ class SessionConsumer(AsyncWebsocketConsumer):
                     "fallback": True
                 },
                 "original_message_id": message_id,
-                "timestamp": datetime.now().isoformat()
+                "timestamp": datetime.now(timezone.utc).isoformat()
             }
         )
     
@@ -657,7 +663,7 @@ class SessionConsumer(AsyncWebsocketConsumer):
                     "error": True
                 },
                 "original_message_id": message_id,
-                "timestamp": datetime.now().isoformat()
+                "timestamp": datetime.now(timezone.utc).isoformat()
             }
         )
     

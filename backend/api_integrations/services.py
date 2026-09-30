@@ -1,10 +1,9 @@
 """Integration services — agent provisioning and lifecycle."""
 import logging
-from typing import List
-
-from django.contrib.auth import get_user_model
 
 from agents.models import Agent, AgentStatus
+from django.contrib.auth import get_user_model
+
 from .models import APIIntegration
 from .registry import IntegrationToolRegistry
 
@@ -12,7 +11,7 @@ logger = logging.getLogger(__name__)
 User = get_user_model()
 
 
-def ensure_integration_agents(integration: APIIntegration) -> List[Agent]:
+def ensure_integration_agents(integration: APIIntegration) -> list[Agent]:
     """Create parent + sub-agents for a connected integration."""
     provider = IntegrationToolRegistry.get_provider(integration)
     if not provider:
@@ -20,7 +19,7 @@ def ensure_integration_agents(integration: APIIntegration) -> List[Agent]:
 
     owner = integration.created_by
     provider_key = provider.provider_key
-    created: List[Agent] = []
+    created: list[Agent] = []
 
     parent_name = f"{provider.display_name} Agent"
     parent, _ = Agent.objects.get_or_create(

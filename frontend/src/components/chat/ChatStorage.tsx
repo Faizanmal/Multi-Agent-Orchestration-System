@@ -31,7 +31,7 @@ export function ChatStorage({ className }: ChatStorageProps) {
     const saved = localStorage.getItem('groq_inference_chats');
     if (saved) {
       try {
-        setStoredChats(JSON.parse(saved));
+        setTimeout(() => { setStoredChats(JSON.parse(saved)); }, 0)
       } catch (error) {
         console.error('Error loading stored chats:', error);
       }

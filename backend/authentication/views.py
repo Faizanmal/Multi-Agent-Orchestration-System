@@ -1,30 +1,36 @@
-from rest_framework import status, generics
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.response import Response
-from rest_framework.authtoken.models import Token
-from rest_framework.permissions import IsAuthenticated, AllowAny
-from rest_framework_simplejwt.tokens import RefreshToken
-from django.utils import timezone
-from datetime import timedelta
-from django.core.mail import send_mail
-from django.conf import settings
 import secrets
 import string
+from datetime import timedelta
 
-from .models import CustomUser, APIKey, UserSession, PasswordReset
-from .serializers import (
-    CustomUserSerializer, UserRegistrationSerializer, UserLoginSerializer,
-    ChangePasswordSerializer, PasswordResetRequestSerializer, PasswordResetConfirmSerializer,
-    APIKeySerializer, UserSessionSerializer
-)
+from django.conf import settings
+from django.core.mail import send_mail
+from django.utils import timezone
+from rest_framework import generics, status
+from rest_framework.authtoken.models import Token
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
+from rest_framework_simplejwt.tokens import RefreshToken
+
 from .decorators import rate_limit_password_reset
+from .models import APIKey, CustomUser, PasswordReset, UserSession
+from .serializers import (
+    APIKeySerializer,
+    ChangePasswordSerializer,
+    CustomUserSerializer,
+    PasswordResetConfirmSerializer,
+    PasswordResetRequestSerializer,
+    UserLoginSerializer,
+    UserRegistrationSerializer,
+    UserSessionSerializer,
+)
 
 
 class UserRegistrationView(generics.CreateAPIView):
     """User registration endpoint with JWT tokens"""
     queryset = CustomUser.objects.all()
     serializer_class = UserRegistrationSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [AllowAny]  # noqa: RUF012
     
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -75,14 +81,14 @@ def logout_view(request):
         # Delete the user's token
         Token.objects.filter(user=request.user).delete()
         return Response({'message': 'Logout successful'}, status=status.HTTP_200_OK)
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class UserProfileView(generics.RetrieveUpdateAPIView):
     """User profile endpoint"""
     serializer_class = CustomUserSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]  # noqa: RUF012
     
     def get_object(self):
         return self.request.user
@@ -129,7 +135,7 @@ def forgot_password_view(request):
             reset_token = ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(64))
             
             # Create or update password reset record
-            password_reset, created = PasswordReset.objects.update_or_create(
+            password_reset, created = PasswordReset.objects.update_or_create(  # noqa: RUF059
                 user=user,
                 defaults={
                     'token': reset_token,
@@ -163,11 +169,11 @@ The Multi-Agent System Team
                     recipient_list=[user.email],
                     fail_silently=False,
                 )
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 # Log the error but don't reveal to user
                 import logging
                 logger = logging.getLogger(__name__)
-                logger.error(f"Failed to send password reset email: {str(e)}")
+                logger.error(f"Failed to send password reset email: {e!s}")
             
             return Response({'message': 'Password reset email sent'}, status=status.HTTP_200_OK)
         
@@ -218,7 +224,7 @@ def reset_password_view(request):
 class APIKeyViewSet(generics.ListCreateAPIView):
     """API Keys management"""
     serializer_class = APIKeySerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]  # noqa: RUF012
     
     def get_queryset(self):
         return APIKey.objects.filter(user=self.request.user)
@@ -244,7 +250,7 @@ def delete_api_key_view(request, key_id):
 class UserSessionListView(generics.ListAPIView):
     """List user sessions"""
     serializer_class = UserSessionSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]  # noqa: RUF012
     
     def get_queryset(self):
         return UserSession.objects.filter(user=self.request.user)

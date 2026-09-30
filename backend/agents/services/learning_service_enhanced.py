@@ -3,9 +3,10 @@ Agent Learning Service - Reinforcement Learning for Agent Self-Improvement
 """
 
 import logging
-import numpy as np
-from typing import Dict, List, Any
 from collections import deque
+from typing import Any
+
+import numpy as np
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +43,7 @@ class ReinforcementLearningAgent:
         self.episode_rewards = []
         self.total_steps = 0
         
-    def get_state_representation(self, context: Dict) -> str:
+    def get_state_representation(self, context: dict) -> str:
         """
         Convert context to state representation
         
@@ -62,7 +63,7 @@ class ReinforcementLearningAgent:
         
         return "|".join(features)
     
-    def select_action(self, state: str, available_actions: List[str], explore: bool = True) -> str:
+    def select_action(self, state: str, available_actions: list[str], explore: bool = True) -> str:
         """
         Select action using epsilon-greedy policy
         
@@ -95,7 +96,7 @@ class ReinforcementLearningAgent:
         return action
     
     def update_q_value(self, state: str, action: str, reward: float, next_state: str, 
-                      next_available_actions: List[str]):
+                      next_available_actions: list[str]):
         """
         Update Q-value using Q-learning update rule
         
@@ -166,11 +167,11 @@ class ReinforcementLearningAgent:
         """Decay exploration rate over time"""
         self.epsilon = max(min_epsilon, self.epsilon * decay_rate)
     
-    def get_policy(self) -> Dict[str, Dict[str, float]]:
+    def get_policy(self) -> dict[str, dict[str, float]]:
         """Get current learned policy"""
         return self.q_table
     
-    def save_policy(self) -> Dict[str, Any]:
+    def save_policy(self) -> dict[str, Any]:
         """Serialize policy for persistence"""
         return {
             'agent_id': self.agent_id,
@@ -180,7 +181,7 @@ class ReinforcementLearningAgent:
             'replay_buffer_size': len(self.replay_buffer)
         }
     
-    def load_policy(self, policy_data: Dict[str, Any]):
+    def load_policy(self, policy_data: dict[str, Any]):
         """Load policy from serialized data"""
         self.q_table = policy_data.get('q_table', {})
         self.epsilon = policy_data.get('epsilon', self.epsilon)
@@ -204,7 +205,7 @@ class AgentLearningService:
         
         return self.rl_agents[agent_id]
     
-    def recommend_action(self, agent_id: str, context: Dict, available_actions: List[str]) -> Dict[str, Any]:
+    def recommend_action(self, agent_id: str, context: dict, available_actions: list[str]) -> dict[str, Any]:
         """
         Recommend action for agent based on learned policy
         
@@ -237,8 +238,8 @@ class AgentLearningService:
             'exploration_rate': rl_agent.epsilon
         }
     
-    def provide_feedback(self, agent_id: str, context: Dict, action: str, outcome: Dict,
-                        next_context: Dict, next_available_actions: List[str]):
+    def provide_feedback(self, agent_id: str, context: dict, action: str, outcome: dict,
+                        next_context: dict, next_available_actions: list[str]):
         """
         Provide feedback to agent for learning
         
@@ -276,7 +277,7 @@ class AgentLearningService:
         logger.info(f"Agent {agent_id} learned from feedback: reward={reward:.3f}, "
                    f"steps={rl_agent.total_steps}, epsilon={rl_agent.epsilon:.3f}")
     
-    def _calculate_reward(self, outcome: Dict) -> float:
+    def _calculate_reward(self, outcome: dict) -> float:
         """
         Calculate reward based on outcome
         
@@ -334,13 +335,14 @@ class AgentLearningService:
                 rl_agent = self.rl_agents[agent_id]
                 rl_agent.load_policy(policy.policy_data)
                 logger.info(f"Loaded policy for agent {agent_id}")
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.warning(f"Failed to load policy for agent {agent_id}: {e}")
     
     def _save_agent_policy(self, agent_id: str):
         """Save agent policy to database"""
         try:
             from agent_learning.models import AgentLearningPolicy
+
             from agents.models import Agent
             
             rl_agent = self.rl_agents[agent_id]
@@ -363,10 +365,10 @@ class AgentLearningService:
             )
             
             logger.info(f"Saved policy for agent {agent_id}")
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error(f"Failed to save policy for agent {agent_id}: {e}")
     
-    def get_learning_statistics(self, agent_id: str) -> Dict[str, Any]:
+    def get_learning_statistics(self, agent_id: str) -> dict[str, Any]:
         """Get learning statistics for an agent"""
         if agent_id not in self.rl_agents:
             return {'message': 'Agent has no learning data'}
@@ -389,7 +391,7 @@ class AgentLearningService:
         
         return stats
     
-    def analyze_agent_performance(self, agent_id: str) -> Dict[str, Any]:
+    def analyze_agent_performance(self, agent_id: str) -> dict[str, Any]:
         """Analyze agent performance and provide recommendations"""
         if agent_id not in self.rl_agents:
             return {'recommendations': ['Start learning by executing tasks']}

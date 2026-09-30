@@ -1,5 +1,5 @@
 """Slack integration provider."""
-from typing import Any, Dict, List
+from typing import Any
 
 import requests
 
@@ -19,7 +19,7 @@ class SlackProvider(IntegrationProvider):
         return "slack" in text
 
     @classmethod
-    def tool_definitions(cls) -> List[Dict[str, Any]]:
+    def tool_definitions(cls) -> list[dict[str, Any]]:
         return [
             {"name": "slack.list_channels", "description": "List Slack channels", "parameters": {}},
             {"name": "slack.post_message", "description": "Post a message to a channel", "parameters": {"channel": "string", "text": "string"}},
@@ -27,14 +27,14 @@ class SlackProvider(IntegrationProvider):
         ]
 
     @classmethod
-    def _headers(cls, integration: APIIntegration) -> Dict[str, str]:
+    def _headers(cls, integration: APIIntegration) -> dict[str, str]:
         token = cls._token(integration)
         if not token:
             raise ValueError("Slack bot token required (xoxb-...)")
         return {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
 
     @classmethod
-    def _api(cls, integration: APIIntegration, method: str, **kwargs) -> Dict[str, Any]:
+    def _api(cls, integration: APIIntegration, method: str, **kwargs) -> dict[str, Any]:
         url = f"https://slack.com/api/{method}"
         resp = requests.post(url, headers=cls._headers(integration), json=kwargs, timeout=30)
         data = resp.json()
@@ -43,7 +43,7 @@ class SlackProvider(IntegrationProvider):
         return data
 
     @classmethod
-    def test_connection(cls, integration: APIIntegration) -> Dict[str, Any]:
+    def test_connection(cls, integration: APIIntegration) -> dict[str, Any]:
         try:
             data = cls._api(integration, "auth.test")
             return {
@@ -51,11 +51,11 @@ class SlackProvider(IntegrationProvider):
                 "message": f"Connected to workspace: {data.get('team', 'unknown')}",
                 "data": {"team": data.get("team"), "user": data.get("user")},
             }
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return {"status": "error", "message": str(e)}
 
     @classmethod
-    def execute_tool(cls, integration: APIIntegration, tool_name: str, params: Dict[str, Any]) -> Dict[str, Any]:
+    def execute_tool(cls, integration: APIIntegration, tool_name: str, params: dict[str, Any]) -> dict[str, Any]:
         try:
             if tool_name == "slack.list_channels":
                 data = cls._api(integration, "conversations.list", types="public_channel,private_channel", limit=50)
@@ -84,5 +84,5 @@ class SlackProvider(IntegrationProvider):
                 return {"status": "success", "messages": messages}
 
             return {"status": "error", "message": f"Unknown Slack tool: {tool_name}"}
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return {"status": "error", "message": str(e)}

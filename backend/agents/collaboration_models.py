@@ -1,10 +1,11 @@
 # Collaboration Models
 
-from django.db import models
-from django.contrib.auth import get_user_model
-from django.conf import settings as django_settings
-from django.utils import timezone
 import uuid
+
+from django.conf import settings as django_settings
+from django.contrib.auth import get_user_model
+from django.db import models
+from django.utils import timezone
 
 # Get the custom user model
 User = get_user_model()
@@ -36,8 +37,8 @@ class CollaborationSession(models.Model):
     last_activity = models.DateTimeField(auto_now=True)
     
     class Meta:
-        ordering = ['-last_activity']
-        indexes = [
+        ordering = ['-last_activity']  # noqa: RUF012
+        indexes = [  # noqa: RUF012
             models.Index(fields=['owner', 'is_active']),
             models.Index(fields=['is_public', 'is_active']),
         ]
@@ -49,14 +50,14 @@ class CollaborationSession(models.Model):
 class TeamMember(models.Model):
     """Team members in collaboration sessions."""
     
-    ROLE_CHOICES = [
+    ROLE_CHOICES = [  # noqa: RUF012
         ('owner', 'Owner'),
         ('editor', 'Editor'),
         ('viewer', 'Viewer'),
         ('commenter', 'Commenter'),
     ]
     
-    STATUS_CHOICES = [
+    STATUS_CHOICES = [  # noqa: RUF012
         ('online', 'Online'),
         ('away', 'Away'),
         ('offline', 'Offline'),
@@ -81,9 +82,9 @@ class TeamMember(models.Model):
     joined_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:
-        unique_together = ['session', 'user']
-        ordering = ['role', 'user__username']
-        indexes = [
+        unique_together = ['session', 'user']  # noqa: RUF012
+        ordering = ['role', 'user__username']  # noqa: RUF012
+        indexes = [  # noqa: RUF012
             models.Index(fields=['session', 'status']),
             models.Index(fields=['user', 'last_active']),
         ]
@@ -118,8 +119,8 @@ class Comment(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
-        ordering = ['created_at']
-        indexes = [
+        ordering = ['created_at']  # noqa: RUF012
+        indexes = [  # noqa: RUF012
             models.Index(fields=['session', 'resolved']),
             models.Index(fields=['node_id', 'created_at']),
             models.Index(fields=['author', 'created_at']),
@@ -151,8 +152,8 @@ class ActivityLog(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
     
     class Meta:
-        ordering = ['-timestamp']
-        indexes = [
+        ordering = ['-timestamp']  # noqa: RUF012
+        indexes = [  # noqa: RUF012
             models.Index(fields=['session', 'timestamp']),
             models.Index(fields=['user', 'timestamp']),
             models.Index(fields=['action', 'timestamp']),
@@ -166,7 +167,7 @@ class ActivityLog(models.Model):
 class Notification(models.Model):
     """Notifications for collaboration events."""
     
-    NOTIFICATION_TYPES = [
+    NOTIFICATION_TYPES = [  # noqa: RUF012
         ('invitation', 'Invitation'),
         ('comment', 'Comment'),
         ('mention', 'Mention'),
@@ -193,8 +194,8 @@ class Notification(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:
-        ordering = ['-created_at']
-        indexes = [
+        ordering = ['-created_at']  # noqa: RUF012
+        indexes = [  # noqa: RUF012
             models.Index(fields=['recipient', 'read']),
             models.Index(fields=['notification_type', 'created_at']),
         ]
@@ -227,8 +228,8 @@ class WorkflowLock(models.Model):
     last_heartbeat = models.DateTimeField(auto_now=True)
     
     class Meta:
-        unique_together = ['session', 'workflow_id', 'node_id']
-        indexes = [
+        unique_together = ['session', 'workflow_id', 'node_id']  # noqa: RUF012
+        indexes = [  # noqa: RUF012
             models.Index(fields=['session', 'locked_by']),
             models.Index(fields=['expires_at']),
         ]
@@ -267,8 +268,8 @@ class ChangeLog(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
     
     class Meta:
-        ordering = ['-timestamp']
-        indexes = [
+        ordering = ['-timestamp']  # noqa: RUF012
+        indexes = [  # noqa: RUF012
             models.Index(fields=['session', 'timestamp']),
             models.Index(fields=['workflow_id', 'timestamp']),
             models.Index(fields=['user', 'timestamp']),

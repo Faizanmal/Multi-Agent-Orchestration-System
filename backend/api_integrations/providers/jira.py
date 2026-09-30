@@ -1,5 +1,5 @@
 """Jira Cloud integration provider."""
-from typing import Any, Dict, List
+from typing import Any
 
 import requests
 
@@ -19,7 +19,7 @@ class JiraProvider(IntegrationProvider):
         return "jira" in text or "atlassian" in text
 
     @classmethod
-    def tool_definitions(cls) -> List[Dict[str, Any]]:
+    def tool_definitions(cls) -> list[dict[str, Any]]:
         return [
             {"name": "jira.list_projects", "description": "List Jira projects", "parameters": {}},
             {"name": "jira.list_issues", "description": "Search Jira issues with JQL", "parameters": {"jql": "string"}},
@@ -40,7 +40,7 @@ class JiraProvider(IntegrationProvider):
         return (email, token)
 
     @classmethod
-    def test_connection(cls, integration: APIIntegration) -> Dict[str, Any]:
+    def test_connection(cls, integration: APIIntegration) -> dict[str, Any]:
         try:
             resp = requests.get(
                 f"{cls._base_url(integration)}/rest/api/3/myself",
@@ -51,11 +51,11 @@ class JiraProvider(IntegrationProvider):
                 raise ValueError(resp.text)
             user = resp.json()
             return {"status": "success", "message": f"Connected as {user.get('displayName')}", "data": {"accountId": user.get("accountId")}}
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return {"status": "error", "message": str(e)}
 
     @classmethod
-    def execute_tool(cls, integration: APIIntegration, tool_name: str, params: Dict[str, Any]) -> Dict[str, Any]:
+    def execute_tool(cls, integration: APIIntegration, tool_name: str, params: dict[str, Any]) -> dict[str, Any]:
         try:
             base = cls._base_url(integration)
             auth = cls._auth(integration)
@@ -106,5 +106,5 @@ class JiraProvider(IntegrationProvider):
                 return {"status": "success", "issue_key": data.get("key"), "id": data.get("id")}
 
             return {"status": "error", "message": f"Unknown Jira tool: {tool_name}"}
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return {"status": "error", "message": str(e)}

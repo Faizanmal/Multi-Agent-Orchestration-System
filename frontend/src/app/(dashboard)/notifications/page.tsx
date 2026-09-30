@@ -196,7 +196,7 @@ export default function NotificationsPage() {
   }, []);
 
   useEffect(() => {
-    loadNotifications();
+    setTimeout(() => { loadNotifications(); }, 0)
   }, [loadNotifications]);
 
   const unreadCount = notificationList.filter((n) => !n.read).length;

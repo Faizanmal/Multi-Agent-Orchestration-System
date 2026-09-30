@@ -1,11 +1,11 @@
 from datetime import timedelta
 
-from rest_framework import generics
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from rest_framework import generics
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 
 from .models import Report, ReportTemplate, Widget
 from .serializers import ReportSerializer, ReportTemplateSerializer, WidgetSerializer
@@ -14,7 +14,7 @@ from .serializers import ReportSerializer, ReportTemplateSerializer, WidgetSeria
 class ReportListCreateView(generics.ListCreateAPIView):
     """List and create reports"""
     serializer_class = ReportSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]  # noqa: RUF012
     
     def get_queryset(self):
         return Report.objects.filter(user=self.request.user)
@@ -26,7 +26,7 @@ class ReportListCreateView(generics.ListCreateAPIView):
 class ReportDetailView(generics.RetrieveUpdateDestroyAPIView):
     """Retrieve, update, delete report"""
     serializer_class = ReportSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]  # noqa: RUF012
     
     def get_queryset(self):
         return Report.objects.filter(user=self.request.user)
@@ -74,17 +74,18 @@ class ReportTemplateListView(generics.ListAPIView):
     """List report templates"""
     serializer_class = ReportTemplateSerializer
     queryset = ReportTemplate.objects.filter(is_public=True)
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]  # noqa: RUF012
 
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def dashboard_view(request):
     """Get dashboard data with real-time analytics"""
-    from agents.models import Agent, Session, Message
-    from Multi_model_Intelligence.models import ModelExecution
-    from django.utils import timezone
     from datetime import timedelta
+
+    from agents.models import Agent, Message, Session
+    from django.utils import timezone
+    from Multi_model_Intelligence.models import ModelExecution
     
     user = request.user
     today = timezone.now().date()
@@ -140,7 +141,10 @@ def dashboard_view(request):
 @permission_classes([IsAuthenticated])
 def performance_metrics_view(request):
     """Get real-time performance metrics"""
-    from real_time_performance.services import get_performance_service, get_cache_service
+    from real_time_performance.services import (
+        get_cache_service,
+        get_performance_service,
+    )
     
     perf_service = get_performance_service()
     cache_service = get_cache_service()
@@ -170,11 +174,12 @@ def performance_metrics_view(request):
 @permission_classes([IsAuthenticated])
 def usage_trends_view(request):
     """Get usage trends over time"""
-    from Multi_model_Intelligence.models import ModelExecution
-    from django.db.models import Count, Avg, Sum
+    from datetime import timedelta
+
+    from django.db.models import Avg, Count, Sum
     from django.db.models.functions import TruncDate
     from django.utils import timezone
-    from datetime import timedelta
+    from Multi_model_Intelligence.models import ModelExecution
     
     days = int(request.GET.get('days', 30))
     start_date = timezone.now() - timedelta(days=days)
@@ -208,10 +213,11 @@ def usage_trends_view(request):
 @permission_classes([IsAuthenticated])
 def model_usage_view(request):
     """Get model usage breakdown"""
-    from Multi_model_Intelligence.models import ModelExecution
-    from django.db.models import Count, Avg, Sum
-    from django.utils import timezone
     from datetime import timedelta
+
+    from django.db.models import Avg, Count, Sum
+    from django.utils import timezone
+    from Multi_model_Intelligence.models import ModelExecution
     
     days = int(request.GET.get('days', 30))
     start_date = timezone.now() - timedelta(days=days)
@@ -246,9 +252,9 @@ def model_usage_view(request):
 @permission_classes([IsAuthenticated])
 def system_health_view(request):
     """Get system health status"""
-    from real_time_performance.services import get_cache_service
-    from integrations.azure_cosmosdb_service import get_cosmos_service
     from django.utils import timezone
+    from integrations.azure_cosmosdb_service import get_cosmos_service
+    from real_time_performance.services import get_cache_service
     
     health = {
         'status': 'healthy',
@@ -278,7 +284,7 @@ def system_health_view(request):
             'status': 'up',
             'enabled': True
         }
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         health['services']['database'] = {
             'status': 'down',
             'enabled': False,
@@ -292,7 +298,7 @@ def system_health_view(request):
 class WidgetListCreateView(generics.ListCreateAPIView):
     """List and create widgets"""
     serializer_class = WidgetSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]  # noqa: RUF012
     
     def get_queryset(self):
         return Widget.objects.filter(dashboard__user=self.request.user)

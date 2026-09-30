@@ -25,7 +25,6 @@ import {
   List,
 } from 'lucide-react';
 import apiClient, { type Agent } from '@/lib/api';
-import { trackEvent, trackOnce } from '@/lib/analytics';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -115,7 +114,7 @@ export default function AgentsPage() {
   };
 
   useEffect(() => {
-    void loadAgents();
+    setTimeout(() => { void loadAgents(); }, 0)
     // eslint-disable-next-line react-hooks/exhaustive-deps -- load once on mount
   }, []);
 

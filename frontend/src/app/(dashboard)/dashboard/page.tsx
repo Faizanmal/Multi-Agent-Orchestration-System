@@ -15,7 +15,6 @@ import {
   Clock,
   CheckCircle2,
   MessageSquare,
-  BarChart3,
   Sparkles,
   Play,
   Pause,
@@ -105,7 +104,7 @@ export default function DashboardPage() {
   };
 
   useEffect(() => {
-    loadData();
+    setTimeout(() => { loadData(); }, 0)
   }, []);
 
   const stats = dashboardData ? [

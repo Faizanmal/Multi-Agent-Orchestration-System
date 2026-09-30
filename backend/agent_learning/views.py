@@ -1,18 +1,26 @@
-from rest_framework import viewsets, status
+import logging
+
+from django.db.models import Avg, Count, Q
+from django.utils import timezone
+from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from django.utils import timezone
-from django.db.models import Avg, Count, Q
+
 from .models import (
-    AgentLearningProfile, ReinforcementState, AdaptiveStrategy,
-    LearningEvent, SkillMatrix
+    AdaptiveStrategy,
+    AgentLearningProfile,
+    LearningEvent,
+    ReinforcementState,
+    SkillMatrix,
 )
 from .serializers import (
-    AgentLearningProfileSerializer, ReinforcementStateSerializer,
-    AdaptiveStrategySerializer, LearningEventSerializer, SkillMatrixSerializer
+    AdaptiveStrategySerializer,
+    AgentLearningProfileSerializer,
+    LearningEventSerializer,
+    ReinforcementStateSerializer,
+    SkillMatrixSerializer,
 )
 from .services import RLEngine, StrategyOptimizer
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -62,8 +70,8 @@ class AgentLearningViewSet(viewsets.ModelViewSet):
                 'q_value': rl_state.q_value
             })
             
-        except Exception as e:
-            logger.error(f"Error recording experience: {str(e)}")
+        except Exception as e:  # noqa: BLE001
+            logger.error(f"Error recording experience: {e!s}")
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
     
     @action(detail=True, methods=['get'])
@@ -85,8 +93,8 @@ class AgentLearningViewSet(viewsets.ModelViewSet):
                 'confidence': recommendations['confidence']
             })
             
-        except Exception as e:
-            logger.error(f"Error getting recommendations: {str(e)}")
+        except Exception as e:  # noqa: BLE001
+            logger.error(f"Error getting recommendations: {e!s}")
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
     
     @action(detail=True, methods=['post'])
@@ -101,7 +109,7 @@ class AgentLearningViewSet(viewsets.ModelViewSet):
             execution_time = request.data.get('execution_time', 0.0)
             
             # Get or create skill
-            skill, created = SkillMatrix.objects.get_or_create(
+            skill, _ = SkillMatrix.objects.get_or_create(
                 learning_profile=profile,
                 skill_name=skill_name,
                 defaults={'skill_category': skill_category}
@@ -144,8 +152,8 @@ class AgentLearningViewSet(viewsets.ModelViewSet):
                 'skill': SkillMatrixSerializer(skill).data
             })
             
-        except Exception as e:
-            logger.error(f"Error updating skill: {str(e)}")
+        except Exception as e:  # noqa: BLE001
+            logger.error(f"Error updating skill: {e!s}")
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
     
     @action(detail=False, methods=['get'])
@@ -186,8 +194,8 @@ class AdaptiveStrategyViewSet(viewsets.ModelViewSet):
             
             return Response(recommended)
             
-        except Exception as e:
-            logger.error(f"Error recommending strategy: {str(e)}")
+        except Exception as e:  # noqa: BLE001
+            logger.error(f"Error recommending strategy: {e!s}")
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
     
     @action(detail=True, methods=['post'])
@@ -223,8 +231,8 @@ class AdaptiveStrategyViewSet(viewsets.ModelViewSet):
                 'strategy': self.get_serializer(strategy).data
             })
             
-        except Exception as e:
-            logger.error(f"Error recording strategy usage: {str(e)}")
+        except Exception as e:  # noqa: BLE001
+            logger.error(f"Error recording strategy usage: {e!s}")
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
     
     @action(detail=False, methods=['get'])

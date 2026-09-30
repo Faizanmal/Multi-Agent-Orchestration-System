@@ -5,7 +5,7 @@
 
 "use client";
 
-import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
@@ -43,27 +43,27 @@ export function EnhancedChatInterface({ className, defaultSessionId }: EnhancedC
   const createSessionMutation = useCreateSession();
   
   // Filter and deduplicate sessions
-  const sessions = useMemo(() => {
-    if (!sessionsResponse?.results) return [];
-    
-    // Remove duplicates based on name and keep only recent ones
-    const uniqueSessions = sessionsResponse.results.reduce((acc: Session[], session: Session) => {
-      const existingIndex = acc.findIndex(s => s.name === session.name);
-      if (existingIndex >= 0) {
-        // Keep the more recent session
-        const existing = acc[existingIndex];
-        if (new Date(session.created_at) > new Date(existing.created_at)) {
-          acc[existingIndex] = session;
+  const sessions = (() => {
+      if (!sessionsResponse?.results) return [];
+      
+      // Remove duplicates based on name and keep only recent ones
+      const uniqueSessions = sessionsResponse.results.reduce((acc: Session[], session: Session) => {
+        const existingIndex = acc.findIndex(s => s.name === session.name);
+        if (existingIndex >= 0) {
+          // Keep the more recent session
+          const existing = acc[existingIndex];
+          if (new Date(session.created_at) > new Date(existing.created_at)) {
+            acc[existingIndex] = session;
+          }
+        } else {
+          acc.push(session);
         }
-      } else {
-        acc.push(session);
-      }
-      return acc;
-    }, []);
-    
-    console.log('📋 Filtered sessions:', uniqueSessions.length, 'from', sessionsResponse.results.length);
-    return uniqueSessions;
-  }, [sessionsResponse?.results]);
+        return acc;
+      }, []);
+      
+      console.log('📋 Filtered sessions:', uniqueSessions.length, 'from', sessionsResponse.results.length);
+      return uniqueSessions;
+    })();
   
   // Create a default session if none exist
   useEffect(() => {
@@ -83,11 +83,13 @@ export function EnhancedChatInterface({ className, defaultSessionId }: EnhancedC
   useEffect(() => {
     if (!currentSessionId && sessions.length > 0) {
       console.log('🎯 Setting current session to first available:', sessions[0].id);
-      setCurrentSessionId(sessions[0].id);
+      setTimeout(() => { setCurrentSessionId(sessions[0].id); }, 0)
     } else if (currentSessionId && !sessions.find(s => s.id === currentSessionId) && sessions.length > 0) {
       // If current session doesn't exist anymore, switch to first available
       console.log('🔄 Current session not found, switching to:', sessions[0].id);
-      setCurrentSessionId(sessions[0].id);
+      setTimeout(() => {
+          setCurrentSessionId(sessions[0].id);
+        }, 0)
     }
   }, [sessions, currentSessionId]);
   

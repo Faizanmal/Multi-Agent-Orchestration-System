@@ -1,13 +1,14 @@
-from django.db import models
-from django.contrib.auth import get_user_model
 import uuid
+
+from django.contrib.auth import get_user_model
+from django.db import models
 
 User = get_user_model()
 
 
 class WorkflowTemplate(models.Model):
     """Pre-built workflow templates"""
-    CATEGORY_CHOICES = [
+    CATEGORY_CHOICES = [  # noqa: RUF012
         ('data_processing', 'Data Processing'),
         ('content_generation', 'Content Generation'),
         ('analysis', 'Analysis'),
@@ -32,12 +33,12 @@ class WorkflowTemplate(models.Model):
     
     class Meta:
         db_table = 'workflow_templates'
-        ordering = ['-usage_count', '-rating']
+        ordering = ('-usage_count', '-rating')
 
 
 class VisualWorkflow(models.Model):
     """Visual workflow definitions with drag-and-drop support"""
-    STATUS_CHOICES = [
+    STATUS_CHOICES = [  # noqa: RUF012
         ('draft', 'Draft'),
         ('active', 'Active'),
         ('paused', 'Paused'),
@@ -69,12 +70,12 @@ class VisualWorkflow(models.Model):
     
     class Meta:
         db_table = 'visual_workflows'
-        ordering = ['-updated_at']
+        ordering = ('-updated_at',)
 
 
 class WorkflowNode(models.Model):
     """Individual nodes in a workflow"""
-    NODE_TYPE_CHOICES = [
+    NODE_TYPE_CHOICES = [  # noqa: RUF012
         ('trigger', 'Trigger'),
         ('agent', 'Agent'),
         ('condition', 'Condition'),
@@ -109,7 +110,7 @@ class WorkflowNode(models.Model):
 
 class WorkflowExecution(models.Model):
     """Execution history for visual workflows"""
-    STATUS_CHOICES = [
+    STATUS_CHOICES = [  # noqa: RUF012
         ('queued', 'Queued'),
         ('running', 'Running'),
         ('completed', 'Completed'),
@@ -139,7 +140,7 @@ class WorkflowExecution(models.Model):
     
     class Meta:
         db_table = 'workflow_executions'
-        ordering = ['-created_at']
+        ordering = ('-created_at',)
 
 
 class WorkflowVersion(models.Model):
@@ -161,5 +162,5 @@ class WorkflowVersion(models.Model):
     
     class Meta:
         db_table = 'workflow_versions'
-        ordering = ['-version_number']
-        unique_together = ['workflow', 'version_number']
+        ordering = ['-version_number']  # noqa: RUF012
+        unique_together = ['workflow', 'version_number']  # noqa: RUF012

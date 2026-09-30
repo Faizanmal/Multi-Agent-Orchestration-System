@@ -3,9 +3,10 @@ Example script demonstrating the Multi-Agent Workflow System
 This script shows how to use workflows to solve real-world problems
 """
 
-import requests
 import time
-from typing import Dict, Any
+from typing import Any
+
+import requests
 
 # Configuration
 API_BASE_URL = "http://localhost:8000/api/agents/api"
@@ -17,7 +18,7 @@ class WorkflowClient:
     def __init__(self, base_url: str = API_BASE_URL):
         self.base_url = base_url
     
-    def list_templates(self, category: str = None) -> Dict[str, Any]:
+    def list_templates(self, category: str | None = None) -> dict[str, Any]:
         """List all available workflow templates"""
         url = f"{self.base_url}/workflows/templates/"
         params = {'category': category} if category else {}
@@ -25,7 +26,7 @@ class WorkflowClient:
         response.raise_for_status()
         return response.json()
     
-    def get_template_detail(self, template_id: str) -> Dict[str, Any]:
+    def get_template_detail(self, template_id: str) -> dict[str, Any]:
         """Get detailed information about a workflow template"""
         url = f"{self.base_url}/workflows/{template_id}/template_detail/"
         response = requests.get(url)
@@ -35,9 +36,9 @@ class WorkflowClient:
     def execute_workflow(
         self, 
         workflow_id: str, 
-        input_data: Dict[str, Any],
-        session_id: str = None
-    ) -> Dict[str, Any]:
+        input_data: dict[str, Any],
+        session_id: str | None = None
+    ) -> dict[str, Any]:
         """Execute a workflow synchronously"""
         url = f"{self.base_url}/workflows/execute/"
         payload = {
@@ -52,9 +53,9 @@ class WorkflowClient:
     def execute_async(
         self,
         workflow_id: str,
-        input_data: Dict[str, Any],
-        session_id: str = None
-    ) -> Dict[str, Any]:
+        input_data: dict[str, Any],
+        session_id: str | None = None
+    ) -> dict[str, Any]:
         """Execute a workflow asynchronously"""
         url = f"{self.base_url}/workflows/execute_async/"
         payload = {
@@ -66,14 +67,14 @@ class WorkflowClient:
         response.raise_for_status()
         return response.json()
     
-    def get_status(self, execution_id: str) -> Dict[str, Any]:
+    def get_status(self, execution_id: str) -> dict[str, Any]:
         """Get status of a workflow execution"""
         url = f"{self.base_url}/workflows/{execution_id}/status/"
         response = requests.get(url)
         response.raise_for_status()
         return response.json()
     
-    def quick_start(self, use_case: str, input_text: str) -> Dict[str, Any]:
+    def quick_start(self, use_case: str, input_text: str) -> dict[str, Any]:
         """Execute a quick start workflow"""
         url = f"{self.base_url}/workflows/quick_start/"
         payload = {
@@ -346,7 +347,7 @@ def run_all_examples():
     except requests.exceptions.ConnectionError:
         print("\n\n❌ Error: Cannot connect to backend server")
         print("Please make sure the server is running on http://localhost:8000")
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         print(f"\n\n❌ Error: {e}")
         import traceback
         traceback.print_exc()

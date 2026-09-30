@@ -1,8 +1,9 @@
 """
 Pytest configuration for the backend test suite.
 """
-import django
 import os
+
+import django
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'backend.settings')
 

@@ -1,15 +1,20 @@
-from rest_framework import viewsets, status
+import logging
+
+from django.db.models import Count
+from django.utils import timezone
+from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from django.utils import timezone
-from django.db.models import Count
-from .models import WebhookEndpoint, NotificationChannel, WebhookNotification, EventLog
+
+from .models import EventLog, NotificationChannel, WebhookEndpoint, WebhookNotification
 from .serializers import (
-    WebhookEndpointSerializer, WebhookDeliverySerializer, NotificationChannelSerializer,
-    WebhookNotificationSerializer, EventLogSerializer
+    EventLogSerializer,
+    NotificationChannelSerializer,
+    WebhookDeliverySerializer,
+    WebhookEndpointSerializer,
+    WebhookNotificationSerializer,
 )
-from .services import WebhookService, NotificationService
-import logging
+from .services import NotificationService, WebhookService
 
 logger = logging.getLogger(__name__)
 
@@ -46,8 +51,8 @@ class WebhookEndpointViewSet(viewsets.ModelViewSet):
                 'delivery_id': str(result.get('delivery_id'))
             })
             
-        except Exception as e:
-            logger.error(f"Error testing webhook: {str(e)}")
+        except Exception as e:  # noqa: BLE001
+            logger.error(f"Error testing webhook: {e!s}")
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
     
     @action(detail=True, methods=['get'])
@@ -88,8 +93,8 @@ class NotificationChannelViewSet(viewsets.ModelViewSet):
                 'success': result['success']
             })
             
-        except Exception as e:
-            logger.error(f"Error testing notification: {str(e)}")
+        except Exception as e:  # noqa: BLE001
+            logger.error(f"Error testing notification: {e!s}")
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 

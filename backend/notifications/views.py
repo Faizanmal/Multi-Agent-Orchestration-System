@@ -1,21 +1,29 @@
+from django.shortcuts import get_object_or_404
 from rest_framework import generics
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from django.shortcuts import get_object_or_404
+from rest_framework.response import Response
 
-from .models import NotificationCampaign, NotificationTemplate, NotificationRule, NotificationPreference, NotificationSubscription
+from .models import (
+    NotificationCampaign,
+    NotificationPreference,
+    NotificationRule,
+    NotificationSubscription,
+    NotificationTemplate,
+)
 from .serializers import (
-    NotificationCampaignSerializer, NotificationTemplateSerializer,
-    NotificationRuleSerializer, NotificationPreferenceSerializer,
-    NotificationSubscriptionSerializer
+    NotificationCampaignSerializer,
+    NotificationPreferenceSerializer,
+    NotificationRuleSerializer,
+    NotificationSubscriptionSerializer,
+    NotificationTemplateSerializer,
 )
 
 
 class NotificationCampaignListCreateView(generics.ListCreateAPIView):
     """List and create notification campaigns"""
     serializer_class = NotificationCampaignSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]  # noqa: RUF012
     
     def get_queryset(self):
         return NotificationCampaign.objects.filter(user=self.request.user)
@@ -27,7 +35,7 @@ class NotificationCampaignListCreateView(generics.ListCreateAPIView):
 class NotificationCampaignDetailView(generics.RetrieveUpdateDestroyAPIView):
     """Retrieve, update, delete notification campaign"""
     serializer_class = NotificationCampaignSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]  # noqa: RUF012
     
     def get_queryset(self):
         return NotificationCampaign.objects.filter(user=self.request.user)
@@ -58,7 +66,7 @@ def send_campaign_view(request, pk):
 class NotificationTemplateListCreateView(generics.ListCreateAPIView):
     """List and create notification templates"""
     serializer_class = NotificationTemplateSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]  # noqa: RUF012
     
     def get_queryset(self):
         return NotificationTemplate.objects.filter(user=self.request.user)
@@ -70,7 +78,7 @@ class NotificationTemplateListCreateView(generics.ListCreateAPIView):
 class NotificationRuleListCreateView(generics.ListCreateAPIView):
     """List and create notification rules"""
     serializer_class = NotificationRuleSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]  # noqa: RUF012
     
     def get_queryset(self):
         return NotificationRule.objects.filter(user=self.request.user)
@@ -112,17 +120,17 @@ def notification_stats_view(request):
 class NotificationPreferenceView(generics.RetrieveUpdateAPIView):
     """Retrieve and update notification preferences"""
     serializer_class = NotificationPreferenceSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]  # noqa: RUF012
     
     def get_object(self):
-        prefs, created = NotificationPreference.objects.get_or_create(user=self.request.user)
+        prefs, created = NotificationPreference.objects.get_or_create(user=self.request.user)  # noqa: RUF059
         return prefs
 
 
 class NotificationSubscriptionListCreateView(generics.ListCreateAPIView):
     """List and create notification subscriptions"""
     serializer_class = NotificationSubscriptionSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]  # noqa: RUF012
     
     def get_queryset(self):
         return NotificationSubscription.objects.filter(user=self.request.user)

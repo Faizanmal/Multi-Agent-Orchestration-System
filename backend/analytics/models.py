@@ -1,20 +1,21 @@
-from django.db import models
-from django.contrib.auth import get_user_model
 import uuid
+
+from django.contrib.auth import get_user_model
+from django.db import models
 
 User = get_user_model()
 
 
 class PerformanceMetric(models.Model):
     """Track detailed performance metrics for workflows and agents"""
-    METRIC_TYPE_CHOICES = [
+    METRIC_TYPE_CHOICES = (
         ('response_time', 'Response Time'),
         ('token_usage', 'Token Usage'),
         ('cost', 'Cost'),
         ('success_rate', 'Success Rate'),
         ('error_rate', 'Error Rate'),
         ('throughput', 'Throughput'),
-    ]
+    )
     
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     metric_type = models.CharField(max_length=50, choices=METRIC_TYPE_CHOICES)
@@ -27,21 +28,21 @@ class PerformanceMetric(models.Model):
     
     class Meta:
         db_table = 'analytics_performance_metrics'
-        indexes = [
+        indexes = (
             models.Index(fields=['metric_type', 'timestamp']),
             models.Index(fields=['workflow_id', 'timestamp']),
             models.Index(fields=['agent_id', 'timestamp']),
-        ]
+        )
 
 
 class CostAnalysis(models.Model):
     """Track and analyze API usage costs"""
-    PROVIDER_CHOICES = [
+    PROVIDER_CHOICES = (
         ('groq', 'Groq'),
         ('openai', 'OpenAI'),
         ('anthropic', 'Anthropic'),
         ('custom', 'Custom Provider'),
-    ]
+    )
     
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     provider = models.CharField(max_length=50, choices=PROVIDER_CHOICES)
@@ -55,21 +56,21 @@ class CostAnalysis(models.Model):
     
     class Meta:
         db_table = 'analytics_cost_analysis'
-        indexes = [
+        indexes = (
             models.Index(fields=['user', 'timestamp']),
             models.Index(fields=['provider', 'timestamp']),
-        ]
+        )
 
 
 class WorkflowOptimization(models.Model):
     """AI-powered workflow optimization suggestions"""
-    OPTIMIZATION_TYPE_CHOICES = [
+    OPTIMIZATION_TYPE_CHOICES = (
         ('reduce_cost', 'Reduce Cost'),
         ('improve_speed', 'Improve Speed'),
         ('increase_accuracy', 'Increase Accuracy'),
         ('reduce_tokens', 'Reduce Token Usage'),
         ('parallel_execution', 'Parallel Execution'),
-    ]
+    )
     
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     workflow_id = models.UUIDField()
@@ -83,17 +84,17 @@ class WorkflowOptimization(models.Model):
     
     class Meta:
         db_table = 'analytics_workflow_optimization'
-        ordering = ['-created_at']
+        ordering = ('-created_at',)
 
 
 class AnomalyDetection(models.Model):
     """Detect anomalies in system performance"""
-    SEVERITY_CHOICES = [
+    SEVERITY_CHOICES = (
         ('low', 'Low'),
         ('medium', 'Medium'),
         ('high', 'High'),
         ('critical', 'Critical'),
-    ]
+    )
     
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     anomaly_type = models.CharField(max_length=100)
@@ -107,17 +108,17 @@ class AnomalyDetection(models.Model):
     
     class Meta:
         db_table = 'analytics_anomaly_detection'
-        ordering = ['-detected_at']
+        ordering = ('-detected_at',)
 
 
 class PredictiveAnalytics(models.Model):
     """Predictive analytics for capacity planning and forecasting"""
-    PREDICTION_TYPE_CHOICES = [
+    PREDICTION_TYPE_CHOICES = (
         ('load_forecast', 'Load Forecast'),
         ('cost_forecast', 'Cost Forecast'),
         ('capacity_planning', 'Capacity Planning'),
         ('failure_prediction', 'Failure Prediction'),
-    ]
+    )
     
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     prediction_type = models.CharField(max_length=50, choices=PREDICTION_TYPE_CHOICES)
@@ -129,4 +130,4 @@ class PredictiveAnalytics(models.Model):
     
     class Meta:
         db_table = 'analytics_predictive_analytics'
-        ordering = ['-created_at']
+        ordering = ('-created_at',)

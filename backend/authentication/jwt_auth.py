@@ -39,7 +39,7 @@ class JWTAuthentication(authentication.BaseAuthentication):
             payload = decode_access_token(token)
         except exceptions.AuthenticationFailed:
             raise
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             raise exceptions.AuthenticationFailed(str(exc))
 
         user_id = payload.get('sub')
@@ -79,8 +79,9 @@ class WebSocketJWTAuthMiddleware:
 
     async def __call__(self, scope, receive, send):
         from urllib.parse import parse_qs
-        from django.contrib.auth.models import AnonymousUser
+
         from channels.db import database_sync_to_async
+        from django.contrib.auth.models import AnonymousUser
 
         query_string = scope.get('query_string', b'').decode()
         params = parse_qs(query_string)
@@ -96,7 +97,7 @@ class WebSocketJWTAuthMiddleware:
                 )()
                 if user:
                     scope['user'] = user
-            except Exception:
+            except Exception:  # noqa: BLE001, S110
                 pass
 
         return await self.inner(scope, receive, send)

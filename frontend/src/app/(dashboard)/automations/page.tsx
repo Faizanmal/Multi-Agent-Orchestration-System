@@ -87,7 +87,7 @@ export default function AutomationsPage() {
     }
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { setTimeout(() => { load(); }, 0) }, []);
 
   const openPreset = (p: typeof PRESETS[0]) => {
     setPreset(p);

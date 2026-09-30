@@ -3,14 +3,15 @@ User Feedback Models
 Collect and analyze user feedback for continuous improvement
 """
 
-from django.db import models
 import uuid
+
+from django.db import models
 
 
 class UserFeedback(models.Model):
     """User feedback on agent responses"""
     
-    FEEDBACK_TYPE_CHOICES = [
+    FEEDBACK_TYPE_CHOICES = [  # noqa: RUF012
         ('rating', 'Rating'),
         ('thumbs', 'Thumbs Up/Down'),
         ('text', 'Text Feedback'),
@@ -43,8 +44,8 @@ class UserFeedback(models.Model):
     
     class Meta:
         db_table = 'user_feedback'
-        ordering = ['-created_at']
-        indexes = [
+        ordering = ['-created_at']  # noqa: RUF012
+        indexes = [  # noqa: RUF012
             models.Index(fields=['user', '-created_at']),
             models.Index(fields=['agent', '-created_at']),
             models.Index(fields=['feedback_type']),
@@ -165,8 +166,8 @@ class FeedbackTrend(models.Model):
     
     class Meta:
         db_table = 'feedback_trends'
-        ordering = ['-start_date']
-        indexes = [
+        ordering = ['-start_date']  # noqa: RUF012
+        indexes = [  # noqa: RUF012
             models.Index(fields=['period', '-start_date']),
             models.Index(fields=['agent', '-start_date'])
         ]

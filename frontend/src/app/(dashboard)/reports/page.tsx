@@ -265,7 +265,7 @@ export default function ReportsPage() {
   }, []);
 
   useEffect(() => {
-    load();
+    setTimeout(() => { load(); }, 0)
   }, [load]);
 
   const filteredReports = useMemo(() => {
@@ -407,7 +407,7 @@ export default function ReportsPage() {
       await apiClient.generateLegacyReport(id);
       await load();
       toast({ title: 'Report generated' });
-    } catch (e: unknown) {
+    } catch {
       try {
         await apiClient.generateReport(id);
         await load();

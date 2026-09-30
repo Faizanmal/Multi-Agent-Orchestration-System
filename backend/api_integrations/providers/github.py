@@ -1,5 +1,5 @@
 """GitHub integration provider."""
-from typing import Any, Dict, List
+from typing import Any
 
 import requests
 
@@ -19,7 +19,7 @@ class GitHubProvider(IntegrationProvider):
         return "github" in text or "git hub" in text
 
     @classmethod
-    def tool_definitions(cls) -> List[Dict[str, Any]]:
+    def tool_definitions(cls) -> list[dict[str, Any]]:
         return [
             {"name": "github.list_repos", "description": "List user repositories", "parameters": {"limit": "int"}},
             {"name": "github.list_issues", "description": "List open issues for a repo", "parameters": {"owner": "string", "repo": "string"}},
@@ -28,7 +28,7 @@ class GitHubProvider(IntegrationProvider):
         ]
 
     @classmethod
-    def _headers(cls, integration: APIIntegration) -> Dict[str, str]:
+    def _headers(cls, integration: APIIntegration) -> dict[str, str]:
         token = cls._token(integration)
         if not token:
             raise ValueError("GitHub personal access token required")
@@ -39,7 +39,7 @@ class GitHubProvider(IntegrationProvider):
         }
 
     @classmethod
-    def _get(cls, integration: APIIntegration, path: str, params: Dict = None) -> Any:
+    def _get(cls, integration: APIIntegration, path: str, params: dict | None = None) -> Any:
         resp = requests.get(
             f"https://api.github.com{path}",
             headers=cls._headers(integration),
@@ -51,7 +51,7 @@ class GitHubProvider(IntegrationProvider):
         return resp.json()
 
     @classmethod
-    def _post(cls, integration: APIIntegration, path: str, body: Dict) -> Any:
+    def _post(cls, integration: APIIntegration, path: str, body: dict) -> Any:
         resp = requests.post(
             f"https://api.github.com{path}",
             headers=cls._headers(integration),
@@ -63,7 +63,7 @@ class GitHubProvider(IntegrationProvider):
         return resp.json()
 
     @classmethod
-    def test_connection(cls, integration: APIIntegration) -> Dict[str, Any]:
+    def test_connection(cls, integration: APIIntegration) -> dict[str, Any]:
         try:
             user = cls._get(integration, "/user")
             return {
@@ -71,11 +71,11 @@ class GitHubProvider(IntegrationProvider):
                 "message": f"Connected as {user.get('login')}",
                 "data": {"login": user.get("login"), "repos": user.get("public_repos")},
             }
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return {"status": "error", "message": str(e)}
 
     @classmethod
-    def execute_tool(cls, integration: APIIntegration, tool_name: str, params: Dict[str, Any]) -> Dict[str, Any]:
+    def execute_tool(cls, integration: APIIntegration, tool_name: str, params: dict[str, Any]) -> dict[str, Any]:
         try:
             if tool_name == "github.list_repos":
                 limit = min(int(params.get("limit", 10)), 30)
@@ -118,5 +118,5 @@ class GitHubProvider(IntegrationProvider):
                 return {"status": "success", "content": content[:8000]}
 
             return {"status": "error", "message": f"Unknown GitHub tool: {tool_name}"}
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return {"status": "error", "message": str(e)}

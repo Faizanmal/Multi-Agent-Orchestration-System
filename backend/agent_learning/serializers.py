@@ -1,7 +1,11 @@
 from rest_framework import serializers
+
 from .models import (
-    AgentLearningProfile, ReinforcementState, AdaptiveStrategy,
-    LearningEvent, SkillMatrix
+    AdaptiveStrategy,
+    AgentLearningProfile,
+    LearningEvent,
+    ReinforcementState,
+    SkillMatrix,
 )
 
 

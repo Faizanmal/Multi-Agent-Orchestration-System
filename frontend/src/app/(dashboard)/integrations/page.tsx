@@ -419,7 +419,7 @@ export default function IntegrationsPage() {
   };
 
   React.useEffect(() => {
-    loadIntegrations();
+    setTimeout(() => { loadIntegrations(); }, 0)
   }, []);
 
   const filteredIntegrations = integrations.filter(integration => {

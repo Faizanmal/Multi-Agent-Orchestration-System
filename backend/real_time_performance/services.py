@@ -2,12 +2,13 @@
 Real-Time Performance Services with Redis Caching
 """
 
-import logging
 import json
-import time
-from typing import Dict, Any, Optional, List
-from django.conf import settings
+import logging
 import os
+import time
+from typing import Any
+
+from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
@@ -47,12 +48,12 @@ class RedisCacheService:
             self.enabled = True
             logger.info("Redis cache service initialized successfully")
             
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.warning(f"Redis not available: {e}")
             self.enabled = False
             self.client = None
     
-    def get(self, key: str) -> Optional[Any]:
+    def get(self, key: str) -> Any | None:
         """Get value from cache"""
         if not self.enabled:
             return None
@@ -62,7 +63,7 @@ class RedisCacheService:
             if value:
                 return json.loads(value)
             return None
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error(f"Cache get error: {e}")
             return None
     
@@ -85,7 +86,7 @@ class RedisCacheService:
             serialized = json.dumps(value)
             self.client.setex(key, ttl, serialized)
             return True
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error(f"Cache set error: {e}")
             return False
     
@@ -97,7 +98,7 @@ class RedisCacheService:
         try:
             self.client.delete(key)
             return True
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error(f"Cache delete error: {e}")
             return False
     
@@ -108,7 +109,7 @@ class RedisCacheService:
         
         try:
             return self.client.exists(key) > 0
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error(f"Cache exists error: {e}")
             return False
     
@@ -130,36 +131,36 @@ class RedisCacheService:
             if keys:
                 return self.client.delete(*keys)
             return 0
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error(f"Cache invalidate error: {e}")
             return 0
     
-    def cache_model_result(self, model_id: str, input_hash: str, result: Dict, ttl: int = 1800):
+    def cache_model_result(self, model_id: str, input_hash: str, result: dict, ttl: int = 1800):
         """Cache model inference result"""
         key = f"model:{model_id}:{input_hash}"
         return self.set(key, result, ttl)
     
-    def get_cached_model_result(self, model_id: str, input_hash: str) -> Optional[Dict]:
+    def get_cached_model_result(self, model_id: str, input_hash: str) -> dict | None:
         """Get cached model result"""
         key = f"model:{model_id}:{input_hash}"
         return self.get(key)
     
-    def cache_agent_state(self, agent_id: str, state: Dict, ttl: int = 600):
+    def cache_agent_state(self, agent_id: str, state: dict, ttl: int = 600):
         """Cache agent state"""
         key = f"agent:state:{agent_id}"
         return self.set(key, state, ttl)
     
-    def get_agent_state(self, agent_id: str) -> Optional[Dict]:
+    def get_agent_state(self, agent_id: str) -> dict | None:
         """Get cached agent state"""
         key = f"agent:state:{agent_id}"
         return self.get(key)
     
-    def cache_session_data(self, session_id: str, data: Dict, ttl: int = 3600):
+    def cache_session_data(self, session_id: str, data: dict, ttl: int = 3600):
         """Cache session data"""
         key = f"session:{session_id}"
         return self.set(key, data, ttl)
     
-    def get_session_data(self, session_id: str) -> Optional[Dict]:
+    def get_session_data(self, session_id: str) -> dict | None:
         """Get cached session data"""
         key = f"session:{session_id}"
         return self.get(key)
@@ -171,7 +172,7 @@ class RedisCacheService:
         
         try:
             return self.client.incrby(key, amount)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error(f"Counter increment error: {e}")
             return 0
     
@@ -183,11 +184,11 @@ class RedisCacheService:
         try:
             value = self.client.get(key)
             return int(value) if value else 0
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error(f"Counter get error: {e}")
             return 0
     
-    def add_to_list(self, key: str, value: Any, max_length: Optional[int] = None):
+    def add_to_list(self, key: str, value: Any, max_length: int | None = None):
         """Add value to list (LPUSH)"""
         if not self.enabled:
             return False
@@ -200,11 +201,11 @@ class RedisCacheService:
                 self.client.ltrim(key, 0, max_length - 1)
             
             return True
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error(f"List add error: {e}")
             return False
     
-    def get_list(self, key: str, start: int = 0, end: int = -1) -> List[Any]:
+    def get_list(self, key: str, start: int = 0, end: int = -1) -> list[Any]:
         """Get list values"""
         if not self.enabled:
             return []
@@ -212,11 +213,11 @@ class RedisCacheService:
         try:
             values = self.client.lrange(key, start, end)
             return [json.loads(v) for v in values]
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error(f"List get error: {e}")
             return []
     
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get cache statistics"""
         if not self.enabled:
             return {'enabled': False}
@@ -235,7 +236,7 @@ class RedisCacheService:
                     info.get('keyspace_misses', 0)
                 )
             }
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error(f"Stats retrieval error: {e}")
             return {'enabled': True, 'error': str(e)}
     
@@ -255,7 +256,7 @@ class PerformanceMonitoringService:
     def __init__(self):
         self.cache = get_cache_service()
     
-    def track_request(self, endpoint: str, duration_ms: int, status_code: int, user_id: str = None):
+    def track_request(self, endpoint: str, duration_ms: int, status_code: int, user_id: str | None = None):
         """Track API request performance"""
         timestamp = int(time.time())
         
@@ -295,7 +296,7 @@ class PerformanceMonitoringService:
         else:
             self.cache.increment_counter(f"metrics:models:{model_id}:failures")
     
-    def get_endpoint_metrics(self, endpoint: str) -> Dict[str, Any]:
+    def get_endpoint_metrics(self, endpoint: str) -> dict[str, Any]:
         """Get performance metrics for endpoint"""
         total_requests = self.cache.get_counter(f"metrics:requests:{endpoint}:count")
         total_errors = self.cache.get_counter(f"metrics:requests:{endpoint}:errors")
@@ -320,7 +321,7 @@ class PerformanceMonitoringService:
             'recent_samples': len(recent_times)
         }
     
-    def get_model_metrics(self, model_id: str) -> Dict[str, Any]:
+    def get_model_metrics(self, model_id: str) -> dict[str, Any]:
         """Get performance metrics for model"""
         total = self.cache.get_counter(f"metrics:models:{model_id}:total")
         success = self.cache.get_counter(f"metrics:models:{model_id}:success")
@@ -348,7 +349,7 @@ class PerformanceMonitoringService:
             'recent_samples': len(recent_executions)
         }
     
-    def get_system_health(self) -> Dict[str, Any]:
+    def get_system_health(self) -> dict[str, Any]:
         """Get overall system health metrics"""
         cache_stats = self.cache.get_stats()
         

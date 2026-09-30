@@ -1,9 +1,10 @@
 """
 Role-Based Access Control (RBAC) for enterprise security
 """
-from rest_framework import permissions
-from django.core.cache import cache
 import logging
+
+from django.core.cache import cache
+from rest_framework import permissions
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +20,7 @@ class RBACPermission(permissions.BasePermission):
     """
     
     # Define role hierarchy (higher number = more privileges)
-    ROLE_HIERARCHY = {
+    ROLE_HIERARCHY = {  # noqa: RUF012
         'viewer': 1,
         'user': 2,
         'developer': 3,
@@ -30,7 +31,7 @@ class RBACPermission(permissions.BasePermission):
     }
     
     # Define permissions for each role
-    ROLE_PERMISSIONS = {
+    ROLE_PERMISSIONS = {  # noqa: RUF012
         'viewer': [
             'view_agent', 'view_session', 'view_message',
             'view_dashboard', 'view_analytics'

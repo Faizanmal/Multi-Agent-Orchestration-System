@@ -2,9 +2,10 @@
 Django management command to create sample agents and sessions
 """
 
-from django.core.management.base import BaseCommand
 from django.contrib.auth import get_user_model
-from agents.models import Agent, Session, AgentStatus
+from django.core.management.base import BaseCommand
+
+from agents.models import Agent, AgentStatus, Session
 
 # Get the custom user model
 User = get_user_model()

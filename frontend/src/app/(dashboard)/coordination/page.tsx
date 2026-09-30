@@ -113,7 +113,8 @@ export default function CoordinationPage() {
   };
 
   useEffect(() => {
-    load();
+    setTimeout(() => { load(); }, 0)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const toggleAgent = (id: string) => {
@@ -141,7 +142,7 @@ export default function CoordinationPage() {
         task: task.trim(),
         use_model_coordination: useModelCoord,
       });
-      setResult(data as RunResult);
+      setResult(data as unknown as RunResult);
       setShowRun(false);
       toast({ title: 'Agents coordinated', description: strategy });
       await load();

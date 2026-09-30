@@ -1,6 +1,7 @@
-from django.urls import path, include
+from django.urls import include, path
 from rest_framework.routers import DefaultRouter
-from .views import PluginViewSet, PluginInstallationViewSet, CustomAgentPluginViewSet
+
+from .views import CustomAgentPluginViewSet, PluginInstallationViewSet, PluginViewSet
 
 router = DefaultRouter()
 router.register(r'marketplace', PluginViewSet, basename='plugin')

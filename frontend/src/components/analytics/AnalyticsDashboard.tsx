@@ -96,7 +96,7 @@ const AnalyticsDashboard: React.FC = () => {
 
       const dashboard =
         dashRes.status === 'fulfilled' && dashRes.value && typeof dashRes.value === 'object'
-          ? (dashRes.value as Record<string, unknown>)
+          ? (dashRes.value as unknown as Record<string, unknown>)
           : {}
       const systemPerf =
         sysRes.status === 'fulfilled' && sysRes.value && typeof sysRes.value === 'object'
@@ -157,7 +157,7 @@ const AnalyticsDashboard: React.FC = () => {
       const responseTimes = Array.isArray(trends.response_times) ? trends.response_times : []
       if (responseTimes.length > 0) {
         setPerformanceData(
-          (responseTimes as Record<string, unknown>[]).map((row, i) => ({
+          (responseTimes as Record<string, unknown>[]).map((row) => ({
             timestamp: String(row.date || row.period || new Date().toISOString()),
             agent_id: 'system',
             task_type: 'all',
@@ -183,7 +183,7 @@ const AnalyticsDashboard: React.FC = () => {
   }
 
   useEffect(() => {
-    loadData()
+    setTimeout(() => { loadData() }, 0)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timeRange])
 
@@ -385,7 +385,7 @@ const AnalyticsDashboard: React.FC = () => {
                     />
                     <YAxis />
                     <Tooltip 
-                      labelFormatter={(value) => new Date(value).toLocaleString()}
+                      labelFormatter={(value) => new Date(value as string | number).toLocaleString()}
                       formatter={(value, name) => {
                         const numericValue = typeof value === 'number'
                           ? value
@@ -614,7 +614,7 @@ const AnalyticsDashboard: React.FC = () => {
                     />
                     <YAxis />
                     <Tooltip 
-                      labelFormatter={(value) => new Date(value).toLocaleString()}
+                      labelFormatter={(value) => new Date(value as string | number).toLocaleString()}
                     />
                     <Legend />
                     <Area 

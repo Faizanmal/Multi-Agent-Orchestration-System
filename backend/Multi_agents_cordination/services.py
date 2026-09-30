@@ -17,7 +17,7 @@ import logging
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -39,10 +39,10 @@ class CoordinationService:
         self,
         session,            # agents.models.Session
         strategy: str,      # CoordinationStrategy value
-        agents: List,       # list of agents.models.Agent
+        agents: list,       # list of agents.models.Agent
         task: str,          # plain-text task description
-        context: Optional[Dict] = None,
-    ) -> Dict[str, Any]:
+        context: dict | None = None,
+    ) -> dict[str, Any]:
         """
         Execute the chosen coordination strategy for the given agents and task.
 
@@ -61,10 +61,10 @@ class CoordinationService:
         self,
         coord_session,      # Multi_agents_cordination.AgentCoordinationSession
         strategy: str,
-        agents: List,
+        agents: list,
         task: str,
-        context: Optional[Dict] = None,
-    ) -> Dict[str, Any]:
+        context: dict | None = None,
+    ) -> dict[str, Any]:
         """Run a strategy on an existing AgentCoordinationSession (HTTP API path)."""
         context = {**(coord_session.context or {}), **(context or {})}
         start = time.monotonic()
@@ -92,7 +92,7 @@ class CoordinationService:
 
             self._close_coord_session(coord_session, success=True)
 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error(f"Coordination strategy '{strategy}' failed: {e}")
             self._close_coord_session(coord_session, success=False)
             results = {}
@@ -111,7 +111,7 @@ class CoordinationService:
                 'results_keys': list(results.keys()) if isinstance(results, dict) else [],
             }
             coord_session.save(update_fields=['context', 'updated_at'])
-        except Exception:
+        except Exception:  # noqa: BLE001, S110
             pass
 
         return {
@@ -132,15 +132,15 @@ class CoordinationService:
     def _run_sequential(
         self,
         coord_session,
-        agents: List,
+        agents: list,
         task: str,
-        context: Dict,
+        context: dict,
     ):
         """Each agent processes the task in order; outputs chain into the next."""
         from agents.services.groq_service import GroqService
         groq = GroqService()
 
-        results: Dict[str, Any] = {}
+        results: dict[str, Any] = {}
         accumulated_context = task
 
         for agent in agents:
@@ -175,9 +175,9 @@ class CoordinationService:
     def _run_parallel(
         self,
         coord_session,
-        agents: List,
+        agents: list,
         task: str,
-        context: Dict,
+        context: dict,
     ):
         """All agents process the task simultaneously; results are merged."""
         from agents.services.groq_service import GroqService
@@ -197,7 +197,7 @@ class CoordinationService:
             response = groq.chat_completion(messages)
             return agent, response.get('content', '')
 
-        results: Dict[str, Any] = {}
+        results: dict[str, Any] = {}
         with ThreadPoolExecutor(max_workers=min(len(agents), 5)) as executor:
             futures = {executor.submit(run_agent, a): a for a in agents}
             for future in as_completed(futures):
@@ -207,7 +207,7 @@ class CoordinationService:
                     self._log_interaction(coord_session, agent, None, 'parallel_result', {
                         'output': output[:300],
                     })
-                except Exception as e:
+                except Exception as e:  # noqa: BLE001
                     logger.warning(f"Parallel agent failed: {e}")
 
         # Merge: concatenate all outputs with headers
@@ -219,9 +219,9 @@ class CoordinationService:
     def _run_hierarchical(
         self,
         coord_session,
-        agents: List,
+        agents: list,
         task: str,
-        context: Dict,
+        context: dict,
         session,
     ):
         """
@@ -259,11 +259,11 @@ class CoordinationService:
             import re
             match = re.search(r'\[.*\]', plan_text, re.DOTALL)
             delegation_plan = json.loads(match.group()) if match else []
-        except Exception:
+        except Exception:  # noqa: BLE001
             delegation_plan = [{'agent_name': a.name, 'sub_task': task} for a in specialists]
 
         # Step 2: Execute each delegation
-        results: Dict[str, Any] = {}
+        results: dict[str, Any] = {}
         specialist_map = {a.name: a for a in specialists}
 
         for item in delegation_plan:
@@ -310,9 +310,9 @@ class CoordinationService:
     def _run_collaborative(
         self,
         coord_session,
-        agents: List,
+        agents: list,
         task: str,
-        context: Dict,
+        context: dict,
         rounds: int = 2,
     ):
         """
@@ -323,11 +323,11 @@ class CoordinationService:
         from agents.services.groq_service import GroqService
         groq = GroqService()
 
-        results: Dict[str, Any] = {}
+        results: dict[str, Any] = {}
         current_draft = task
 
         for round_num in range(1, rounds + 1):
-            round_outputs: Dict[str, str] = {}
+            round_outputs: dict[str, str] = {}
             for agent in agents:
                 if round_num == 1:
                     prompt = f"Task: {task}\nProvide your initial answer."
@@ -365,9 +365,9 @@ class CoordinationService:
     def _run_competitive(
         self,
         coord_session,
-        agents: List,
+        agents: list,
         task: str,
-        context: Dict,
+        context: dict,
     ):
         """
         Each agent independently solves the task.
@@ -377,7 +377,7 @@ class CoordinationService:
         groq = GroqService()
 
         # All agents answer independently
-        results: Dict[str, str] = {}
+        results: dict[str, str] = {}
         for agent in agents:
             messages = [
                 {
@@ -417,17 +417,17 @@ class CoordinationService:
         judge_response = groq.chat_completion(judge_messages, temperature=0.1)
         judge_text = judge_response.get('content', '')
 
-        winner_name = list(results.keys())[0] if results else ''
+        winner_name = next(iter(results.keys())) if results else ''
         try:
             import re
             match = re.search(r'\{.*\}', judge_text, re.DOTALL)
             if match:
                 verdict = json.loads(match.group())
                 winner_name = verdict.get('winner', winner_name)
-        except Exception:
+        except Exception:  # noqa: BLE001, S110
             pass
 
-        final_answer = results.get(winner_name, list(results.values())[0] if results else '')
+        final_answer = results.get(winner_name, next(iter(results.values())) if results else '')
         self._record_metric(coord_session, 'competitive_winner', 0.0)
 
         return results, f"[Winner: {winner_name}]\n\n{final_answer}"
@@ -436,7 +436,7 @@ class CoordinationService:
     # DB helpers
     # ─────────────────────────────────────────────────────────────────────────
 
-    def _create_coord_session(self, session, strategy: str, task: str, context: Dict):
+    def _create_coord_session(self, session, strategy: str, task: str, context: dict):
         from .models import AgentCoordinationSession
         return AgentCoordinationSession.objects.create(
             name=f"auto:{strategy}:{str(task)[:50]}",
@@ -453,7 +453,7 @@ class CoordinationService:
             coord_session.completed_at = datetime.now(tz=timezone.utc)
             coord_session.context['success'] = success
             coord_session.save(update_fields=['is_active', 'completed_at', 'context'])
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.debug(f"Could not close coordination session: {e}")
 
     def _log_interaction(
@@ -462,7 +462,7 @@ class CoordinationService:
         source_agent,
         target_agent,
         interaction_type: str,
-        content: Dict,
+        content: dict,
     ):
         try:
             from .models import AgentInteraction
@@ -475,7 +475,7 @@ class CoordinationService:
                 processed=True,
                 processed_at=datetime.now(tz=timezone.utc),
             )
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.debug(f"Interaction log skipped: {e}")
 
     def _record_metric(self, coord_session, name: str, value: float):
@@ -486,5 +486,5 @@ class CoordinationService:
                 metric_name=name,
                 metric_value=value,
             )
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.debug(f"Metric record skipped: {e}")

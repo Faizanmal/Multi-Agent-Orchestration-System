@@ -1,9 +1,7 @@
-from django.urls import path, include
+from django.urls import include, path
 from rest_framework.routers import DefaultRouter
-from . import views
-from . import collaboration_views
-from . import workflow_views
-from . import health_views
+
+from . import collaboration_views, health_views, views, workflow_views
 
 router = DefaultRouter()
 # Existing endpoints

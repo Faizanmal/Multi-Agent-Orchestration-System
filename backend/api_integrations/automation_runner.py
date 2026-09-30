@@ -18,7 +18,7 @@ def _groq_summarize(prompt: str) -> str:
             {"role": "user", "content": prompt},
         ], max_tokens=800, temperature=0.3)
         return resp.get("content", "No summary generated.")
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         logger.error(f"Groq summarize failed: {e}")
         return f"Summary unavailable: {e}"
 
@@ -60,9 +60,10 @@ def run_slack_alert(automation, user) -> dict:
 def run_workflow(automation, user) -> dict:
     if not automation.workflow_id:
         return {"status": "error", "message": "No workflow linked"}
-    from workflow_builder.models import VisualWorkflow, WorkflowExecution
-    from agents.services.workflow_engine import WorkflowEngine
     import asyncio
+
+    from agents.services.workflow_engine import WorkflowEngine
+    from workflow_builder.models import VisualWorkflow, WorkflowExecution
 
     try:
         workflow = VisualWorkflow.objects.get(id=automation.workflow_id)

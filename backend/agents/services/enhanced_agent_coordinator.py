@@ -1,16 +1,17 @@
-from typing import List, Dict, Any, Optional
 import logging
-from datetime import datetime
-from channels.layers import get_channel_layer
-from asgiref.sync import async_to_sync
+from datetime import datetime, timezone
+from typing import Any
 
-from ..models import Agent, Session, Task, Message, TaskStatus, AgentStatus
-from .groq_service import GroqService
-from .vision_service import VisionService
-from .audio_service import AudioService
-from .performance_tracker import PerformanceTracker
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
+
+from ..models import Agent, AgentStatus, Message, Session, Task, TaskStatus
 from .agent_selector import SmartAgentSelector
+from .audio_service import AudioService
+from .groq_service import GroqService
 from .langchain_coordinator import LangchainAgentCoordinator
+from .performance_tracker import PerformanceTracker
+from .vision_service import VisionService
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +30,7 @@ class EnhancedAgentCoordinator:
         self.active_agents = {}
         self.task_queue = []
         
-    def process_message(self, message: Message) -> Dict[str, Any]:
+    def process_message(self, message: Message) -> dict[str, Any]:
         """
         Process incoming message and coordinate agent responses with enhanced logic
         
@@ -46,8 +47,8 @@ class EnhancedAgentCoordinator:
             langchain_coordinator = LangchainAgentCoordinator(self.session)
             result = langchain_coordinator.process_message(message)
             return result
-        except Exception as e:
-            logger.warning(f"Langchain coordination failed, falling back to enhanced coordination: {str(e)}")
+        except Exception as e:  # noqa: BLE001
+            logger.warning(f"Langchain coordination failed, falling back to enhanced coordination: {e!s}")
             # Fallback to original enhanced coordination
             # Determine which agents should handle this message using smart selection
             relevant_agents = self._determine_relevant_agents_enhanced(message)
@@ -74,7 +75,7 @@ class EnhancedAgentCoordinator:
                 'response': final_response
             }
     
-    def process_multimodal_message(self, message: Message) -> Dict[str, Any]:
+    def process_multimodal_message(self, message: Message) -> dict[str, Any]:
         """
         Process multimodal message with appropriate specialized agents
         
@@ -112,7 +113,7 @@ class EnhancedAgentCoordinator:
         
         return results
     
-    def execute_task(self, task: Task) -> Dict[str, Any]:
+    def execute_task(self, task: Task) -> dict[str, Any]:
         """
         Execute a specific task with the assigned agent
         
@@ -128,10 +129,10 @@ class EnhancedAgentCoordinator:
         
         # Update task status
         task.status = TaskStatus.IN_PROGRESS
-        task.started_at = datetime.now()
+        task.started_at = datetime.now(timezone.utc)
         task.save()
         
-        start_time = datetime.now()
+        start_time = datetime.now(timezone.utc)
         
         try:
             # Execute based on agent type
@@ -151,19 +152,19 @@ class EnhancedAgentCoordinator:
             # Update task with results
             task.output_data = result
             task.status = TaskStatus.COMPLETED
-            task.completed_at = datetime.now()
+            task.completed_at = datetime.now(timezone.utc)
             
-        except Exception as e:
-            logger.error(f"Task execution failed: {str(e)}")
+        except Exception as e:  # noqa: BLE001
+            logger.error(f"Task execution failed: {e!s}")
             task.error_message = str(e)
             task.status = TaskStatus.FAILED
-            task.completed_at = datetime.now()
+            task.completed_at = datetime.now(timezone.utc)
             result = {'error': str(e)}
         
         task.save()
         
         # Track performance
-        end_time = datetime.now()
+        end_time = datetime.now(timezone.utc)
         execution_time = (end_time - start_time).total_seconds()
         success = task.status == TaskStatus.COMPLETED
         
@@ -182,7 +183,7 @@ class EnhancedAgentCoordinator:
         
         return result
     
-    def _determine_relevant_agents_enhanced(self, message: Message) -> List[Agent]:
+    def _determine_relevant_agents_enhanced(self, message: Message) -> list[Agent]:
         """Enhanced agent determination with smart selection"""
         relevant_agents = []
         session_agents = self.session.agents.filter(is_active=True)
@@ -249,7 +250,7 @@ class EnhancedAgentCoordinator:
         
         return task
     
-    def _execute_tasks_enhanced(self, tasks: List[Task]) -> Dict[str, Any]:
+    def _execute_tasks_enhanced(self, tasks: list[Task]) -> dict[str, Any]:
         """Execute multiple tasks with parallel processing for better performance"""
         results = {}
         
@@ -280,7 +281,7 @@ class EnhancedAgentCoordinator:
         
         return results
     
-    def _synthesize_responses_enhanced(self, results: Dict[str, Any]) -> Dict[str, Any]:
+    def _synthesize_responses_enhanced(self, results: dict[str, Any]) -> dict[str, Any]:
         """Enhanced response synthesis with better coordination"""
         orchestrator = self._get_agent_by_type('orchestrator')
         
@@ -323,7 +324,7 @@ class EnhancedAgentCoordinator:
             'orchestrator': orchestrator.name
         }
     
-    def _send_response_to_session(self, response: Dict[str, Any], original_message: Message):
+    def _send_response_to_session(self, response: dict[str, Any], original_message: Message):
         """Send response back to the session via WebSocket"""
         channel_layer = get_channel_layer()
         async_to_sync(channel_layer.group_send)(
@@ -332,15 +333,15 @@ class EnhancedAgentCoordinator:
                 "type": "agent_response",
                 "response": response,
                 "original_message_id": str(original_message.id),
-                "timestamp": datetime.now().isoformat()
+                "timestamp": datetime.now(timezone.utc).isoformat()
             }
         )
     
-    def _get_agent_by_type(self, agent_type: str) -> Optional[Agent]:
+    def _get_agent_by_type(self, agent_type: str) -> Agent | None:
         """Get agent by type from session"""
         return self.session.agents.filter(type=agent_type, is_active=True).first()
     
-    def _execute_orchestrator_task(self, task: Task) -> Dict[str, Any]:
+    def _execute_orchestrator_task(self, task: Task) -> dict[str, Any]:
         """Execute orchestrator-specific task"""
         input_data = task.input_data
         
@@ -356,7 +357,7 @@ class EnhancedAgentCoordinator:
             'coordination_actions': []
         }
     
-    def _execute_vision_task(self, task: Task) -> Dict[str, Any]:
+    def _execute_vision_task(self, task: Task) -> dict[str, Any]:
         """Execute vision-specific task"""
         input_data = task.input_data
         file_path = input_data.get('file_path')
@@ -379,7 +380,7 @@ class EnhancedAgentCoordinator:
             'agent_type': 'vision'
         }
     
-    def _execute_reasoning_task(self, task: Task) -> Dict[str, Any]:
+    def _execute_reasoning_task(self, task: Task) -> dict[str, Any]:
         """Execute reasoning-specific task with enhanced logic"""
         input_data = task.input_data
         
@@ -412,7 +413,7 @@ class EnhancedAgentCoordinator:
             'reasoning_steps': self._extract_reasoning_steps(response)
         }
     
-    def _execute_action_task(self, task: Task) -> Dict[str, Any]:
+    def _execute_action_task(self, task: Task) -> dict[str, Any]:
         """Execute action-specific task"""
         input_data = task.input_data
         
@@ -429,7 +430,7 @@ class EnhancedAgentCoordinator:
             'actions_taken': []
         }
     
-    def _execute_memory_task(self, task: Task) -> Dict[str, Any]:
+    def _execute_memory_task(self, task: Task) -> dict[str, Any]:
         """Execute memory-specific task"""
         input_data = task.input_data
         
@@ -448,7 +449,7 @@ class EnhancedAgentCoordinator:
             'memory_operations': memory_operations
         }
     
-    def _execute_generic_task(self, task: Task) -> Dict[str, Any]:
+    def _execute_generic_task(self, task: Task) -> dict[str, Any]:
         """Execute generic task for custom agent types"""
         input_data = task.input_data
         
@@ -487,7 +488,7 @@ class EnhancedAgentCoordinator:
         # Cap priority at 10
         return min(priority, 10)
     
-    def _notify_task_completion(self, task: Task, result: Dict[str, Any]):
+    def _notify_task_completion(self, task: Task, result: dict[str, Any]):
         """Notify about task completion via WebSocket"""
         channel_layer = get_channel_layer()
         async_to_sync(channel_layer.group_send)(
@@ -501,14 +502,14 @@ class EnhancedAgentCoordinator:
             }
         )
     
-    def _extract_reasoning_steps(self, response: Dict[str, Any]) -> List[str]:
+    def _extract_reasoning_steps(self, response: dict[str, Any]) -> list[str]:
         """Extract reasoning steps from response"""
         content = response.get('content', '')
         # Simple extraction - could be enhanced with NLP
         steps = [line.strip() for line in content.split('\n') if line.strip().startswith(('1.', '2.', '3.', '-', '*'))]
         return steps
     
-    def _handle_memory_operations(self, task: Task) -> Dict[str, Any]:
+    def _handle_memory_operations(self, task: Task) -> dict[str, Any]:
         """Handle memory storage and retrieval operations against session context."""
         input_data = task.input_data
         content: str = input_data.get('content', '')
@@ -519,7 +520,7 @@ class EnhancedAgentCoordinator:
         memory_updates: list = []
 
         # ── Retrieve existing memory from session context ─────────────────────
-        session_memory: Dict[str, Any] = self.session.context.get('agent_memory', {})
+        session_memory: dict[str, Any] = self.session.context.get('agent_memory', {})
 
         # ── Store: detect save/remember intent ────────────────────────────────
         store_triggers = ('remember', 'store', 'save', 'note that', 'keep in mind')
@@ -562,7 +563,7 @@ class EnhancedAgentCoordinator:
             'memory_updates': memory_updates,
         }
     
-    def _process_text_message(self, message: Message) -> Dict[str, Any]:
+    def _process_text_message(self, message: Message) -> dict[str, Any]:
         """Process text-only message"""
         return {
             'content': message.content,
@@ -571,7 +572,7 @@ class EnhancedAgentCoordinator:
             'entities': []  # Could be enhanced with NER
         }
     
-    def _get_combined_analysis(self, results: Dict[str, Any], content: str) -> Dict[str, Any]:
+    def _get_combined_analysis(self, results: dict[str, Any], content: str) -> dict[str, Any]:
         """Get combined analysis from reasoning agent"""
         reasoning_prompt = f"""
         Analyze and combine the following multimodal processing results:
@@ -589,7 +590,7 @@ class EnhancedAgentCoordinator:
         
         return self.groq_service.chat_completion(messages)
     
-    def _orchestrate_final_response(self, results: Dict[str, Any], message: Message) -> Dict[str, Any]:
+    def _orchestrate_final_response(self, results: dict[str, Any], message: Message) -> dict[str, Any]:
         """Orchestrate final response combining all analyses"""
         orchestration_prompt = f"""
         Create a comprehensive response based on the following multimodal analysis:

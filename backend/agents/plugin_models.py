@@ -2,12 +2,13 @@
 Plugin Architecture Models
 Supports custom agent plugins and marketplace functionality
 """
-from django.db import models
-from django.contrib.auth import get_user_model
-from django.conf import settings
-from django.core.validators import URLValidator
 import uuid
 from decimal import Decimal
+
+from django.conf import settings
+from django.contrib.auth import get_user_model
+from django.core.validators import URLValidator
+from django.db import models
 
 User = get_user_model()
 
@@ -106,8 +107,8 @@ class AgentPlugin(models.Model):
     last_reviewed_at = models.DateTimeField(null=True, blank=True)
     
     class Meta:
-        ordering = ['-is_featured', '-average_rating', '-downloads_count']
-        indexes = [
+        ordering = ['-is_featured', '-average_rating', '-downloads_count']  # noqa: RUF012
+        indexes = [  # noqa: RUF012
             models.Index(fields=['slug']),
             models.Index(fields=['category', '-downloads_count']),
             models.Index(fields=['status', 'is_public']),
@@ -156,9 +157,9 @@ class PluginInstallation(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
-        unique_together = ['plugin', 'user']
-        ordering = ['-installed_at']
-        indexes = [
+        unique_together = ['plugin', 'user']  # noqa: RUF012
+        ordering = ['-installed_at']  # noqa: RUF012
+        indexes = [  # noqa: RUF012
             models.Index(fields=['user', '-last_used_at']),
             models.Index(fields=['plugin', 'is_enabled']),
         ]
@@ -166,7 +167,7 @@ class PluginInstallation(models.Model):
     def __str__(self):
         return f"{self.user.username} - {self.plugin.name} v{self.installed_version}"
     
-    def record_usage(self, execution_time_ms: int = None, success: bool = True):
+    def record_usage(self, execution_time_ms: int | None = None, success: bool = True):
         """Record plugin usage"""
         from django.utils import timezone
         
@@ -224,9 +225,9 @@ class PluginReview(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
-        unique_together = ['plugin', 'user']
-        ordering = ['-created_at']
-        indexes = [
+        unique_together = ['plugin', 'user']  # noqa: RUF012
+        ordering = ['-created_at']  # noqa: RUF012
+        indexes = [  # noqa: RUF012
             models.Index(fields=['plugin', '-rating']),
             models.Index(fields=['-helpful_count']),
         ]
@@ -249,7 +250,7 @@ class PluginDependency(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:
-        unique_together = ['plugin', 'required_plugin']
+        unique_together = ['plugin', 'required_plugin']  # noqa: RUF012
         verbose_name_plural = 'Plugin dependencies'
     
     def __str__(self):
@@ -286,8 +287,8 @@ class PluginExecutionLog(models.Model):
     cpu_usage_percent = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
     
     class Meta:
-        ordering = ['-started_at']
-        indexes = [
+        ordering = ['-started_at']  # noqa: RUF012
+        indexes = [  # noqa: RUF012
             models.Index(fields=['installation', '-started_at']),
             models.Index(fields=['status', '-started_at']),
         ]
@@ -322,9 +323,9 @@ class PluginMarketplaceMetrics(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:
-        unique_together = ['plugin', 'date']
-        ordering = ['-date']
-        indexes = [
+        unique_together = ['plugin', 'date']  # noqa: RUF012
+        ordering = ['-date']  # noqa: RUF012
+        indexes = [  # noqa: RUF012
             models.Index(fields=['plugin', '-date']),
             models.Index(fields=['-downloads_count']),
         ]
@@ -353,7 +354,7 @@ class PluginCollection(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
-        ordering = ['-is_official', '-created_at']
+        ordering = ['-is_official', '-created_at']  # noqa: RUF012
     
     def __str__(self):
         return self.name

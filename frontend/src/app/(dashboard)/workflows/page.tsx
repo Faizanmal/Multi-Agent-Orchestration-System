@@ -230,7 +230,7 @@ export default function WorkflowsPage() {
   };
 
   useEffect(() => {
-    loadSavedWorkflows();
+    setTimeout(() => { loadSavedWorkflows(); }, 0)
     apiClient.getWorkflowTemplates().then((res) => {
       const list = paginatedItems(res.data as WorkflowRecord[] | { results?: WorkflowRecord[] });
       if (list.length > 0) setWorkflowTemplates(list);
@@ -268,7 +268,7 @@ export default function WorkflowsPage() {
     const nextSelectedNode = nodes.find((node) => node.id === selectedNode.id) ?? null;
 
     if (nextSelectedNode !== selectedNode) {
-      setSelectedNode(nextSelectedNode);
+      setTimeout(() => { setSelectedNode(nextSelectedNode); }, 0)
     }
   }, [nodes, selectedNode]);
 
@@ -300,7 +300,7 @@ export default function WorkflowsPage() {
 
   const addNode = (nodeType: keyof typeof nodeTypesConfig) => {
     const newNode: Node = {
-      id: `node-${Date.now()}`,
+      id: `node-${new Date().getTime()}`,
       type: 'custom',
       position: { x: 400, y: 100 + nodes.length * 50 },
       data: {
@@ -435,7 +435,7 @@ export default function WorkflowsPage() {
 
   const addIntegrationNode = (tool: IntegrationTool) => {
     const newNode: Node = {
-      id: `node-${Date.now()}`,
+      id: `node-${new Date().getTime()}`,
       type: 'custom',
       position: { x: 400, y: 100 + nodes.length * 50 },
       data: {

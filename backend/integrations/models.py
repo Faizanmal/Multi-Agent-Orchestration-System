@@ -1,6 +1,7 @@
-from django.db import models
-from django.contrib.auth import get_user_model
 import uuid
+
+from django.contrib.auth import get_user_model
+from django.db import models
 
 User = get_user_model()
 
@@ -37,7 +38,7 @@ class Integration(models.Model):
     
     class Meta:
         db_table = 'integrations'
-        ordering = ['-created_at']
+        ordering = ['-created_at']  # noqa: RUF012
     
     def __str__(self):
         return f"{self.name} ({self.integration_type})"
@@ -63,8 +64,8 @@ class IntegrationExecution(models.Model):
     
     class Meta:
         db_table = 'integration_executions'
-        ordering = ['-executed_at']
-        indexes = [
+        ordering = ['-executed_at']  # noqa: RUF012
+        indexes = [  # noqa: RUF012
             models.Index(fields=['integration', 'executed_at']),
             models.Index(fields=['success', 'executed_at']),
         ]
@@ -96,7 +97,7 @@ class AutomationWorkflow(models.Model):
     
     class Meta:
         db_table = 'automation_workflows'
-        ordering = ['-created_at']
+        ordering = ['-created_at']  # noqa: RUF012
     
     def __str__(self):
         return f"{self.name} ({self.platform})"

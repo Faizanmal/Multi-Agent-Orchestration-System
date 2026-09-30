@@ -4,7 +4,6 @@ Real-world workflow templates for common business and development tasks.
 These templates define multi-agent coordination for solving actual problems.
 """
 
-from typing import Dict, List, Optional
 from enum import Enum
 
 
@@ -24,7 +23,7 @@ class WorkflowTemplates:
     """Predefined templates for real-world agent workflows"""
     
     @staticmethod
-    def get_all_templates() -> Dict[str, Dict]:
+    def get_all_templates() -> dict[str, dict]:
         """Get all available workflow templates"""
         return {
             'data_analysis_pipeline': WorkflowTemplates.data_analysis_pipeline(),
@@ -40,7 +39,7 @@ class WorkflowTemplates:
         }
     
     @staticmethod
-    def data_analysis_pipeline() -> Dict:
+    def data_analysis_pipeline() -> dict:
         """
         Multi-agent workflow for comprehensive data analysis.
         Agents: Vision (for charts/graphs), Reasoning (for analysis), Action (for processing)
@@ -147,7 +146,7 @@ class WorkflowTemplates:
         }
     
     @staticmethod
-    def customer_support_ticket() -> Dict:
+    def customer_support_ticket() -> dict:
         """
         Multi-agent workflow for handling customer support tickets.
         Agents: Reasoning (understand issue), Memory (check history), Action (resolve)
@@ -256,7 +255,7 @@ class WorkflowTemplates:
         }
     
     @staticmethod
-    def code_review_process() -> Dict:
+    def code_review_process() -> dict:
         """
         Multi-agent workflow for automated code review.
         Agents: Action (run tests), Reasoning (analyze code), Orchestrator (summarize)
@@ -366,7 +365,7 @@ class WorkflowTemplates:
         }
     
     @staticmethod
-    def content_creation_workflow() -> Dict:
+    def content_creation_workflow() -> dict:
         """
         Multi-agent workflow for content creation.
         Agents: Reasoning (ideation), Action (research), Orchestrator (writing), Vision (graphics)
@@ -488,7 +487,7 @@ class WorkflowTemplates:
         }
     
     @staticmethod
-    def bug_investigation() -> Dict:
+    def bug_investigation() -> dict:
         """
         Multi-agent workflow for investigating and fixing bugs.
         """
@@ -608,7 +607,7 @@ class WorkflowTemplates:
         }
     
     @staticmethod
-    def research_and_summarize() -> Dict:
+    def research_and_summarize() -> dict:
         """Research a topic and create comprehensive summary"""
         return {
             'id': 'research_and_summarize',
@@ -700,7 +699,7 @@ class WorkflowTemplates:
         }
     
     @staticmethod
-    def document_generation() -> Dict:
+    def document_generation() -> dict:
         """Generate technical or business documentation"""
         return {
             'id': 'document_generation',
@@ -805,7 +804,7 @@ class WorkflowTemplates:
         }
     
     @staticmethod
-    def automated_testing() -> Dict:
+    def automated_testing() -> dict:
         """Comprehensive automated testing workflow"""
         return {
             'id': 'automated_testing',
@@ -909,7 +908,7 @@ class WorkflowTemplates:
         }
     
     @staticmethod
-    def data_quality_check() -> Dict:
+    def data_quality_check() -> dict:
         """Data quality assessment and remediation workflow"""
         return {
             'id': 'data_quality_check',
@@ -1013,7 +1012,7 @@ class WorkflowTemplates:
         }
     
     @staticmethod
-    def onboarding_automation() -> Dict:
+    def onboarding_automation() -> dict:
         """Automated employee onboarding workflow"""
         return {
             'id': 'onboarding_automation',
@@ -1120,13 +1119,13 @@ class WorkflowTemplates:
 
 
 # Export all templates
-def get_template(template_id: str) -> Optional[Dict]:
+def get_template(template_id: str) -> dict | None:
     """Get a specific template by ID"""
     templates = WorkflowTemplates.get_all_templates()
     return templates.get(template_id)
 
 
-def list_templates_by_category(category: WorkflowCategory) -> List[Dict]:
+def list_templates_by_category(category: WorkflowCategory) -> list[dict]:
     """List all templates in a category"""
     templates = WorkflowTemplates.get_all_templates()
     return [

@@ -1,5 +1,5 @@
 """HubSpot CRM integration provider."""
-from typing import Any, Dict, List
+from typing import Any
 
 import requests
 
@@ -19,7 +19,7 @@ class HubSpotProvider(IntegrationProvider):
         return "hubspot" in text or "hub spot" in text
 
     @classmethod
-    def tool_definitions(cls) -> List[Dict[str, Any]]:
+    def tool_definitions(cls) -> list[dict[str, Any]]:
         return [
             {"name": "hubspot.list_contacts", "description": "List HubSpot contacts", "parameters": {"limit": "int"}},
             {"name": "hubspot.create_contact", "description": "Create a HubSpot contact", "parameters": {"email": "string", "firstname": "string", "lastname": "string"}},
@@ -27,14 +27,14 @@ class HubSpotProvider(IntegrationProvider):
         ]
 
     @classmethod
-    def _headers(cls, integration: APIIntegration) -> Dict[str, str]:
+    def _headers(cls, integration: APIIntegration) -> dict[str, str]:
         token = cls._token(integration)
         if not token:
             raise ValueError("HubSpot private app token required")
         return {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
 
     @classmethod
-    def test_connection(cls, integration: APIIntegration) -> Dict[str, Any]:
+    def test_connection(cls, integration: APIIntegration) -> dict[str, Any]:
         try:
             resp = requests.get(
                 "https://api.hubapi.com/crm/v3/objects/contacts",
@@ -45,11 +45,11 @@ class HubSpotProvider(IntegrationProvider):
             if resp.status_code >= 400:
                 return {"status": "error", "message": resp.text[:200]}
             return {"status": "success", "message": "Connected to HubSpot CRM", "data": {"total": resp.json().get("total")}}
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return {"status": "error", "message": str(e)}
 
     @classmethod
-    def execute_tool(cls, integration: APIIntegration, tool_name: str, params: Dict[str, Any]) -> Dict[str, Any]:
+    def execute_tool(cls, integration: APIIntegration, tool_name: str, params: dict[str, Any]) -> dict[str, Any]:
         try:
             headers = cls._headers(integration)
             if tool_name == "hubspot.list_contacts":
@@ -96,5 +96,5 @@ class HubSpotProvider(IntegrationProvider):
                 return {"status": "success" if resp.ok else "error", "contacts": resp.json().get("results", []) if resp.ok else [], "message": "" if resp.ok else resp.text[:200]}
 
             return {"status": "error", "message": f"Unknown HubSpot tool: {tool_name}"}
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return {"status": "error", "message": str(e)}

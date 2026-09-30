@@ -1,10 +1,11 @@
+import logging
+import os
+from typing import Any
+
 import cv2
 import numpy as np
-from PIL import Image
 import pytesseract
-import logging
-from typing import Dict, Any, List
-import os
+from PIL import Image
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +18,7 @@ class VisionService:
         self.supported_formats = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp']
         self.ocr_languages = ['eng']  # Can be extended
     
-    def analyze_image(self, image_path: str) -> Dict[str, Any]:
+    def analyze_image(self, image_path: str) -> dict[str, Any]:
         """
         Comprehensive image analysis
         
@@ -49,11 +50,11 @@ class VisionService:
             
             return analysis
             
-        except Exception as e:
-            logger.error(f"Image analysis error: {str(e)}")
+        except Exception as e:  # noqa: BLE001
+            logger.error(f"Image analysis error: {e!s}")
             return {'error': str(e)}
     
-    def _get_basic_image_info(self, image: Image.Image) -> Dict[str, Any]:
+    def _get_basic_image_info(self, image: Image.Image) -> dict[str, Any]:
         """Get basic image information"""
         return {
             'width': image.width,
@@ -63,7 +64,7 @@ class VisionService:
             'size_mb': len(image.tobytes()) / (1024 * 1024)
         }
     
-    def _detect_objects(self, image: np.ndarray) -> List[Dict[str, Any]]:
+    def _detect_objects(self, image: np.ndarray) -> list[dict[str, Any]]:
         """
         Detect objects in image using OpenCV
         Note: This is a basic implementation. For production,
@@ -104,11 +105,11 @@ class VisionService:
             
             return objects
             
-        except Exception as e:
-            logger.error(f"Object detection error: {str(e)}")
+        except Exception as e:  # noqa: BLE001
+            logger.error(f"Object detection error: {e!s}")
             return []
     
-    def _extract_text(self, image: Image.Image) -> Dict[str, Any]:
+    def _extract_text(self, image: Image.Image) -> dict[str, Any]:
         """Extract text using OCR"""
         try:
             # Extract text using pytesseract
@@ -142,8 +143,8 @@ class VisionService:
                 'languages_detected': ['en']  # Could be enhanced with language detection
             }
             
-        except Exception as e:
-            logger.error(f"OCR error: {str(e)}")
+        except Exception as e:  # noqa: BLE001
+            logger.error(f"OCR error: {e!s}")
             return {
                 'full_text': '',
                 'words': [],
@@ -151,7 +152,7 @@ class VisionService:
                 'error': str(e)
             }
     
-    def _analyze_colors(self, image: np.ndarray) -> Dict[str, Any]:
+    def _analyze_colors(self, image: np.ndarray) -> dict[str, Any]:
         """Analyze color composition of image"""
         try:
             # Convert to RGB
@@ -185,11 +186,11 @@ class VisionService:
                 'color_variety': len(unique_colors)
             }
             
-        except Exception as e:
-            logger.error(f"Color analysis error: {str(e)}")
+        except Exception as e:  # noqa: BLE001
+            logger.error(f"Color analysis error: {e!s}")
             return {'error': str(e)}
     
-    def _analyze_composition(self, image: np.ndarray) -> Dict[str, Any]:
+    def _analyze_composition(self, image: np.ndarray) -> dict[str, Any]:
         """Analyze image composition"""
         try:
             height, width = image.shape[:2]
@@ -212,11 +213,11 @@ class VisionService:
             
             return composition
             
-        except Exception as e:
-            logger.error(f"Composition analysis error: {str(e)}")
+        except Exception as e:  # noqa: BLE001
+            logger.error(f"Composition analysis error: {e!s}")
             return {'error': str(e)}
     
-    def _assess_image_quality(self, image: np.ndarray) -> Dict[str, Any]:
+    def _assess_image_quality(self, image: np.ndarray) -> dict[str, Any]:
         """Assess basic image quality metrics"""
         try:
             gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -241,8 +242,8 @@ class VisionService:
             
             return quality
             
-        except Exception as e:
-            logger.error(f"Quality assessment error: {str(e)}")
+        except Exception as e:  # noqa: BLE001
+            logger.error(f"Quality assessment error: {e!s}")
             return {'error': str(e)}
     
     def _categorize_resolution(self, width: int, height: int) -> str:
@@ -256,7 +257,7 @@ class VisionService:
         else:
             return 'low'
     
-    def process_video_frame(self, video_path: str, frame_number: int = 0) -> Dict[str, Any]:
+    def process_video_frame(self, video_path: str, frame_number: int = 0) -> dict[str, Any]:
         """
         Process a single frame from video
         
@@ -295,11 +296,11 @@ class VisionService:
             cap.release()
             return analysis
             
-        except Exception as e:
-            logger.error(f"Video frame processing error: {str(e)}")
+        except Exception as e:  # noqa: BLE001
+            logger.error(f"Video frame processing error: {e!s}")
             return {'error': str(e)}
     
-    def _get_video_info(self, cap) -> Dict[str, Any]:
+    def _get_video_info(self, cap) -> dict[str, Any]:
         """Get basic video information"""
         try:
             return {
@@ -309,11 +310,11 @@ class VisionService:
                 'height': int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT)),
                 'duration_seconds': int(cap.get(cv2.CAP_PROP_FRAME_COUNT)) / cap.get(cv2.CAP_PROP_FPS)
             }
-        except Exception as e:
-            logger.error(f"Video info error: {str(e)}")
+        except Exception as e:  # noqa: BLE001
+            logger.error(f"Video info error: {e!s}")
             return {}
     
-    def generate_image_description(self, analysis: Dict[str, Any]) -> str:
+    def generate_image_description(self, analysis: dict[str, Any]) -> str:
         """
         Generate natural language description of image analysis
         
@@ -333,7 +334,7 @@ class VisionService:
             )
         
         # Objects
-        if 'objects' in analysis and analysis['objects']:
+        if analysis.get('objects'):
             object_count = len(analysis['objects'])
             face_count = len([obj for obj in analysis['objects'] if obj.get('type') == 'face'])
             

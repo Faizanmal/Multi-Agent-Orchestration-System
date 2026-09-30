@@ -1,12 +1,15 @@
+from datetime import timezone
+
 """
 Simple WebSocket Consumer for testing connections
 """
 
 import json
 import uuid
+from datetime import datetime
+
 from channels.generic.websocket import AsyncWebsocketConsumer
 from django.contrib.auth import get_user_model
-from datetime import datetime
 
 # Get the custom user model
 User = get_user_model()
@@ -38,9 +41,9 @@ class SimpleSessionConsumer(AsyncWebsocketConsumer):
                 'type': 'connection_established',
                 'session_id': self.session_id,
                 'message': 'Connected to session (Simple Consumer)',
-                'timestamp': datetime.now().isoformat()
+                'timestamp': datetime.now(timezone.utc).isoformat()
             }))
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             print(f"ERROR: Failed to connect WebSocket: {e}")
             import traceback
             traceback.print_exc()
@@ -75,9 +78,9 @@ class SimpleSessionConsumer(AsyncWebsocketConsumer):
                 
         except json.JSONDecodeError:
             await self.send_error('Invalid JSON format')
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             print(f"DEBUG: Error in WebSocket receive: {e}")
-            await self.send_error(f'Processing error: {str(e)}')
+            await self.send_error(f'Processing error: {e!s}')
     
     async def handle_chat_message(self, data):
         """Handle incoming chat message"""
@@ -92,7 +95,7 @@ class SimpleSessionConsumer(AsyncWebsocketConsumer):
         
         # Echo the message back to the group
         message_id = str(uuid.uuid4())
-        timestamp = datetime.now().isoformat()
+        timestamp = datetime.now(timezone.utc).isoformat()
         
         await self.channel_layer.group_send(
             self.session_group_name,
@@ -123,7 +126,7 @@ class SimpleSessionConsumer(AsyncWebsocketConsumer):
                     'agent_id': 'test-agent-123'
                 },
                 'original_message_id': message_id,
-                'timestamp': datetime.now().isoformat()
+                'timestamp': datetime.now(timezone.utc).isoformat()
             }
         )
         

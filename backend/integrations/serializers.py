@@ -1,4 +1,5 @@
 from rest_framework import serializers
+
 from .models import Integration, IntegrationExecution
 
 
@@ -7,11 +8,11 @@ class IntegrationSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Integration
-        fields = [
+        fields = [  # noqa: RUF012
             'id', 'name', 'integration_type', 'config', 'is_active',
             'last_sync', 'last_error', 'created_at', 'updated_at'
         ]
-        read_only_fields = ['id', 'created_at', 'updated_at', 'last_sync', 'last_error']
+        read_only_fields = ['id', 'created_at', 'updated_at', 'last_sync', 'last_error']  # noqa: RUF012
     
     def validate_config(self, value):
         """Validate configuration based on integration type"""
@@ -49,9 +50,9 @@ class IntegrationExecutionSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = IntegrationExecution
-        fields = [
+        fields = [  # noqa: RUF012
             'id', 'integration', 'integration_name', 'integration_type',
             'status', 'request_data', 'response_data', 'error_message',
             'duration_ms', 'created_at'
         ]
-        read_only_fields = ['id', 'created_at']
+        read_only_fields = ['id', 'created_at']  # noqa: RUF012

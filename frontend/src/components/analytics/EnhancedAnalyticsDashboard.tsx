@@ -71,12 +71,6 @@ export default function EnhancedAnalyticsDashboard() {
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState('7d');
   const [metricType, setMetricType] = useState('all');
-
-  useEffect(() => {
-    loadData();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [timeRange, metricType]);
-
   const loadData = async () => {
     try {
       setLoading(true);
@@ -155,6 +149,13 @@ export default function EnhancedAnalyticsDashboard() {
     return 'text-red-600';
   };
 
+  useEffect(() => {
+    setTimeout(() => {
+      loadData();
+    }, 0);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [timeRange, metricType]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -165,6 +166,7 @@ export default function EnhancedAnalyticsDashboard() {
       </div>
     );
   }
+
 
   return (
     <div className="container mx-auto p-6 space-y-6">

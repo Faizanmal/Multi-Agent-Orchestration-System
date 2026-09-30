@@ -1,14 +1,15 @@
-from rest_framework import viewsets, status
-from rest_framework.decorators import action
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated, AllowAny
+import logging
+
+from agents.models import Agent
 from django.conf import settings
 from django.contrib.auth import get_user_model
-import logging
+from rest_framework import status, viewsets
+from rest_framework.decorators import action
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
 
 from .models import AgentCoordinationSession, CoordinationStrategy
 from .services import CoordinationService
-from agents.models import Agent
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
@@ -47,7 +48,7 @@ class CoordinationSessionViewSet(viewsets.ViewSet):
                 'task': (session.context or {}).get('task', '')[:200],
             } for session in sessions]
             return Response({'sessions': data, 'count': len(data)})
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error(f"Error listing coordination sessions: {e}")
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
@@ -84,7 +85,7 @@ class CoordinationSessionViewSet(viewsets.ViewSet):
                 'created_at': session.created_at.isoformat(),
                 'message': 'Coordination session created successfully',
             }, status=status.HTTP_201_CREATED)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error(f"Error creating coordination session: {e}")
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
@@ -130,7 +131,7 @@ class CoordinationSessionViewSet(viewsets.ViewSet):
                 )
 
             agents = list(Agent.objects.filter(id__in=agent_ids, is_active=True))
-            if len(agents) != len(agent_ids):
+            if len(agents) != len(agent_ids):  # noqa: SIM102
                 # Allow partial match in DEBUG if some IDs invalid
                 if not agents:
                     return Response(
@@ -150,7 +151,9 @@ class CoordinationSessionViewSet(viewsets.ViewSet):
             # Optional: refine final answer via multi-model coordination
             if use_model_coord and result.get('final_answer'):
                 try:
-                    from Multi_model_Intelligence.coordination import get_coordination_service
+                    from Multi_model_Intelligence.coordination import (
+                        get_coordination_service,
+                    )
                     model_result = get_coordination_service().run(
                         mode='collaborative',
                         prompt=(
@@ -168,7 +171,7 @@ class CoordinationSessionViewSet(viewsets.ViewSet):
                         'models_used': model_result.get('models_used'),
                     }
                     result['final_answer'] = model_result.get('final_answer') or result['final_answer']
-                except Exception as exc:
+                except Exception as exc:  # noqa: BLE001
                     logger.warning('Model coordination bridge skipped: %s', exc)
                     result['model_coordination_error'] = str(exc)
 

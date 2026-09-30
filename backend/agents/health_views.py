@@ -1,17 +1,21 @@
+from datetime import timezone
+
 """
 Health Check and System Status Views
 """
+from datetime import datetime, timedelta
+
+import psutil
+from authentication.models import CustomUser
+from django.conf import settings
+from django.core.cache import cache
+from django.db import connection
+from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
-from rest_framework import status
-from django.db import connection
-from django.core.cache import cache
-from django.conf import settings
-from agents.models import Agent, Session, Message, Task
-from authentication.models import CustomUser
-import psutil
-from datetime import datetime, timedelta
+
+from agents.models import Agent, Message, Session, Task
 
 
 @api_view(['GET'])
@@ -33,17 +37,17 @@ def health_check(request):
         
         return Response({
             'status': 'healthy',
-            'timestamp': datetime.now().isoformat(),
+            'timestamp': datetime.now(timezone.utc).isoformat(),
             'database': 'connected',
             'cache': 'connected' if cache_status else 'disconnected',
             'version': '1.0.0'
         }, status=status.HTTP_200_OK)
     
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         return Response({
             'status': 'unhealthy',
             'error': str(e),
-            'timestamp': datetime.now().isoformat()
+            'timestamp': datetime.now(timezone.utc).isoformat()
         }, status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
 
@@ -65,7 +69,7 @@ def system_status(request):
         total_users = CustomUser.objects.count()
         
         # Recent activity (last 24 hours)
-        yesterday = datetime.now() - timedelta(days=1)
+        yesterday = datetime.now(timezone.utc) - timedelta(days=1)
         recent_sessions = Session.objects.filter(created_at__gte=yesterday).count()
         recent_messages = Message.objects.filter(created_at__gte=yesterday).count()
         
@@ -76,7 +80,7 @@ def system_status(request):
         
         return Response({
             'status': 'healthy',
-            'timestamp': datetime.now().isoformat(),
+            'timestamp': datetime.now(timezone.utc).isoformat(),
             'database': {
                 'agents': {
                     'total': total_agents,
@@ -114,11 +118,11 @@ def system_status(request):
             }
         }, status=status.HTTP_200_OK)
     
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         return Response({
             'status': 'error',
             'error': str(e),
-            'timestamp': datetime.now().isoformat()
+            'timestamp': datetime.now(timezone.utc).isoformat()
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
@@ -132,7 +136,7 @@ def performance_metrics(request):
         from agents.models import PerformanceMetric
         
         # Get recent metrics (last hour)
-        one_hour_ago = datetime.now() - timedelta(hours=1)
+        one_hour_ago = datetime.now(timezone.utc) - timedelta(hours=1)
         recent_metrics = PerformanceMetric.objects.filter(
             timestamp__gte=one_hour_ago
         )
@@ -156,20 +160,20 @@ def performance_metrics(request):
             })
         
         # Calculate averages
-        for agent_name in metrics_by_agent:
-            count = metrics_by_agent[agent_name]['count']
-            total = metrics_by_agent[agent_name]['total_value']
-            metrics_by_agent[agent_name]['average'] = round(total / count, 2) if count > 0 else 0
+        for agent_name, agent_metrics in metrics_by_agent.items():
+            count = agent_metrics['count']
+            total = agent_metrics['total_value']
+            agent_metrics['average'] = round(total / count, 2) if count > 0 else 0
         
         return Response({
             'status': 'success',
-            'timestamp': datetime.now().isoformat(),
+            'timestamp': datetime.now(timezone.utc).isoformat(),
             'period': 'last_hour',
             'metrics_by_agent': metrics_by_agent,
             'total_metrics': recent_metrics.count()
         }, status=status.HTTP_200_OK)
     
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         return Response({
             'status': 'error',
             'error': str(e)
@@ -193,14 +197,14 @@ def readiness_check(request):
         
         return Response({
             'ready': True,
-            'timestamp': datetime.now().isoformat()
+            'timestamp': datetime.now(timezone.utc).isoformat()
         }, status=status.HTTP_200_OK)
     
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         return Response({
             'ready': False,
             'error': str(e),
-            'timestamp': datetime.now().isoformat()
+            'timestamp': datetime.now(timezone.utc).isoformat()
         }, status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
 
@@ -213,5 +217,5 @@ def liveness_check(request):
     """
     return Response({
         'alive': True,
-        'timestamp': datetime.now().isoformat()
+        'timestamp': datetime.now(timezone.utc).isoformat()
     }, status=status.HTTP_200_OK)

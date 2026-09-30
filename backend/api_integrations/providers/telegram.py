@@ -1,5 +1,5 @@
 """Telegram Bot API integration provider."""
-from typing import Any, Dict, List
+from typing import Any
 
 import requests
 
@@ -19,7 +19,7 @@ class TelegramProvider(IntegrationProvider):
         return "telegram" in text
 
     @classmethod
-    def tool_definitions(cls) -> List[Dict[str, Any]]:
+    def tool_definitions(cls) -> list[dict[str, Any]]:
         return [
             {"name": "telegram.get_me", "description": "Get bot identity", "parameters": {}},
             {"name": "telegram.send_message", "description": "Send a message to a chat", "parameters": {"chat_id": "string", "text": "string"}},
@@ -34,7 +34,7 @@ class TelegramProvider(IntegrationProvider):
         return f"https://api.telegram.org/bot{token}"
 
     @classmethod
-    def test_connection(cls, integration: APIIntegration) -> Dict[str, Any]:
+    def test_connection(cls, integration: APIIntegration) -> dict[str, Any]:
         try:
             resp = requests.get(f"{cls._base(integration)}/getMe", timeout=20)
             data = resp.json()
@@ -46,11 +46,11 @@ class TelegramProvider(IntegrationProvider):
                 "message": f"Connected as @{bot.get('username', 'bot')}",
                 "data": bot,
             }
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return {"status": "error", "message": str(e)}
 
     @classmethod
-    def execute_tool(cls, integration: APIIntegration, tool_name: str, params: Dict[str, Any]) -> Dict[str, Any]:
+    def execute_tool(cls, integration: APIIntegration, tool_name: str, params: dict[str, Any]) -> dict[str, Any]:
         try:
             base = cls._base(integration)
             if tool_name == "telegram.get_me":
@@ -76,5 +76,5 @@ class TelegramProvider(IntegrationProvider):
                 return {"status": "success" if data.get("ok") else "error", "updates": updates, "message": data.get("description", "")}
 
             return {"status": "error", "message": f"Unknown Telegram tool: {tool_name}"}
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return {"status": "error", "message": str(e)}

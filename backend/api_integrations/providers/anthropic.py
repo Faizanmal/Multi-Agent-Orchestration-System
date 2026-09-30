@@ -1,5 +1,5 @@
 """Anthropic Claude integration provider."""
-from typing import Any, Dict, List
+from typing import Any
 
 import requests
 
@@ -19,7 +19,7 @@ class AnthropicProvider(IntegrationProvider):
         return "anthropic" in text or "claude" in text
 
     @classmethod
-    def tool_definitions(cls) -> List[Dict[str, Any]]:
+    def tool_definitions(cls) -> list[dict[str, Any]]:
         return [
             {
                 "name": "anthropic.chat",
@@ -29,7 +29,7 @@ class AnthropicProvider(IntegrationProvider):
         ]
 
     @classmethod
-    def _headers(cls, integration: APIIntegration) -> Dict[str, str]:
+    def _headers(cls, integration: APIIntegration) -> dict[str, str]:
         token = cls._token(integration)
         if not token:
             raise ValueError("Anthropic API key required (sk-ant-...)")
@@ -40,17 +40,17 @@ class AnthropicProvider(IntegrationProvider):
         }
 
     @classmethod
-    def test_connection(cls, integration: APIIntegration) -> Dict[str, Any]:
+    def test_connection(cls, integration: APIIntegration) -> dict[str, Any]:
         try:
             result = cls.execute_tool(integration, "anthropic.chat", {"prompt": "Reply with OK only.", "model": "claude-3-5-haiku-20241022"})
             if result.get("status") == "success":
                 return {"status": "success", "message": "Anthropic API connected", "data": result}
             return result
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return {"status": "error", "message": str(e)}
 
     @classmethod
-    def execute_tool(cls, integration: APIIntegration, tool_name: str, params: Dict[str, Any]) -> Dict[str, Any]:
+    def execute_tool(cls, integration: APIIntegration, tool_name: str, params: dict[str, Any]) -> dict[str, Any]:
         try:
             if tool_name == "anthropic.chat":
                 prompt = params.get("prompt", "Hello")
@@ -70,5 +70,5 @@ class AnthropicProvider(IntegrationProvider):
                 content = resp.json()["content"][0]["text"]
                 return {"status": "success", "content": content, "model": model}
             return {"status": "error", "message": f"Unknown Anthropic tool: {tool_name}"}
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return {"status": "error", "message": str(e)}

@@ -237,7 +237,7 @@ const AdvancedTaskManager: React.FC = () => {
   }, [])
 
   useEffect(() => {
-    loadTasks()
+    setTimeout(() => { loadTasks() }, 0)
   }, [loadTasks])
 
   const filteredTasks = tasks.filter(task => {

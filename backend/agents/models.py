@@ -1,7 +1,8 @@
-from django.db import models
-from django.contrib.auth import get_user_model
-from django.conf import settings as django_settings
 import uuid
+
+from django.conf import settings as django_settings
+from django.contrib.auth import get_user_model
+from django.db import models
 
 # Get the custom user model
 User = get_user_model()
@@ -35,7 +36,7 @@ class Agent(models.Model):
     is_active = models.BooleanField(default=True)
     
     class Meta:
-        ordering = ['-created_at']
+        ordering = ['-created_at']  # noqa: RUF012
     
     def __str__(self):
         return f"{self.name} ({self.type})"
@@ -52,7 +53,7 @@ class Session(models.Model):
     is_active = models.BooleanField(default=True)
     
     class Meta:
-        ordering = ['-updated_at']
+        ordering = ['-updated_at']  # noqa: RUF012
     
     def __str__(self):
         return self.name
@@ -79,7 +80,7 @@ class Message(models.Model):
     processed_at = models.DateTimeField(null=True, blank=True)
     
     class Meta:
-        ordering = ['created_at']
+        ordering = ['created_at']  # noqa: RUF012
     
     def __str__(self):
         sender_name = self.sender.username if self.sender else self.sender_agent.name if self.sender_agent else 'System'
@@ -96,8 +97,8 @@ class AgentMemory(models.Model):
     importance_score = models.FloatField(default=1.0)
     
     class Meta:
-        unique_together = ['agent', 'session', 'key']
-        ordering = ['-importance_score', '-accessed_at']
+        unique_together = ['agent', 'session', 'key']  # noqa: RUF012
+        ordering = ['-importance_score', '-accessed_at']  # noqa: RUF012
     
     def __str__(self):
         return f"{self.agent.name} - {self.key}"
@@ -112,8 +113,8 @@ class PerformanceMetric(models.Model):
     metadata = models.JSONField(default=dict)
     
     class Meta:
-        ordering = ['-timestamp']
-        indexes = [
+        ordering = ['-timestamp']  # noqa: RUF012
+        indexes = [  # noqa: RUF012
             models.Index(fields=['agent', 'metric_name']),
             models.Index(fields=['timestamp']),
         ]
@@ -154,8 +155,8 @@ class Task(models.Model):
     actual_duration = models.IntegerField(null=True, blank=True, help_text="Actual duration in seconds")
     
     class Meta:
-        ordering = ['-created_at']
-        indexes = [
+        ordering = ['-created_at']  # noqa: RUF012
+        indexes = [  # noqa: RUF012
             models.Index(fields=['status', 'priority']),
             models.Index(fields=['assigned_agent', 'status']),
             models.Index(fields=['task_type']),
@@ -183,8 +184,8 @@ class TaskExecution(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:
-        ordering = ['-start_time']
-        indexes = [
+        ordering = ['-start_time']  # noqa: RUF012
+        indexes = [  # noqa: RUF012
             models.Index(fields=['agent', 'task_type']),
             models.Index(fields=['start_time']),
             models.Index(fields=['success']),
@@ -209,8 +210,8 @@ class WorkflowTemplate(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
-        ordering = ['-usage_count', '-average_rating']
-        indexes = [
+        ordering = ['-usage_count', '-average_rating']  # noqa: RUF012
+        indexes = [  # noqa: RUF012
             models.Index(fields=['category']),
             models.Index(fields=['is_public']),
             models.Index(fields=['usage_count']),
@@ -232,9 +233,9 @@ class AgentSkill(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
-        unique_together = ['agent', 'skill_name']
-        ordering = ['-proficiency_level']
-        indexes = [
+        unique_together = ['agent', 'skill_name']  # noqa: RUF012
+        ordering = ['-proficiency_level']  # noqa: RUF012
+        indexes = [  # noqa: RUF012
             models.Index(fields=['agent', 'skill_name']),
             models.Index(fields=['proficiency_level']),
         ]

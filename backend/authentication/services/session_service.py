@@ -2,12 +2,11 @@
 Session / device parsing utilities.
 """
 import logging
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 
 
-def _get_client_ip(request) -> Optional[str]:
+def _get_client_ip(request) -> str | None:
     """Return the real client IP, respecting X-Forwarded-For."""
     xff = request.META.get('HTTP_X_FORWARDED_FOR', '')
     if xff:
@@ -40,7 +39,7 @@ def parse_device_info(request) -> dict:
         )
         browser = f"{ua.browser.family} {ua.browser.version_string}".strip()
         os_name = f"{ua.os.family} {ua.os.version_string}".strip()
-    except Exception:
+    except Exception:  # noqa: BLE001, S110
         pass
 
     return {
@@ -55,8 +54,9 @@ def parse_device_info(request) -> dict:
 
 def get_active_sessions(user) -> list:
     """Return serialised list of active refresh token records as session view."""
-    from authentication.models import EnterpriseRefreshToken
     from django.utils import timezone
+
+    from authentication.models import EnterpriseRefreshToken
 
     tokens = EnterpriseRefreshToken.objects.filter(
         user=user, is_active=True
@@ -82,8 +82,9 @@ def get_active_sessions(user) -> list:
 
 def revoke_session_by_id(user, session_record_id: str) -> bool:
     """Revoke a specific refresh token record belonging to the user."""
-    from authentication.models import EnterpriseRefreshToken
     import uuid
+
+    from authentication.models import EnterpriseRefreshToken
 
     try:
         token = EnterpriseRefreshToken.objects.get(

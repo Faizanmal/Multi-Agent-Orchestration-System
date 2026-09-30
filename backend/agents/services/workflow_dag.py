@@ -9,11 +9,12 @@ Directed Acyclic Graph based workflow execution with:
 """
 import asyncio
 import logging
-from typing import Dict, List, Any, Optional, Callable
-from enum import Enum
-from dataclasses import dataclass, field
-from datetime import datetime
 import uuid
+from collections.abc import Callable
+from dataclasses import dataclass, field
+from datetime import datetime, timezone
+from enum import Enum
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -47,19 +48,19 @@ class WorkflowNode:
     id: str
     name: str
     type: NodeType
-    action: Optional[Callable] = None
-    condition: Optional[Callable] = None
-    inputs: Dict[str, Any] = field(default_factory=dict)
-    outputs: Dict[str, Any] = field(default_factory=dict)
-    dependencies: List[str] = field(default_factory=list)
+    action: Callable | None = None
+    condition: Callable | None = None
+    inputs: dict[str, Any] = field(default_factory=dict)
+    outputs: dict[str, Any] = field(default_factory=dict)
+    dependencies: list[str] = field(default_factory=list)
     status: NodeStatus = NodeStatus.PENDING
     retry_count: int = 0
     max_retries: int = 3
     timeout: int = 300  # seconds
-    metadata: Dict[str, Any] = field(default_factory=dict)
-    start_time: Optional[datetime] = None
-    end_time: Optional[datetime] = None
-    error: Optional[str] = None
+    metadata: dict[str, Any] = field(default_factory=dict)
+    start_time: datetime | None = None
+    end_time: datetime | None = None
+    error: str | None = None
     
     def __post_init__(self):
         if not self.id:
@@ -73,7 +74,7 @@ class WorkflowNode:
         """Check if node is in terminal state"""
         return self.status in [NodeStatus.SUCCESS, NodeStatus.FAILED, NodeStatus.SKIPPED]
     
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         """Convert node to dictionary"""
         return {
             'id': self.id,
@@ -99,10 +100,10 @@ class WorkflowDAG:
     def __init__(self, workflow_id: str, name: str):
         self.workflow_id = workflow_id
         self.name = name
-        self.nodes: Dict[str, WorkflowNode] = {}
-        self.edges: Dict[str, List[str]] = {}  # node_id -> [dependent_node_ids]
-        self.created_at = datetime.utcnow()
-        self.context: Dict[str, Any] = {}
+        self.nodes: dict[str, WorkflowNode] = {}
+        self.edges: dict[str, list[str]] = {}  # node_id -> [dependent_node_ids]
+        self.created_at = datetime.now(timezone.utc)
+        self.context: dict[str, Any] = {}
     
     def add_node(self, node: WorkflowNode) -> str:
         """Add node to DAG"""
@@ -149,7 +150,7 @@ class WorkflowDAG:
         
         return dfs(to_node)
     
-    def get_executable_nodes(self, completed_nodes: set) -> List[WorkflowNode]:
+    def get_executable_nodes(self, completed_nodes: set) -> list[WorkflowNode]:
         """Get nodes that can be executed based on completed dependencies"""
         executable = []
         
@@ -159,11 +160,11 @@ class WorkflowDAG:
         
         return executable
     
-    def get_start_nodes(self) -> List[WorkflowNode]:
+    def get_start_nodes(self) -> list[WorkflowNode]:
         """Get nodes with no dependencies (entry points)"""
         return [node for node in self.nodes.values() if not node.dependencies]
     
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         """Convert DAG to dictionary"""
         return {
             'workflow_id': self.workflow_id,
@@ -181,10 +182,10 @@ class WorkflowEngine:
     """
     
     def __init__(self):
-        self.active_workflows: Dict[str, WorkflowDAG] = {}
-        self.execution_history: Dict[str, List[Dict]] = {}
+        self.active_workflows: dict[str, WorkflowDAG] = {}
+        self.execution_history: dict[str, list[dict]] = {}
     
-    async def execute_workflow(self, dag: WorkflowDAG) -> Dict:
+    async def execute_workflow(self, dag: WorkflowDAG) -> dict:
         """
         Execute workflow DAG
         
@@ -214,7 +215,7 @@ class WorkflowEngine:
                 # Process results
                 for node, result in zip(executable_nodes, results):
                     if isinstance(result, Exception):
-                        logger.error(f"Node {node.id} failed: {str(result)}")
+                        logger.error(f"Node {node.id} failed: {result!s}")
                         failed_nodes.add(node.id)
                         node.status = NodeStatus.FAILED
                         node.error = str(result)
@@ -261,7 +262,7 @@ class WorkflowEngine:
             return result
             
         except Exception as e:
-            logger.error(f"Workflow execution failed: {str(e)}")
+            logger.error(f"Workflow execution failed: {e!s}")
             raise
         finally:
             # Cleanup
@@ -276,7 +277,7 @@ class WorkflowEngine:
             True if successful, False if skipped
         """
         node.status = NodeStatus.RUNNING
-        node.start_time = datetime.utcnow()
+        node.start_time = datetime.now(timezone.utc)
         
         logger.info(f"Executing node {node.id} ({node.name})")
         
@@ -293,7 +294,7 @@ class WorkflowEngine:
             else:
                 result = await self._execute_generic_node(dag, node)
             
-            node.end_time = datetime.utcnow()
+            node.end_time = datetime.now(timezone.utc)
             
             # Update context with outputs
             if node.outputs:
@@ -302,9 +303,9 @@ class WorkflowEngine:
             return result
             
         except Exception as e:
-            logger.error(f"Node {node.id} execution failed: {str(e)}")
+            logger.error(f"Node {node.id} execution failed: {e!s}")
             node.error = str(e)
-            node.end_time = datetime.utcnow()
+            node.end_time = datetime.now(timezone.utc)
             
             # Retry logic
             if node.retry_count < node.max_retries:
@@ -356,7 +357,7 @@ class WorkflowEngine:
             # Nothing to fan out; treat as a no-op success
             return True
 
-        async def _run_subtask(subtask_config: Dict) -> Any:
+        async def _run_subtask(subtask_config: dict) -> Any:
             action = subtask_config.get('action')
             if action is None:
                 return None
@@ -370,7 +371,7 @@ class WorkflowEngine:
             return_exceptions=True,
         )
 
-        outputs: Dict[str, Any] = {}
+        outputs: dict[str, Any] = {}
         all_ok = True
         for i, result in enumerate(results):
             key = subtasks[i].get('output_key', f'subtask_{i}')
@@ -387,13 +388,13 @@ class WorkflowEngine:
 
     async def _execute_agent_node(self, dag: WorkflowDAG, node: WorkflowNode) -> bool:
         """Execute agent node — invokes a Groq-backed agent and stores its response."""
-        from groq import Groq
         from django.conf import settings as django_settings
+        from groq import Groq
 
         agent_type = node.metadata.get('agent_type', 'orchestrator')
         task_content = node.inputs.get('content') or str(dag.context)[:2000]
 
-        _agent_prompts: Dict[str, str] = {
+        _agent_prompts: dict[str, str] = {
             'orchestrator': (
                 'You are an Orchestrator Agent. Analyse the request, decompose it into subtasks, '
                 'and synthesise a coherent answer. Think step-by-step.'
@@ -443,7 +444,7 @@ class WorkflowEngine:
             return await self._execute_task_node(dag, node)
         return True
     
-    def _generate_summary(self, dag: WorkflowDAG) -> Dict:
+    def _generate_summary(self, dag: WorkflowDAG) -> dict:
         """Generate execution summary"""
         summary = {
             'total_nodes': len(dag.nodes),
@@ -468,12 +469,12 @@ class WorkflowEngine:
         
         return summary
     
-    def _store_execution_history(self, workflow_id: str, result: Dict):
+    def _store_execution_history(self, workflow_id: str, result: dict):
         """Store workflow execution history"""
         if workflow_id not in self.execution_history:
             self.execution_history[workflow_id] = []
         
-        result['executed_at'] = datetime.utcnow().isoformat()
+        result['executed_at'] = datetime.now(timezone.utc).isoformat()
         self.execution_history[workflow_id].append(result)
         
         # Keep only last 100 executions

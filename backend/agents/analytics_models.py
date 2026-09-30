@@ -2,11 +2,12 @@
 Advanced Analytics Models
 Predictive insights, cost tracking, and anomaly detection
 """
-from django.db import models
-from django.contrib.auth import get_user_model
-from django.conf import settings
 import uuid
 from decimal import Decimal
+
+from django.conf import settings
+from django.contrib.auth import get_user_model
+from django.db import models
 
 User = get_user_model()
 
@@ -56,8 +57,8 @@ class CostTracking(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:
-        ordering = ['-created_at']
-        indexes = [
+        ordering = ['-created_at']  # noqa: RUF012
+        indexes = [  # noqa: RUF012
             models.Index(fields=['user', '-created_at']),
             models.Index(fields=['provider', 'model_name', '-created_at']),
             models.Index(fields=['resource_type', 'resource_id']),
@@ -124,8 +125,8 @@ class PredictiveInsight(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
-        ordering = ['-confidence_score', '-impact_level', '-created_at']
-        indexes = [
+        ordering = ['-confidence_score', '-impact_level', '-created_at']  # noqa: RUF012
+        indexes = [  # noqa: RUF012
             models.Index(fields=['user', 'status', '-created_at']),
             models.Index(fields=['insight_type', '-created_at']),
             models.Index(fields=['-confidence_score', '-impact_level']),
@@ -193,8 +194,8 @@ class AnomalyDetection(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:
-        ordering = ['-severity', '-created_at']
-        indexes = [
+        ordering = ['-severity', '-created_at']  # noqa: RUF012
+        indexes = [  # noqa: RUF012
             models.Index(fields=['user', 'status', '-created_at']),
             models.Index(fields=['anomaly_type', '-created_at']),
             models.Index(fields=['-severity', 'status']),
@@ -266,8 +267,8 @@ class WorkflowOptimization(models.Model):
     implemented_at = models.DateTimeField(null=True, blank=True)
     
     class Meta:
-        ordering = ['-improvement_cost_percentage', '-improvement_duration_percentage', '-created_at']
-        indexes = [
+        ordering = ['-improvement_cost_percentage', '-improvement_duration_percentage', '-created_at']  # noqa: RUF012
+        indexes = [  # noqa: RUF012
             models.Index(fields=['workflow_id', 'status']),
             models.Index(fields=['user', '-created_at']),
         ]
@@ -310,9 +311,9 @@ class UsageAnalytics(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:
-        unique_together = ['user', 'date', 'hour']
-        ordering = ['-date', '-hour']
-        indexes = [
+        unique_together = ['user', 'date', 'hour']  # noqa: RUF012
+        ordering = ['-date', '-hour']  # noqa: RUF012
+        indexes = [  # noqa: RUF012
             models.Index(fields=['user', '-date']),
             models.Index(fields=['-date', 'hour']),
         ]
@@ -358,8 +359,8 @@ class PerformanceBenchmark(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
-        ordering = ['category', 'name']
-        indexes = [
+        ordering = ['category', 'name']  # noqa: RUF012
+        indexes = [  # noqa: RUF012
             models.Index(fields=['category', 'is_active']),
             models.Index(fields=['-calculation_date']),
         ]
@@ -429,8 +430,8 @@ class MLModel(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
-        ordering = ['-is_production', '-training_date']
-        indexes = [
+        ordering = ['-is_production', '-training_date']  # noqa: RUF012
+        indexes = [  # noqa: RUF012
             models.Index(fields=['model_type', 'is_active']),
             models.Index(fields=['-training_date']),
         ]

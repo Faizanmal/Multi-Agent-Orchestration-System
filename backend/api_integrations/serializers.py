@@ -1,5 +1,13 @@
 from rest_framework import serializers
-from .models import APIIntegration, APITemplate, APICallResult, IntegrationUsage, IntegrationAlert, ScheduledAutomation
+
+from .models import (
+    APICallResult,
+    APIIntegration,
+    APITemplate,
+    IntegrationAlert,
+    IntegrationUsage,
+    ScheduledAutomation,
+)
 
 
 class APIIntegrationSerializer(serializers.ModelSerializer):
@@ -8,13 +16,13 @@ class APIIntegrationSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = APIIntegration
-        fields = [
+        fields = [  # noqa: RUF012
             'id', 'name', 'description', 'type', 'category', 'endpoint',
             'method', 'headers', 'authentication', 'parameters', 'rate_limit',
             'retry_policy', 'timeout', 'status', 'last_tested', 'success_rate', 
             'total_calls', 'avg_response_time', 'created_at', 'updated_at'
         ]
-        read_only_fields = ['id', 'created_at', 'updated_at', 'last_tested', 'success_rate', 'total_calls', 'avg_response_time']
+        read_only_fields = ['id', 'created_at', 'updated_at', 'last_tested', 'success_rate', 'total_calls', 'avg_response_time']  # noqa: RUF012
     
     def to_representation(self, instance):
         """Convert model instance to JSON representation"""
@@ -27,12 +35,12 @@ class APIIntegrationSerializer(serializers.ModelSerializer):
 class APITemplateSerializer(serializers.ModelSerializer):
     class Meta:
         model = APITemplate
-        fields = [
+        fields = [  # noqa: RUF012
             'id', 'name', 'description', 'category', 'provider', 'logo',
             'config_template', 'popularity', 'tags', 'is_public',
             'documentation_url', 'created_at', 'updated_at'
         ]
-        read_only_fields = ['id', 'created_at', 'updated_at', 'popularity']
+        read_only_fields = ['id', 'created_at', 'updated_at', 'popularity']  # noqa: RUF012
 
 
 class APICallResultSerializer(serializers.ModelSerializer):
@@ -40,40 +48,40 @@ class APICallResultSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = APICallResult
-        fields = [
+        fields = [  # noqa: RUF012
             'id', 'integration', 'integration_name', 'status', 'response_data',
             'response_time', 'error_message', 'request_data', 'timestamp',
         ]
-        read_only_fields = ['id', 'timestamp', 'integration_name']
+        read_only_fields = ['id', 'timestamp', 'integration_name']  # noqa: RUF012
 
 
 class IntegrationUsageSerializer(serializers.ModelSerializer):
     class Meta:
         model = IntegrationUsage
-        fields = [
+        fields = [  # noqa: RUF012
             'id', 'integration', 'date', 'total_calls', 'successful_calls', 
             'failed_calls', 'avg_response_time', 'total_data_transferred'
         ]
-        read_only_fields = ['id']
+        read_only_fields = ['id']  # noqa: RUF012
 
 
 class IntegrationAlertSerializer(serializers.ModelSerializer):
     class Meta:
         model = IntegrationAlert
-        fields = [
+        fields = [  # noqa: RUF012
             'id', 'integration', 'severity', 'message', 'rule_triggered',
             'acknowledged', 'acknowledged_by', 'acknowledged_at', 'resolved', 
             'resolved_at', 'created_at'
         ]
-        read_only_fields = ['id', 'created_at']
+        read_only_fields = ['id', 'created_at']  # noqa: RUF012
 
 
 class ScheduledAutomationSerializer(serializers.ModelSerializer):
     class Meta:
         model = ScheduledAutomation
-        fields = [
+        fields = [  # noqa: RUF012
             'id', 'name', 'automation_type', 'frequency', 'cron_expression',
             'is_active', 'config', 'workflow', 'last_run_at', 'next_run_at',
             'last_result', 'created_at', 'updated_at',
         ]
-        read_only_fields = ['id', 'last_run_at', 'next_run_at', 'last_result', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'last_run_at', 'next_run_at', 'last_result', 'created_at', 'updated_at']  # noqa: RUF012

@@ -4,9 +4,10 @@ Process and analyze user feedback for continuous improvement
 """
 
 import logging
+from datetime import timedelta
+
 from django.db.models import Avg, Count
 from django.utils import timezone
-from datetime import timedelta
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +18,7 @@ class FeedbackService:
     @staticmethod
     def submit_feedback(user, feedback_type, **kwargs):
         """Submit user feedback"""
-        from .models import UserFeedback, AgentRating
+        from .models import AgentRating, UserFeedback
         
         try:
             # Create feedback
@@ -29,7 +30,7 @@ class FeedbackService:
             
             # Update agent rating if agent feedback
             if feedback.agent:
-                rating, created = AgentRating.objects.get_or_create(agent=feedback.agent)
+                rating, created = AgentRating.objects.get_or_create(agent=feedback.agent)  # noqa: RUF059
                 
                 if feedback_type == 'rating' and feedback.rating:
                     rating.update_rating(feedback.rating)
@@ -45,7 +46,7 @@ class FeedbackService:
             logger.info(f"Feedback submitted: {feedback.id}")
             return feedback
             
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error(f"Error submitting feedback: {e}")
             return None
     
@@ -128,7 +129,7 @@ class FeedbackService:
             logger.info(f"Feedback analyzed: {feedback.id}")
             return analysis
             
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error(f"Error analyzing feedback: {e}")
             return None
     
@@ -161,13 +162,13 @@ class FeedbackService:
                 
                 logger.info(f"Integrated feedback with learning service: {feedback.id}")
         
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error(f"Error integrating with learning service: {e}")
     
     @staticmethod
     def get_agent_insights(agent_id, days=30):
         """Get insights for an agent"""
-        from .models import UserFeedback, AgentRating
+        from .models import AgentRating, UserFeedback
         
         start_date = timezone.now() - timedelta(days=days)
         
@@ -264,7 +265,7 @@ class FeedbackService:
         ).values('comment')[:5])
         
         # Create or update trend
-        trend, created = FeedbackTrend.objects.update_or_create(
+        trend, created = FeedbackTrend.objects.update_or_create(  # noqa: RUF059
             period=period,
             start_date=start_date,
             end_date=end_date,

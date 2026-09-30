@@ -1,7 +1,8 @@
-from rest_framework import viewsets, status
-from rest_framework.decorators import api_view, permission_classes, action
-from rest_framework.response import Response
+from rest_framework import status, viewsets
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+
 from .models import Integration, IntegrationExecution, IntegrationType
 from .serializers import IntegrationSerializer
 
@@ -9,7 +10,7 @@ from .serializers import IntegrationSerializer
 class IntegrationViewSet(viewsets.ModelViewSet):
     """Manage integrations"""
     serializer_class = IntegrationSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]  # noqa: RUF012
     
     def get_queryset(self):
         return Integration.objects.filter(user=self.request.user)
@@ -25,12 +26,16 @@ class IntegrationViewSet(viewsets.ModelViewSet):
         try:
             # Test based on integration type
             if integration.integration_type == IntegrationType.AZURE_COSMOSDB:
-                from Multi_model_Intelligence.services.azure_cosmos_service import AzureCosmosService
+                from Multi_model_Intelligence.services.azure_cosmos_service import (
+                    AzureCosmosService,
+                )
                 service = AzureCosmosService()
                 # Test connection
                 result = service.test_connection()
             elif integration.integration_type == IntegrationType.AZURE_FUNCTIONS:
-                from Multi_model_Intelligence.services.azure_functions_service import AzureFunctionsService
+                from Multi_model_Intelligence.services.azure_functions_service import (
+                    AzureFunctionsService,
+                )
                 service = AzureFunctionsService()
                 result = service.test_connection()
             else:
@@ -44,7 +49,7 @@ class IntegrationViewSet(viewsets.ModelViewSet):
                 'message': 'Connection successful',
                 'details': result
             })
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return Response({
                 'status': 'error',
                 'message': str(e)
@@ -53,16 +58,18 @@ class IntegrationViewSet(viewsets.ModelViewSet):
 
 class AzureCosmosDBViewSet(viewsets.ViewSet):
     """Azure CosmosDB operations"""
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]  # noqa: RUF012
     
     def list(self, request):
         """List all containers"""
         try:
-            from Multi_model_Intelligence.services.azure_cosmos_service import AzureCosmosService
+            from Multi_model_Intelligence.services.azure_cosmos_service import (
+                AzureCosmosService,
+            )
             service = AzureCosmosService()
             containers = service.list_containers()
             return Response(containers)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return Response({
                 'error': str(e)
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -71,7 +78,9 @@ class AzureCosmosDBViewSet(viewsets.ViewSet):
     def query(self, request):
         """Execute CosmosDB query"""
         try:
-            from Multi_model_Intelligence.services.azure_cosmos_service import AzureCosmosService
+            from Multi_model_Intelligence.services.azure_cosmos_service import (
+                AzureCosmosService,
+            )
             service = AzureCosmosService()
             
             container_name = request.data.get('container')
@@ -86,7 +95,7 @@ class AzureCosmosDBViewSet(viewsets.ViewSet):
             return Response({
                 'results': results
             })
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return Response({
                 'error': str(e)
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -94,13 +103,15 @@ class AzureCosmosDBViewSet(viewsets.ViewSet):
 
 class AzureFunctionsViewSet(viewsets.ViewSet):
     """Azure Functions operations"""
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]  # noqa: RUF012
     
     @action(detail=False, methods=['post'])
     def trigger(self, request):
         """Trigger an Azure Function"""
         try:
-            from Multi_model_Intelligence.services.azure_functions_service import AzureFunctionsService
+            from Multi_model_Intelligence.services.azure_functions_service import (
+                AzureFunctionsService,
+            )
             service = AzureFunctionsService()
             
             function_name = request.data.get('function_name')
@@ -116,7 +127,7 @@ class AzureFunctionsViewSet(viewsets.ViewSet):
                 'status': 'success',
                 'result': result
             })
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return Response({
                 'error': str(e)
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -125,7 +136,9 @@ class AzureFunctionsViewSet(viewsets.ViewSet):
     def logs(self, request):
         """Get Azure Function logs"""
         try:
-            from Multi_model_Intelligence.services.azure_functions_service import AzureFunctionsService
+            from Multi_model_Intelligence.services.azure_functions_service import (
+                AzureFunctionsService,
+            )
             service = AzureFunctionsService()
             
             function_name = request.query_params.get('function_name')
@@ -138,7 +151,7 @@ class AzureFunctionsViewSet(viewsets.ViewSet):
             return Response({
                 'logs': logs
             })
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return Response({
                 'error': str(e)
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -149,13 +162,15 @@ class AzureFunctionsViewSet(viewsets.ViewSet):
 def list_cosmos_containers(request):
     """List Azure CosmosDB containers"""
     try:
-        from Multi_model_Intelligence.services.azure_cosmos_service import AzureCosmosService
+        from Multi_model_Intelligence.services.azure_cosmos_service import (
+            AzureCosmosService,
+        )
         service = AzureCosmosService()
         containers = service.list_containers()
         return Response({
             'containers': containers
         })
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         return Response({
             'error': str(e)
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -166,7 +181,9 @@ def list_cosmos_containers(request):
 def query_cosmos_db(request):
     """Query Azure CosmosDB"""
     try:
-        from Multi_model_Intelligence.services.azure_cosmos_service import AzureCosmosService
+        from Multi_model_Intelligence.services.azure_cosmos_service import (
+            AzureCosmosService,
+        )
         service = AzureCosmosService()
         
         container = request.data.get('container')
@@ -181,7 +198,7 @@ def query_cosmos_db(request):
         return Response({
             'results': results
         })
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         return Response({
             'error': str(e)
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -192,7 +209,9 @@ def query_cosmos_db(request):
 def trigger_azure_function(request):
     """Trigger an Azure Function"""
     try:
-        from Multi_model_Intelligence.services.azure_functions_service import AzureFunctionsService
+        from Multi_model_Intelligence.services.azure_functions_service import (
+            AzureFunctionsService,
+        )
         service = AzureFunctionsService()
         
         function_name = request.data.get('function_name')
@@ -208,7 +227,7 @@ def trigger_azure_function(request):
             'status': 'success',
             'result': result
         })
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         return Response({
             'error': str(e)
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -219,7 +238,9 @@ def trigger_azure_function(request):
 def get_function_logs(request):
     """Get Azure Function logs"""
     try:
-        from Multi_model_Intelligence.services.azure_functions_service import AzureFunctionsService
+        from Multi_model_Intelligence.services.azure_functions_service import (
+            AzureFunctionsService,
+        )
         service = AzureFunctionsService()
         
         function_name = request.query_params.get('function_name')
@@ -232,7 +253,7 @@ def get_function_logs(request):
         return Response({
             'logs': logs
         })
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         return Response({
             'error': str(e)
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -269,7 +290,7 @@ def zapier_webhook(request):
             'status': 'success',
             'execution_id': str(execution.id)
         })
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         return Response({
             'error': str(e)
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -306,7 +327,7 @@ def make_webhook(request):
             'status': 'success',
             'execution_id': str(execution.id)
         })
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         return Response({
             'error': str(e)
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

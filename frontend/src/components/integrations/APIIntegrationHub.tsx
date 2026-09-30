@@ -104,13 +104,6 @@ export const APIIntegrationHub: React.FC = () => {
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    loadIntegrations();
-    loadTemplates();
-    loadCallHistory();
-  }, []);
-
   const loadIntegrations = async () => {
     try {
       setIsLoading(true);
@@ -247,6 +240,13 @@ export const APIIntegrationHub: React.FC = () => {
       default: return <Globe className="w-4 h-4" />;
     }
   };
+    useEffect(() => {
+        setTimeout(() => {
+          loadIntegrations();
+          loadTemplates();
+          loadCallHistory();
+        }, 0);
+      }, []);
 
   return (
     <div className="p-6 space-y-6">

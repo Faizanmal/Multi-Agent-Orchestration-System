@@ -5,18 +5,17 @@ Access token:  15-minute lifespan, signed HS256, full OIDC-style claims.
 Refresh token: opaque 64-byte random, SHA-256 hashed in DB, rotated on use.
 """
 import hashlib
+import logging
 import os
 import secrets
 import uuid
-from datetime import datetime, timedelta, timezone as dt_timezone
-from typing import Optional
+from datetime import datetime, timedelta
+from datetime import timezone as dt_timezone
 
 import jwt
 from django.conf import settings
 from django.utils import timezone
 from rest_framework import exceptions
-
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +24,7 @@ logger = logging.getLogger(__name__)
 # Helpers
 # ---------------------------------------------------------------------------
 
-def _get_secret(key_name: str, fallback: Optional[str] = None) -> str:
+def _get_secret(key_name: str, fallback: str | None = None) -> str:
     val = getattr(settings, key_name, None) or os.getenv(key_name) or fallback
     if not val:
         raise RuntimeError(f"Missing required setting: {key_name}")
@@ -55,7 +54,7 @@ def _audience() -> str:
 def generate_access_token(
     user,
     provider: str = 'email',
-    session_id: Optional[str] = None,
+    session_id: str | None = None,
 ) -> str:
     """Return a signed JWT access token valid for 15 minutes."""
     now = datetime.now(dt_timezone.utc)

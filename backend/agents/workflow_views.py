@@ -1,22 +1,29 @@
+from datetime import timezone
+
 # backend/agents/workflow_views.py
 """
 API Views for Workflow Management
 Provides endpoints for creating, executing, and monitoring workflows
 """
 
-from rest_framework import viewsets, status
-from rest_framework.decorators import action
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated, AllowAny
-from django.conf import settings
 import asyncio
 import logging
 
-from .services.workflow_templates import WorkflowTemplates, get_template, WorkflowCategory
-from .services.workflow_orchestrator import WorkflowOrchestrator
-from .models import Agent
-from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
+from django.conf import settings
+from rest_framework import status, viewsets
+from rest_framework.decorators import action
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
+
+from .models import Agent
+from .services.workflow_orchestrator import WorkflowOrchestrator
+from .services.workflow_templates import (
+    WorkflowCategory,
+    WorkflowTemplates,
+    get_template,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -69,7 +76,7 @@ class WorkflowViewSet(viewsets.ViewSet):
                 'templates': template_list
             })
             
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error(f"Error fetching templates: {e}")
             return Response(
                 {'error': str(e)},
@@ -94,7 +101,7 @@ class WorkflowViewSet(viewsets.ViewSet):
             
             return Response({'categories': categories})
             
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error(f"Error fetching categories: {e}")
             return Response(
                 {'error': str(e)},
@@ -119,7 +126,7 @@ class WorkflowViewSet(viewsets.ViewSet):
             
             return Response(template)
             
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error(f"Error fetching template detail: {e}")
             return Response(
                 {'error': str(e)},
@@ -178,7 +185,7 @@ class WorkflowViewSet(viewsets.ViewSet):
             return Response(result, status=status.HTTP_200_OK)
             
         except Exception as e:
-            logger.error(f"Error executing workflow: {e}", exc_info=True)
+            logger.exception("Error executing workflow")
             return Response(
                 {'error': str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -223,7 +230,7 @@ class WorkflowViewSet(viewsets.ViewSet):
             
             # Generate execution ID
             from datetime import datetime
-            execution_id = f"{workflow_id}_{int(datetime.now().timestamp())}"
+            execution_id = f"{workflow_id}_{int(datetime.now(timezone.utc).timestamp())}"
             
             # Start workflow in background
             # In production, you'd use Celery or similar
@@ -240,7 +247,7 @@ class WorkflowViewSet(viewsets.ViewSet):
                             callback=self._create_progress_callback(session_id)
                         )
                     )
-                except Exception as e:
+                except Exception as e:  # noqa: BLE001
                     logger.error(f"Background workflow execution failed: {e}")
             
             thread = threading.Thread(target=run_workflow)
@@ -254,7 +261,7 @@ class WorkflowViewSet(viewsets.ViewSet):
             }, status=status.HTTP_202_ACCEPTED)
             
         except Exception as e:
-            logger.error(f"Error starting async workflow: {e}", exc_info=True)
+            logger.exception("Error starting async workflow")
             return Response(
                 {'error': str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -278,7 +285,7 @@ class WorkflowViewSet(viewsets.ViewSet):
             
             return Response(status_info)
             
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error(f"Error fetching workflow status: {e}")
             return Response(
                 {'error': str(e)},
@@ -390,7 +397,7 @@ class WorkflowViewSet(viewsets.ViewSet):
             }, status=status.HTTP_200_OK)
             
         except Exception as e:
-            logger.error(f"Error in quick start: {e}", exc_info=True)
+            logger.exception("Error in quick start")
             return Response(
                 {'error': str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -431,16 +438,16 @@ class WorkflowViewSet(viewsets.ViewSet):
                 })
             
             # Convert sets to lists for JSON serialization
-            for agent_type in capabilities_by_type:
-                capabilities_by_type[agent_type]['capabilities'] = list(
-                    capabilities_by_type[agent_type]['capabilities']
+            for agent_type, value in capabilities_by_type.items():
+                value['capabilities'] = list(
+                    value['capabilities']
                 )
             
             return Response({
                 'agent_types': list(capabilities_by_type.values())
             })
             
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error(f"Error fetching agent capabilities: {e}")
             return Response(
                 {'error': str(e)},
@@ -462,7 +469,7 @@ class WorkflowViewSet(viewsets.ViewSet):
                             'progress': progress
                         }
                     )
-                except Exception as e:
+                except Exception as e:  # noqa: BLE001
                     logger.warning(f"Could not send progress update: {e}")
         
         return callback

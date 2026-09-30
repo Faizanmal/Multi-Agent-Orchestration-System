@@ -52,7 +52,7 @@ export default function CoordinationDashboard() {
   }, [toast]);
 
   useEffect(() => {
-    loadData();
+    setTimeout(() => { loadData(); }, 0)
   }, [loadData]);
 
   const handleCreateSession = async () => {
