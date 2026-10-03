@@ -21,7 +21,7 @@ export interface AuthUser {
   display_name?: string;
   avatar?: string | null;
   role?: string;
-  subscription_tier?: 'free' | 'pro' | 'enterprise' | string;
+  subscription_tier?: 'free' | 'pro' | 'premium' | string;
   is_email_verified?: boolean;
   date_joined?: string;
 }

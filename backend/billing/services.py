@@ -9,7 +9,7 @@ def stripe_price_tiers():
     """Return the configured Stripe Price ID to workspace tier mapping."""
     prices = {
         getattr(settings, "STRIPE_PRICE_PRO", ""): "pro",
-        getattr(settings, "STRIPE_PRICE_ENTERPRISE", ""): "enterprise",
+        getattr(settings, "STRIPE_PRICE_PREMIUM", ""): "premium",
     }
     return {price_id: tier for price_id, tier in prices.items() if price_id}
 

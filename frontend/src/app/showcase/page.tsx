@@ -331,7 +331,7 @@ export default function ComponentShowcase() {
               highlighted
             />
             <PricingCard
-              name="Enterprise"
+              name="Premium"
               price="$99"
               period="/month"
               features={[

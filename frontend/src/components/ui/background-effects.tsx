@@ -1,6 +1,6 @@
 /**
  * Interactive Background Effects
- * Stunning visual effects for enterprise-grade applications
+ * Stunning visual effects for applications
  */
 
 'use client';

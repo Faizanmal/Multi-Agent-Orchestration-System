@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { CommandPalette } from './CommandPalette';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard,
@@ -227,6 +228,7 @@ export function Sidebar() {
   const { user, logout } = useAuth();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  const [openCommand, setOpenCommand] = useState(false);
 
   const displayName = user?.display_name || user?.username || user?.email || 'User';
   const initials = displayName
@@ -263,6 +265,7 @@ export function Sidebar() {
   if (!isMounted) return null;
 
   return (
+    <>
     <motion.aside
       initial={false}
       animate={{ width: isCollapsed ? 72 : 260 }}
@@ -309,7 +312,7 @@ export function Sidebar() {
             isCollapsed && "justify-center px-0"
           )}
           onClick={() => {
-            // TODO: Implement command palette
+            setOpenCommand(true);
           }}
         >
           <Search className="h-4 w-4" />
@@ -400,6 +403,8 @@ export function Sidebar() {
         )}
       </button>
     </motion.aside>
+      <CommandPalette open={openCommand} setOpen={setOpenCommand} />
+    </>
   );
 }
 

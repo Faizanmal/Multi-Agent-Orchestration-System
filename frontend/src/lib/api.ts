@@ -382,7 +382,7 @@ class ApiClient {
       withCredentials: true,
     });
 
-    // Request interceptor for authentication (enterprise JWT)
+    // Request interceptor for authentication (JWT)
     this.client.interceptors.request.use(
       (config) => {
         const token = this.getAuthToken();
@@ -473,7 +473,7 @@ class ApiClient {
     );
   }
 
-  // Enterprise JWT lives in access_token (AuthContext). Fall back to legacy keys.
+  // JWT lives in access_token (AuthContext). Fall back to legacy keys.
   private getAuthToken(): string | null {
     if (typeof window === 'undefined') return null;
     return (

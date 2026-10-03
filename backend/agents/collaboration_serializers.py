@@ -50,14 +50,14 @@ class CollaborationSessionSerializer(serializers.ModelSerializer):
             "updated_at",
             "last_activity",
         ]
-        read_only_fields = [
+        read_only_fields = [  # noqa: RUF012
             "id",
             "owner",
             "member_count",
             "created_at",
             "updated_at",
             "last_activity",
-        ]  # noqa: RUF012
+        ]
 
     def get_member_count(self, obj):
         """Get the number of members in the session."""
@@ -107,14 +107,14 @@ class CommentSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
-        read_only_fields = [
+        read_only_fields = [  # noqa: RUF012
             "id",
             "author",
             "resolved_by",
             "resolved_at",
             "created_at",
             "updated_at",
-        ]  # noqa: RUF012
+        ]
 
 
 class ActivityLogSerializer(serializers.ModelSerializer):
@@ -156,13 +156,13 @@ class NotificationSerializer(serializers.ModelSerializer):
             "read_at",
             "created_at",
         ]
-        read_only_fields = [
+        read_only_fields = [  # noqa: RUF012
             "id",
             "recipient",
             "sender",
             "read_at",
             "created_at",
-        ]  # noqa: RUF012
+        ]
 
 
 class WorkflowLockSerializer(serializers.ModelSerializer):
@@ -183,12 +183,12 @@ class WorkflowLockSerializer(serializers.ModelSerializer):
             "expires_at",
             "last_heartbeat",
         ]
-        read_only_fields = [
+        read_only_fields = [  # noqa: RUF012
             "id",
             "locked_by",
             "created_at",
             "last_heartbeat",
-        ]  # noqa: RUF012
+        ]
 
 
 class ChangeLogSerializer(serializers.ModelSerializer):

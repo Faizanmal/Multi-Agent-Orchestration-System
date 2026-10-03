@@ -15,7 +15,7 @@ class CustomUser(AbstractUser):
     )
     subscription_tier = models.CharField(
         max_length=20,
-        choices=[("free", "Free"), ("pro", "Pro"), ("enterprise", "Enterprise")],
+        choices=[("free", "Free"), ("pro", "Pro"), ("premium", "Premium")],
         default="free",
     )
     is_2fa_enabled = models.BooleanField(default=False)
@@ -25,6 +25,7 @@ class CustomUser(AbstractUser):
 
     # Enhanced fields
     email = models.EmailField(unique=True)
+    is_email_verified = models.BooleanField(default=False)
     profile_image = models.ImageField(
         upload_to="profile_images/", blank=True, null=True
     )
@@ -136,6 +137,22 @@ class PasswordReset(models.Model):
         return not self.used and not self.is_expired()
 
 
+class EmailVerificationToken(models.Model):
+    user = models.ForeignKey(
+        CustomUser, on_delete=models.CASCADE, related_name="email_verification_tokens"
+    )
+    token = models.CharField(max_length=255, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    used = models.BooleanField(default=False)
+
+    def is_expired(self):
+        return timezone.now() > self.expires_at
+
+    def is_valid(self):
+        return not self.used and not self.is_expired()
+
+
 class APIKey(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(
@@ -196,7 +213,7 @@ class UserRoleAssignment(models.Model):
 
 
 # ---------------------------------------------------------------------------
-# Enterprise Authentication Models
+# Advanced Authentication Models
 # ---------------------------------------------------------------------------
 
 PROVIDER_CHOICES = [
@@ -273,12 +290,12 @@ class OAuthState(models.Model):
         indexes = [models.Index(fields=["state", "provider"])]  # noqa: RUF012
 
 
-class EnterpriseRefreshToken(models.Model):
+class RefreshToken(models.Model):
     """Refresh tokens with rotation, revocation, and theft detection."""
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(
-        CustomUser, on_delete=models.CASCADE, related_name="enterprise_refresh_tokens"
+        CustomUser, on_delete=models.CASCADE, related_name="refresh_tokens"
     )
     hashed_token = models.CharField(max_length=64, unique=True, db_index=True)
     family = models.UUIDField(default=uuid.uuid4, db_index=True)
@@ -388,7 +405,7 @@ class Workspace(models.Model):
     slug = models.SlugField(max_length=255, unique=True, null=True, blank=True)
     subscription_tier = models.CharField(
         max_length=20,
-        choices=[("free", "Free"), ("pro", "Pro"), ("enterprise", "Enterprise")],
+        choices=[("free", "Free"), ("pro", "Pro"), ("premium", "Premium")],
         default="free",
     )
     stripe_customer_id = models.CharField(max_length=255, blank=True, null=True)

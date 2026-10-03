@@ -1,5 +1,5 @@
 """
-Enterprise-grade security middleware for API protection
+security middleware for API protection
 """
 
 import hashlib
@@ -142,7 +142,7 @@ class RateLimitMiddleware:
 
 class SecurityHeadersMiddleware:
     """
-    Add enterprise security headers to all responses
+    Add Advanced Security headers to all responses
     """
 
     def __init__(self, get_response):

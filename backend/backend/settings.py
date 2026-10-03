@@ -128,7 +128,7 @@ MIDDLEWARE = [
     # Authentication middleware
     "authentication.middleware.JWTAuthenticationMiddleware",
     "authentication.middleware.RateLimitMiddleware",
-    # Enterprise security middleware
+    # Advanced Security middleware
     "authentication.security_middleware.RateLimitMiddleware",
     "authentication.security_middleware.SecurityHeadersMiddleware",
     "authentication.security_middleware.AuditLoggingMiddleware",
@@ -341,7 +341,7 @@ REST_FRAMEWORK = {
         "anon": "100/hour",
         "user": "1000/hour",
     },
-    "DEFAULT_VERSIONING_CLASS": "backend.api_versioning.EnterpriseAPIVersioning",
+    "DEFAULT_VERSIONING_CLASS": "backend.api_versioning.AdvancedAPIVersioning",
     "DEFAULT_VERSION": "v1",
     "ALLOWED_VERSIONS": ["v1", "v2"],
 }
@@ -385,7 +385,7 @@ STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY", "sk_test_dummy")
 STRIPE_PUBLISHABLE_KEY = os.getenv("STRIPE_PUBLISHABLE_KEY", "")
 STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET", "whsec_dummy")
 STRIPE_PRICE_PRO = os.getenv("STRIPE_PRICE_PRO", "")
-STRIPE_PRICE_ENTERPRISE = os.getenv("STRIPE_PRICE_ENTERPRISE", "")
+STRIPE_PRICE_PREMIUM = os.getenv("STRIPE_PRICE_PREMIUM", "")
 
 # ---------------------------------------------------------------------------
 # JWT configuration
@@ -579,3 +579,27 @@ MCP_CONFIG = {
     "TOOL_TIMEOUT": 60,
     "MAX_CONCURRENT_TOOLS": 5,
 }
+
+# ---------------------------------------------------------------------------
+# Sentry APM Configuration
+# ---------------------------------------------------------------------------
+import sentry_sdk
+from sentry_sdk.integrations.celery import CeleryIntegration
+from sentry_sdk.integrations.django import DjangoIntegration
+from sentry_sdk.integrations.redis import RedisIntegration
+
+SENTRY_DSN = os.getenv("SENTRY_DSN")
+if SENTRY_DSN:
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        integrations=[
+            DjangoIntegration(),
+            CeleryIntegration(),
+            RedisIntegration(),
+        ],
+        traces_sample_rate=1.0 if DEBUG else 0.2,
+        send_default_pii=True,
+        environment=os.getenv(
+            "SENTRY_ENVIRONMENT", "development" if DEBUG else "production"
+        ),
+    )

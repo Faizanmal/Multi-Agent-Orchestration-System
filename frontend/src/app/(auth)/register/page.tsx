@@ -41,7 +41,7 @@ const registerSchema = z.object({
   lastName: z.string().min(2, 'Last name must be at least 2 characters'),
   email: z.string().email('Please enter a valid email address'),
   company: z.string().optional(),
-  plan: z.enum(['free', 'pro', 'enterprise']),
+  plan: z.enum(['free', 'pro', 'premium']),
   password: z.string()
     .min(8, 'Password must be at least 8 characters')
     .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
@@ -74,8 +74,8 @@ const plans = [
     features: ['Unlimited Agents', '10,000 messages/month', 'Priority support', 'Advanced analytics'],
   },
   {
-    id: 'enterprise',
-    name: 'Enterprise',
+    id: 'premium',
+    name: 'Premium',
     price: 'Custom',
     description: 'For large organizations',
     features: ['1,000,000 messages/month', 'Dedicated support', 'SSO & audit logs', 'Custom limits'],

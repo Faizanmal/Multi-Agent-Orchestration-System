@@ -1,7 +1,8 @@
 import uuid
 
-from agents.models import Agent, Session
 from django.db import models
+
+from agents.models import Agent, Session
 
 
 class LearningAlgorithm(models.TextChoices):

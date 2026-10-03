@@ -1,7 +1,7 @@
 from datetime import timezone
 
 """
-API Versioning System for Enterprise Applications
+API Versioning System for Applications
 Supports:
 - Multiple API versions (v1, v2, etc.)
 - Deprecation warnings
@@ -19,7 +19,7 @@ from rest_framework.versioning import URLPathVersioning
 logger = logging.getLogger(__name__)
 
 
-class EnterpriseAPIVersioning(URLPathVersioning):
+class AdvancedAPIVersioning(URLPathVersioning):
     """
     Custom API versioning with deprecation support
     """

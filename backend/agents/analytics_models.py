@@ -345,11 +345,11 @@ class WorkflowOptimization(models.Model):
     implemented_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
-        ordering = [
+        ordering = [  # noqa: RUF012
             "-improvement_cost_percentage",
             "-improvement_duration_percentage",
             "-created_at",
-        ]  # noqa: RUF012
+        ]
         indexes = [  # noqa: RUF012
             models.Index(fields=["workflow_id", "status"]),
             models.Index(fields=["user", "-created_at"]),

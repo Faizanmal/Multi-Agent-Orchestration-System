@@ -90,12 +90,12 @@ class TaskSerializer(serializers.ModelSerializer):
             "error_message",
             "duration",
         ]
-        read_only_fields = [
+        read_only_fields = [  # noqa: RUF012
             "id",
             "created_at",
             "started_at",
             "completed_at",
-        ]  # noqa: RUF012
+        ]
 
     def get_subtasks(self, obj):
         subtasks = obj.subtasks.all()

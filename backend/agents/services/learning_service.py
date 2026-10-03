@@ -331,6 +331,7 @@ class AdaptiveCoordinationService:
         for strategy combinations that show consistently high success rates.
         """
         from django.db.models import Avg, Count
+
         from Multi_agents_cordination.models import (
             AgentCoordinationSession,
             CoordinationMetric,

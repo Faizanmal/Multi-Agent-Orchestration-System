@@ -1,6 +1,6 @@
 /**
  * Modern Animated Card Components
- * Enterprise-grade card designs with stunning animations
+ * Card designs with stunning animations
  */
 
 'use client';

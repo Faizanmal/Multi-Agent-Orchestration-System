@@ -3,18 +3,18 @@ Authentication URL configuration.
 
 Mounted at both /authentication/api/ (legacy) and /api/auth/ (frontend).
 
-Existing endpoints are preserved; enterprise endpoints are added below.
+Existing endpoints are preserved; advanced endpoints are added below.
 """
 
 from django.urls import path
 from rest_framework_simplejwt.views import TokenRefreshView
 
-# Enterprise views
-from .enterprise_views import (
+# Advanced views
+from .advanced_views import (
+    advanced_login_view,
+    advanced_register_view,
     audit_log_view,
     delete_account_view,
-    enterprise_login_view,
-    enterprise_register_view,
     firebase_auth_view,
     github_callback_view,
     github_initiate_view,
@@ -30,9 +30,10 @@ from .enterprise_views import (
     unlink_github_view,
     unlink_google_view,
     update_profile_view,
+    verify_email_view,
 )
-from .enterprise_views import (
-    logout_view as enterprise_logout_view,
+from .advanced_views import (
+    logout_view as advanced_logout_view,
 )
 
 # Legacy views (unchanged)
@@ -67,14 +68,15 @@ urlpatterns = [
     path("api-keys/<uuid:key_id>/", delete_api_key_view, name="delete_api_key"),
     path("sessions/", UserSessionListView.as_view(), name="user_sessions_legacy"),
     # -----------------------------------------------------------------------
-    # Enterprise endpoints
+    # Advanced endpoints
     # -----------------------------------------------------------------------
     # Email / password
-    path("v2/register/", enterprise_register_view, name="register"),
-    path("v2/login/", enterprise_login_view, name="login"),
+    path("v2/register/", advanced_register_view, name="register"),
+    path("v2/login/", advanced_login_view, name="login"),
+    path("v2/verify-email/", verify_email_view, name="verify_email"),
     # Token management
     path("refresh/", token_refresh_view, name="token_refresh"),
-    path("logout-current/", enterprise_logout_view, name="logout_current"),
+    path("logout-current/", advanced_logout_view, name="logout_current"),
     path("logout-all/", logout_all_view, name="logout_all"),
     # Firebase
     path("firebase/", firebase_auth_view, name="firebase_auth"),

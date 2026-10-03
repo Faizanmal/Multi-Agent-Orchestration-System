@@ -179,7 +179,7 @@ const ENHANCEMENT_TASKS: Task[] = [
     updatedAt: '2025-09-27T10:00:00Z'
   },
 
-  // Phase 5: Enterprise Features
+  // Phase 5: More Features
   {
     id: 'task-10',
     title: 'Advanced Security & Permissions',

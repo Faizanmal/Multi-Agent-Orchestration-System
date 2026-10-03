@@ -1,8 +1,9 @@
 import uuid
 
-from agents.models import Session, Task
 from django.contrib.auth import get_user_model
 from django.db import models
+
+from agents.models import Session, Task
 
 User = get_user_model()
 

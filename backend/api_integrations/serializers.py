@@ -38,7 +38,7 @@ class APIIntegrationSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
-        read_only_fields = [
+        read_only_fields = [  # noqa: RUF012
             "id",
             "created_at",
             "updated_at",
@@ -46,7 +46,7 @@ class APIIntegrationSerializer(serializers.ModelSerializer):
             "success_rate",
             "total_calls",
             "avg_response_time",
-        ]  # noqa: RUF012
+        ]
 
     def to_representation(self, instance):
         """Convert model instance to JSON representation"""
@@ -74,12 +74,12 @@ class APITemplateSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
-        read_only_fields = [
+        read_only_fields = [  # noqa: RUF012
             "id",
             "created_at",
             "updated_at",
             "popularity",
-        ]  # noqa: RUF012
+        ]
 
 
 class APICallResultSerializer(serializers.ModelSerializer):
@@ -154,11 +154,11 @@ class ScheduledAutomationSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
-        read_only_fields = [
+        read_only_fields = [  # noqa: RUF012
             "id",
             "last_run_at",
             "next_run_at",
             "last_result",
             "created_at",
             "updated_at",
-        ]  # noqa: RUF012
+        ]

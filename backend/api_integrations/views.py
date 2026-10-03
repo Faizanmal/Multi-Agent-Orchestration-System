@@ -1,10 +1,11 @@
-from authentication.permissions_util import public_or_authenticated
 from django.conf import settings
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import generics
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
+
+from authentication.permissions_util import public_or_authenticated
 
 from .models import APICallResult, APIIntegration, APITemplate, ScheduledAutomation
 from .registry import IntegrationToolRegistry

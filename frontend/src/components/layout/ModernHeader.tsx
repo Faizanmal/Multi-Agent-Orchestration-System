@@ -1,6 +1,6 @@
 /**
  * Modern Navigation Header
- * Enterprise-grade header with animations
+ * Header with animations
  */
 
 'use client';

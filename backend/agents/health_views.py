@@ -6,7 +6,6 @@ Health Check and System Status Views
 from datetime import datetime, timedelta
 
 import psutil
-from authentication.models import CustomUser
 from django.conf import settings
 from django.core.cache import cache
 from django.db import connection
@@ -16,6 +15,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
 from agents.models import Agent, Message, Session, Task
+from authentication.models import CustomUser
 
 
 @api_view(["GET"])

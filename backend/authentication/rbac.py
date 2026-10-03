@@ -1,5 +1,5 @@
 """
-Role-Based Access Control (RBAC) for enterprise security
+Role-Based Access Control (RBAC) for Advanced Security
 """
 
 import logging

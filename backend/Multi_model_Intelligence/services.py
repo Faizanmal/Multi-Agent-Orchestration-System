@@ -448,9 +448,9 @@ class MultiModelOrchestrator:
         )
 
         if not available_models:
-            raise Exception(
+            raise ValueError(
                 f"No suitable models found for {provider.value} with complexity {complexity.value}"
-            )  # noqa: TRY002
+            )
 
         # Try each model for this provider
         for model in available_models:
@@ -479,9 +479,7 @@ class MultiModelOrchestrator:
                 logger.warning(f"Model {provider.value}/{model} failed: {e}")
                 continue
 
-        raise Exception(
-            f"All models failed for provider {provider.value}"
-        )  # noqa: TRY002
+        raise ValueError(f"All models failed for provider {provider.value}")
 
     def chat_completion(
         self,

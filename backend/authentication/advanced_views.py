@@ -1,5 +1,5 @@
 """
-Enterprise Authentication API Views.
+Authentication API Views.
 
 All endpoints follow the final verification checklist:
   ✓ Firebase ID tokens verified on backend
@@ -70,7 +70,7 @@ def _user_profile(user) -> dict:
         "avatar": getattr(user, "avatar", None),
         "role": getattr(user, "role", "user"),
         "subscription_tier": getattr(user, "subscription_tier", "free"),
-        "is_email_verified": user.is_active,
+        "is_email_verified": getattr(user, "is_email_verified", False),
         "date_joined": user.date_joined.isoformat(),
         "providers": account_linking_service.get_linked_providers(user),
     }
@@ -150,7 +150,7 @@ def _oauth_browser_redirect(user, provider: str, request, frontend_path: str):
 
 @api_view(["POST"])
 @permission_classes([AllowAny])
-def enterprise_login_view(request):
+def advanced_login_view(request):
     """
     POST /api/auth/login/
     Authenticates email + password, returns JWT pair.
@@ -222,7 +222,7 @@ def enterprise_login_view(request):
 
 @api_view(["POST"])
 @permission_classes([AllowAny])
-def enterprise_register_view(request):
+def advanced_register_view(request):
     """POST /api/auth/register/"""
     username = request.data.get("username", "").strip()
     email = (request.data.get("email") or "").strip().lower()
@@ -263,8 +263,75 @@ def enterprise_register_view(request):
         last_name=last_name,
     )
 
+    # Generate Email Verification Token
+    import secrets
+    from datetime import timedelta
+
+    from django.conf import settings
+    from django.core.mail import send_mail
+    from django.utils import timezone
+
+    from authentication.models import EmailVerificationToken
+
+    token = secrets.token_urlsafe(32)
+    EmailVerificationToken.objects.create(
+        user=user, token=token, expires_at=timezone.now() + timedelta(days=1)
+    )
+
+    frontend = getattr(settings, "FRONTEND_URL", "http://localhost:3000").rstrip("/")
+    verification_link = f"{frontend}/verify-email?token={token}"
+
+    try:
+        send_mail(
+            subject="Verify your email - Multi-Agent Orchestration System",
+            message=f"Hi {first_name or username},\n\nPlease verify your email by clicking the link below:\n\n{verification_link}\n\nThanks!",
+            from_email=getattr(
+                settings, "DEFAULT_FROM_EMAIL", "noreply@multiagent.example.com"
+            ),
+            recipient_list=[email],
+            fail_silently=True,
+        )
+    except Exception as e:  # noqa: BLE001
+        logger.error(f"Failed to send verification email to {email}: {e!s}")
+
     audit_service.log_event("register", user=user, provider="email", request=request)
     return _auth_response(user, "email", request)
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def verify_email_view(request):
+    """POST /api/auth/v2/verify-email/ — confirm email token."""
+    token = request.data.get("token", "").strip()
+    if not token:
+        return Response(
+            {"error": "Token is required."}, status=status.HTTP_400_BAD_REQUEST
+        )
+
+    from authentication.models import EmailVerificationToken
+
+    try:
+        verification = EmailVerificationToken.objects.select_related("user").get(
+            token=token
+        )
+    except EmailVerificationToken.DoesNotExist:
+        return Response({"error": "Invalid token."}, status=status.HTTP_400_BAD_REQUEST)
+
+    if not verification.is_valid():
+        return Response(
+            {"error": "Token is expired or already used."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    user = verification.user
+    user.is_email_verified = True
+    user.save(update_fields=["is_email_verified"])
+
+    verification.used = True
+    verification.save(update_fields=["used"])
+
+    audit_service.log_event("email_verified", user=user, request=request)
+    return Response({"message": "Email verified successfully."})
 
 
 # ---------------------------------------------------------------------------
@@ -350,9 +417,9 @@ def firebase_auth_view(request):
     identifier = get_client_identifier(request)
     try:
         decoded = firebase_service.verify_firebase_token(id_token)
-        user, created = firebase_service.get_or_create_user_from_firebase(
+        user, _created = firebase_service.get_or_create_user_from_firebase(
             decoded, request=request
-        )  # noqa: RUF059
+        )
         clear_failure_record(identifier, "login")
         return _auth_response(user, "firebase", request)
     except ValueError as exc:
@@ -426,9 +493,9 @@ def google_callback_view(request):
 
     identifier = get_client_identifier(request)
     try:
-        user, created = google_oauth_service.handle_callback(
+        user, _created = google_oauth_service.handle_callback(
             code, state, request=request
-        )  # noqa: RUF059
+        )
         clear_failure_record(identifier, "google_callback")
         audit_service.log_event("login", user=user, provider="google", request=request)
         return _oauth_browser_redirect(user, "google", request, "/google/callback")
@@ -511,9 +578,9 @@ def github_callback_view(request):
 
     identifier = get_client_identifier(request)
     try:
-        user, created = github_oauth_service.handle_callback(
+        user, _created = github_oauth_service.handle_callback(
             code, state, request=request
-        )  # noqa: RUF059
+        )
         clear_failure_record(identifier, "github_callback")
         audit_service.log_event("login", user=user, provider="github", request=request)
         return _oauth_browser_redirect(user, "github", request, "/github/callback")

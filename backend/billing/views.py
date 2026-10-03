@@ -1,11 +1,12 @@
 """Billing API views — Stripe checkout and portal."""
 
-from authentication.models import Workspace, WorkspaceMembership
 from django.conf import settings
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+
+from authentication.models import Workspace, WorkspaceMembership
 
 from .services import create_checkout_session, get_customer_portal
 from .usage import usage_summary

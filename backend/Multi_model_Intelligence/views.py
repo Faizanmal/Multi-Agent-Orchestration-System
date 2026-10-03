@@ -1,8 +1,6 @@
 import json
 import logging
 
-from agents.services.groq_service import GroqService
-from agents.services.multimodal_processor import MultiModalProcessor
 from asgiref.sync import async_to_sync
 from django.conf import settings
 from django.utils import timezone
@@ -11,6 +9,9 @@ from rest_framework.decorators import action
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+
+from agents.services.groq_service import GroqService
+from agents.services.multimodal_processor import MultiModalProcessor
 
 from .catalog import seed_default_ai_models
 from .coordination import get_coordination_service
@@ -368,11 +369,10 @@ class MultiModalIntelligenceViewSet(viewsets.ViewSet):
 
             if (
                 not request.user.is_authenticated or session.user != request.user
-            ):  # noqa: SIM102
-                if not settings.DEBUG:
-                    return Response(
-                        {"error": "Unauthorized"}, status=status.HTTP_403_FORBIDDEN
-                    )
+            ) and not settings.DEBUG:
+                return Response(
+                    {"error": "Unauthorized"}, status=status.HTTP_403_FORBIDDEN
+                )
 
             modality_results = [
                 {
@@ -628,9 +628,7 @@ class MultiModelViewSet(viewsets.ViewSet):
                 )
 
         elif request.method == "PUT":
-            pref, created = ModelPreference.objects.get_or_create(
-                user=request.user
-            )  # noqa: RUF059
+            pref, _created = ModelPreference.objects.get_or_create(user=request.user)
 
             # Update fields
             if "default_priority" in request.data:

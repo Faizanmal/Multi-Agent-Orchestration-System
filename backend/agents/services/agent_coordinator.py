@@ -4,9 +4,10 @@ import re
 from datetime import datetime, timezone
 from typing import Any
 
-from api_integrations.registry import IntegrationToolRegistry
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
+
+from api_integrations.registry import IntegrationToolRegistry
 
 from ..models import Agent, AgentStatus, Message, Session, Task, TaskStatus
 from .agent_selector import SmartAgentSelector

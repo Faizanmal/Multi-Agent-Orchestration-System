@@ -94,8 +94,9 @@ def dashboard_view(request):
     """Get dashboard data with real-time analytics"""
     from datetime import timedelta
 
-    from agents.models import Agent, Message, Session
     from django.utils import timezone
+
+    from agents.models import Agent, Message, Session
     from Multi_model_Intelligence.models import ModelExecution
 
     user = request.user
@@ -180,6 +181,7 @@ def usage_trends_view(request):
     from django.db.models import Avg, Count, Sum
     from django.db.models.functions import TruncDate
     from django.utils import timezone
+
     from Multi_model_Intelligence.models import ModelExecution
 
     days = int(request.GET.get("days", 30))
@@ -219,6 +221,7 @@ def model_usage_view(request):
 
     from django.db.models import Avg, Count, Sum
     from django.utils import timezone
+
     from Multi_model_Intelligence.models import ModelExecution
 
     days = int(request.GET.get("days", 30))
@@ -257,6 +260,7 @@ def model_usage_view(request):
 def system_health_view(request):
     """Get system health status"""
     from django.utils import timezone
+
     from integrations.azure_cosmosdb_service import get_cosmos_service
     from real_time_performance.services import get_cache_service
 

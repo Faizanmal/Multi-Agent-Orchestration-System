@@ -1,6 +1,6 @@
 /**
  * Modern Hero Section
- * Enterprise-grade hero with stunning animations
+ * Hero with stunning animations
  */
 
 'use client';

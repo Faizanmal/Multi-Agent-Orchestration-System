@@ -8,6 +8,7 @@ from rest_framework.response import Response
 
 from .models import (
     AdaptiveStrategy,
+    AgentLearningPolicy,
     AgentLearningProfile,
     LearningEvent,
     ReinforcementState,
@@ -15,6 +16,7 @@ from .models import (
 )
 from .serializers import (
     AdaptiveStrategySerializer,
+    AgentLearningPolicySerializer,
     AgentLearningProfileSerializer,
     LearningEventSerializer,
     ReinforcementStateSerializer,
@@ -314,3 +316,10 @@ class ReinforcementStateViewSet(viewsets.ReadOnlyModelViewSet):
             }
 
         return Response(analytics)
+
+
+class AgentLearningPolicyViewSet(viewsets.ModelViewSet):
+    """Manage agent learning policies"""
+
+    queryset = AgentLearningPolicy.objects.all()
+    serializer_class = AgentLearningPolicySerializer

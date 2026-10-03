@@ -147,16 +147,14 @@ def forgot_password_view(request):
             )
 
             # Create or update password reset record
-            password_reset, created = (
-                PasswordReset.objects.update_or_create(  # noqa: RUF059
-                    user=user,
-                    defaults={
-                        "token": reset_token,
-                        "ip_address": request.META.get("REMOTE_ADDR", ""),
-                        "expires_at": timezone.now() + timedelta(hours=1),
-                        "used": False,
-                    },
-                )
+            _password_reset, _created = PasswordReset.objects.update_or_create(
+                user=user,
+                defaults={
+                    "token": reset_token,
+                    "ip_address": request.META.get("REMOTE_ADDR", ""),
+                    "expires_at": timezone.now() + timedelta(hours=1),
+                    "used": False,
+                },
             )
 
             # Send password reset email

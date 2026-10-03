@@ -28,9 +28,9 @@ class FeedbackService:
 
             # Update agent rating if agent feedback
             if feedback.agent:
-                rating, created = AgentRating.objects.get_or_create(
+                rating, _created = AgentRating.objects.get_or_create(
                     agent=feedback.agent
-                )  # noqa: RUF059
+                )
 
                 if feedback_type == "rating" and feedback.rating:
                     rating.update_rating(feedback.rating)

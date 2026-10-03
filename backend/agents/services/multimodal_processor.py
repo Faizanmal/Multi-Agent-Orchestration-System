@@ -596,9 +596,9 @@ class MultiModalProcessor:
                 if isinstance(document_data, UploadedFile):
                     extracted_text = document_data.read().decode("utf-8")
                 elif isinstance(document_data, str):
-                    with open(
+                    with open(  # noqa: ASYNC230
                         document_data, "r", encoding="utf-8"
-                    ) as f:  # noqa: ASYNC230
+                    ) as f:
                         extracted_text = f.read()
                 elif isinstance(document_data, bytes):
                     extracted_text = document_data.decode("utf-8")
@@ -717,8 +717,15 @@ class MultiModalProcessor:
         return sorted(word_freq.items(), key=lambda x: x[1], reverse=True)[:10]
 
     async def _detect_language(self, text: str) -> str:
-        """Simple language detection (placeholder - use proper library in production)."""
-        # Placeholder implementation
+        """Language detection using TextBlob."""
+        try:
+            from textblob import TextBlob
+
+            b = TextBlob(text)
+            if len(text) > 3:
+                return b.detect_language()
+        except Exception as e:  # noqa: BLE001
+            logger.warning(f"Language detection failed: {e}")
         return "en"  # Default to English
 
     async def _analyze_image_colors(self, image: Image.Image) -> dict:
@@ -769,9 +776,20 @@ class MultiModalProcessor:
             return []
 
     async def _analyze_audio_properties(self, audio_path: str) -> dict:
-        """Analyze audio properties."""
-        # Placeholder implementation
-        return {"sample_rate": 44100, "channels": 2, "bit_depth": 16}
+        """Analyze audio properties using pydub."""
+        try:
+            from pydub import AudioSegment
+
+            audio = AudioSegment.from_file(audio_path)
+            return {
+                "sample_rate": audio.frame_rate,
+                "channels": audio.channels,
+                "bit_depth": audio.sample_width * 8,
+                "duration_seconds": len(audio) / 1000.0,
+            }
+        except Exception as e:  # noqa: BLE001
+            logger.warning(f"Audio properties analysis failed: {e}")
+            return {"sample_rate": 44100, "channels": 2, "bit_depth": 16}
 
     async def _extract_key_frames(
         self, cap: cv2.VideoCapture, max_frames: int
@@ -796,11 +814,30 @@ class MultiModalProcessor:
 
     async def _extract_video_audio(self, video_path: str) -> dict:
         """Extract audio from video file."""
-        # Placeholder implementation - would use ffmpeg in production
-        return {
-            "audio_extracted": False,
-            "reason": "Audio extraction not implemented in demo",
-        }
+        try:
+            from pydub import AudioSegment
+
+            # pydub can extract audio from mp4 if ffmpeg is installed
+            audio = AudioSegment.from_file(video_path)
+
+            with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp_file:
+                audio.export(tmp_file.name, format="wav")
+                extracted_path = tmp_file.name
+
+            # Process extracted audio
+            audio_analysis = await self._process_audio(
+                extracted_path, {"analyze_audio": True, "speech_to_text": True}
+            )
+
+            try:
+                Path(extracted_path).unlink()
+            except Exception:  # noqa: BLE001, S110
+                pass
+
+            return audio_analysis
+        except Exception as e:  # noqa: BLE001
+            logger.warning(f"Video audio extraction failed: {e}")
+            return {"error": "Could not extract audio from video"}
 
     async def _extract_pdf_text(self, pdf_data: UploadedFile | str | bytes) -> str:
         """Extract text from PDF document."""

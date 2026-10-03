@@ -1,8 +1,9 @@
 import uuid
 
-from agents.models import Agent
 from django.contrib.auth import get_user_model
 from django.db import models
+
+from agents.models import Agent
 
 User = get_user_model()
 

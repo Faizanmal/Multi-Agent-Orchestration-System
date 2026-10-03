@@ -1,10 +1,11 @@
 import logging
 import uuid
 
-from authentication.encryption_utils import encryption_util
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db import models
+
+from authentication.encryption_utils import encryption_util
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
@@ -196,6 +197,7 @@ class IntegrationAlert(models.Model):
 
 class ScheduledAutomation(models.Model):
     """Scheduled automation jobs — inbox digest, Slack alerts, workflow runs."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     AUTOMATION_TYPES = [  # noqa: RUF012
         ("inbox_digest", "Daily Inbox Digest"),
@@ -210,7 +212,6 @@ class ScheduledAutomation(models.Model):
         ("cron", "Custom Cron"),
     ]
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=255)
     automation_type = models.CharField(max_length=50, choices=AUTOMATION_TYPES)
     frequency = models.CharField(

@@ -26,13 +26,13 @@ class UserFeedbackSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
-        read_only_fields = [
+        read_only_fields = [  # noqa: RUF012
             "id",
             "sentiment",
             "processed",
             "created_at",
             "updated_at",
-        ]  # noqa: RUF012
+        ]
 
 
 class AgentRatingSerializer(serializers.ModelSerializer):

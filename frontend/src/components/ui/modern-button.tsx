@@ -1,6 +1,6 @@
 /**
  * Modern Button Components
- * Enterprise-grade buttons with animations
+ * Buttons with animations
  */
 
 'use client';

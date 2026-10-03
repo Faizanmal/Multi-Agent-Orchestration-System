@@ -1,8 +1,8 @@
-# Enterprise Authentication Architecture
+# Authentication Architecture
 
 ## Overview
 
-This document describes the enterprise authentication and authorization system
+This document describes authentication and authorization system
 added to the Multi-Agent AI platform. It follows OWASP ASVS Level 2, NIST
 SP 800-63B, OAuth 2.1, and OpenID Connect 1.0 best practices.
 
@@ -29,7 +29,7 @@ SP 800-63B, OAuth 2.1, and OpenID Connect 1.0 best practices.
 
 ### Refresh Token (Opaque)
 - 64-byte URL-safe random string
-- SHA-256 hashed before storage in `EnterpriseRefreshToken` table
+- SHA-256 hashed before storage in `RefreshToken` table
 - Lifetime: **30 days**
 - Rotation: new pair issued on every `/api/auth/refresh/` call
 - Theft detection: entire token family revoked on reuse of revoked token
@@ -48,7 +48,7 @@ invalidated — preventing token theft.
 | `CustomUser` | Core user (email login, roles) |
 | `AuthProvider` | Linked OAuth providers per user |
 | `OAuthState` | Short-lived CSRF state tokens for OAuth |
-| `EnterpriseRefreshToken` | Hashed refresh tokens with rotation metadata |
+| `RefreshToken` | Hashed refresh tokens with rotation metadata |
 | `AuditLog` | Immutable audit trail |
 | `BruteForceRecord` | Failure tracking for lockout |
 | `UserSession` | Legacy session model (preserved) |
@@ -173,7 +173,7 @@ is the user's only login method and no password is set.
 
 ## Session Management
 
-Sessions are tracked via `EnterpriseRefreshToken` records:
+Sessions are tracked via `RefreshToken` records:
 - Each login creates a new refresh token with device/IP metadata
 - `/api/sessions/list/` returns all active sessions
 - `/api/sessions/{id}/revoke/` revokes a specific session
@@ -231,10 +231,10 @@ Sessions are tracked via `EnterpriseRefreshToken` records:
 
 ```
 backend/authentication/
-├── models.py                      ← Added 5 new enterprise models
+├── models.py                      ← Added 5 new models
 ├── jwt_auth.py                    ← Replaced with service-backed implementation
 ├── brute_force.py                 ← NEW: Brute force protection
-├── enterprise_views.py            ← NEW: All enterprise API endpoints
+├── advanced_views.py            ← NEW: All API endpoints
 ├── urls.py                        ← Extended with all new routes
 ├── services/
 │   ├── __init__.py
@@ -247,12 +247,12 @@ backend/authentication/
 │   └── account_linking_service.py ← NEW: Link/unlink providers
 ├── tests/
 │   ├── test_jwt_service.py        ← NEW: 16 JWT unit tests
-│   ├── test_enterprise_views.py   ← NEW: 26 integration tests
+│   ├── test_advanced_views.py   ← NEW: 26 integration tests
 │   ├── test_rbac.py               ← NEW: 10 RBAC tests
 │   ├── test_brute_force.py        ← NEW: 5 brute force tests
 │   └── test_account_linking.py    ← NEW: 7 linking tests
 └── migrations/
-    └── 0003_enterprise_auth.py    ← NEW: DB migration
+    └── 0003_advanced_auth.py    ← NEW: DB migration
 
 backend/backend/settings.py        ← Added Firebase/Google/GitHub/JWT config
 backend/requirements.txt           ← Added 7 new packages

@@ -423,8 +423,9 @@ class WorkflowEngine:
 
     async def _execute_integration_call(self, step: WorkflowStep, context: dict) -> Any:
         """Execute a connected integration tool via IntegrationToolRegistry."""
-        from api_integrations.registry import IntegrationToolRegistry
         from django.contrib.auth import get_user_model
+
+        from api_integrations.registry import IntegrationToolRegistry
 
         config = step.config
         tool_name = config.get("tool_name") or config.get("tool", "")

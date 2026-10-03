@@ -377,7 +377,6 @@ class AgentLearningService:
         """Save agent policy to database"""
         try:
             from agent_learning.models import AgentLearningPolicy
-
             from agents.models import Agent
 
             rl_agent = self.rl_agents[agent_id]

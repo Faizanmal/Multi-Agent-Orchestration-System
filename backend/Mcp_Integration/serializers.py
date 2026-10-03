@@ -34,14 +34,14 @@ class MCPToolSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
-        read_only_fields = [
+        read_only_fields = [  # noqa: RUF012
             "id",
             "usage_count",
             "success_rate",
             "average_execution_time",
             "created_at",
             "updated_at",
-        ]  # noqa: RUF012
+        ]
 
 
 class MCPSessionSerializer(serializers.ModelSerializer):
@@ -60,12 +60,12 @@ class MCPSessionSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
-        read_only_fields = [
+        read_only_fields = [  # noqa: RUF012
             "id",
             "last_activity",
             "created_at",
             "updated_at",
-        ]  # noqa: RUF012
+        ]
 
 
 class MCPToolExecutionSerializer(serializers.ModelSerializer):
@@ -92,12 +92,12 @@ class MCPToolExecutionSerializer(serializers.ModelSerializer):
             "context_used",
             "created_at",
         ]
-        read_only_fields = [
+        read_only_fields = [  # noqa: RUF012
             "id",
             "tool_name",
             "tool_category",
             "created_at",
-        ]  # noqa: RUF012
+        ]
 
 
 class MCPToolRegistrySerializer(serializers.ModelSerializer):
@@ -120,12 +120,12 @@ class MCPToolRegistrySerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
-        read_only_fields = [
+        read_only_fields = [  # noqa: RUF012
             "id",
             "tools_count",
             "created_at",
             "updated_at",
-        ]  # noqa: RUF012
+        ]
 
     def get_tools_count(self, obj):
         """Get the number of tools in this registry."""
@@ -155,7 +155,7 @@ class MCPAgentToolBindingSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
-        read_only_fields = [
+        read_only_fields = [  # noqa: RUF012
             "id",
             "tool_name",
             "tool_category",
@@ -164,4 +164,4 @@ class MCPAgentToolBindingSerializer(serializers.ModelSerializer):
             "usage_count",
             "created_at",
             "updated_at",
-        ]  # noqa: RUF012
+        ]

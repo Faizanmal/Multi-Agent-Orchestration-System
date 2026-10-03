@@ -1,6 +1,6 @@
 /**
  * Modern Dashboard
- * Enterprise-grade dashboard with animated metrics
+ * Dashboard with animated metrics
  */
 
 'use client';

@@ -191,6 +191,21 @@ services:
     networks:
       - multi_agent_network
 
+  # Cloudflare Tunnel for DDoS protection
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: multi_agent_cloudflared
+    command: tunnel run
+    profiles:
+      - cloudflare
+    environment:
+      - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN}
+    depends_on:
+      - nginx
+    restart: unless-stopped
+    networks:
+      - multi_agent_network
+
 volumes:
   postgres_data:
   redis_data:

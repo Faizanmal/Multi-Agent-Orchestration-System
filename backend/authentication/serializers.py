@@ -156,13 +156,13 @@ class APIKeySerializer(serializers.ModelSerializer):
             "expires_at",
             "created_at",
         ]
-        read_only_fields = [
+        read_only_fields = [  # noqa: RUF012
             "id",
             "key",
             "usage_count",
             "last_used",
             "created_at",
-        ]  # noqa: RUF012
+        ]
 
 
 class UserSessionSerializer(serializers.ModelSerializer):

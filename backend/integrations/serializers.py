@@ -19,13 +19,13 @@ class IntegrationSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
-        read_only_fields = [
+        read_only_fields = [  # noqa: RUF012
             "id",
             "created_at",
             "updated_at",
             "last_sync",
             "last_error",
-        ]  # noqa: RUF012
+        ]
 
     def validate_config(self, value):
         """Validate configuration based on integration type"""

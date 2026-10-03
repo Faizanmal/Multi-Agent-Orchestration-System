@@ -16,12 +16,12 @@ class WebhookEndpointSerializer(serializers.ModelSerializer):
     class Meta:
         model = WebhookEndpoint
         fields = "__all__"
-        read_only_fields = [
+        read_only_fields = [  # noqa: RUF012
             "user",
             "total_deliveries",
             "successful_deliveries",
             "failed_deliveries",
-        ]  # noqa: RUF012
+        ]
 
     def get_success_rate(self, obj):
         if obj.total_deliveries == 0:

@@ -238,7 +238,7 @@ export default function LandingPage() {
 
               <motion.div variants={staggerItem}>
                 <PricingCard
-                  name="Enterprise"
+                  name="Premium"
                   price="Custom"
                   period=""
                   ctaHref="/register"

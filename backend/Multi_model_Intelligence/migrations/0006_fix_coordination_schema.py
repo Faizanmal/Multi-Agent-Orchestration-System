@@ -1,3 +1,4 @@
+# ruff: noqa: RUF012
 # ruff: noqa
 # Make 0006 a no-op if already repaired manually; keep state aligned.
 import uuid
@@ -52,7 +53,7 @@ def fix_tables(apps, schema_editor):
 
 class Migration(migrations.Migration):
 
-    dependencies = [
+    dependencies = [  # noqa: RUF012
         ("Multi_model_Intelligence", "0005_model_coordination_run"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]

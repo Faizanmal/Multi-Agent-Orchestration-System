@@ -1,6 +1,6 @@
 /**
  * Modern Loading Components
- * Enterprise-grade loading indicators and skeleton screens
+ * Loading indicators and skeleton screens
  */
 
 'use client';

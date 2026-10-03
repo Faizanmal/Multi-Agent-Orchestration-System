@@ -1,10 +1,11 @@
+# ruff: noqa: RUF012
 # ruff: noqa
 import django.db.models.deletion
 from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-    dependencies = [
+    dependencies = [  # noqa: RUF012
         ("billing", "0001_initial"),
     ]
 

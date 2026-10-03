@@ -186,7 +186,7 @@ class RateLimitMiddleware:
         self.rate_limits = {
             "free": {"requests": 100, "window": 3600},  # 100 requests per hour
             "pro": {"requests": 1000, "window": 3600},  # 1000 requests per hour
-            "enterprise": {"requests": 10000, "window": 3600},  # 10k requests per hour
+            "premium": {"requests": 10000, "window": 3600},  # 10k requests per hour
         }
 
     def __call__(self, request):

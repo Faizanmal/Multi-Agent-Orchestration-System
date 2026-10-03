@@ -143,9 +143,8 @@ class GDPRComplianceService:
             Complete user data export
         """
         from agents.models import Agent, Session
-        from Multi_model_Intelligence.models import ModelExecution
-
         from authentication.models import UserDataExport
+        from Multi_model_Intelligence.models import ModelExecution
 
         try:
             user = User.objects.get(id=user_id)
@@ -221,9 +220,8 @@ class GDPRComplianceService:
             Deletion summary
         """
         from agents.models import Agent, Session
-        from Multi_model_Intelligence.models import ModelExecution
-
         from authentication.models import UserDeletionLog
+        from Multi_model_Intelligence.models import ModelExecution
 
         try:
             user = User.objects.get(id=user_id)

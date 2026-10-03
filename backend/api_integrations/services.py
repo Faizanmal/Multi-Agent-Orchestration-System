@@ -2,8 +2,9 @@
 
 import logging
 
-from agents.models import Agent, AgentStatus
 from django.contrib.auth import get_user_model
+
+from agents.models import Agent, AgentStatus
 
 from .models import APIIntegration
 from .registry import IntegrationToolRegistry

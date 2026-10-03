@@ -312,3 +312,5 @@ logs
 # Backup files
 *.bak
 *.backup
+
+.internal_dev_cache.md

@@ -1,7 +1,7 @@
 """
 JWT Authentication backend for Django REST Framework.
 
-Validates the enterprise JWT (issued by jwt_service.py) from the
+Validates the advanced JWT (issued by jwt_service.py) from the
 Authorization: Bearer <token> header.
 
 Kept intentionally thin – all crypto logic lives in services/jwt_service.py.
@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 
 class JWTAuthentication(authentication.BaseAuthentication):
-    """DRF authentication class that validates enterprise JWTs."""
+    """DRF authentication class that validates advanced JWTs."""
 
     keyword = "Bearer"
 

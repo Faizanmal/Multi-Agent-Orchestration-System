@@ -10,7 +10,7 @@ from .models import MonthlyUsage
 TIER_MESSAGE_LIMITS = {
     "free": 100,
     "pro": 10_000,
-    "enterprise": 1_000_000,
+    "premium": 1_000_000,
 }
 
 

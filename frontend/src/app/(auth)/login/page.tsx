@@ -56,7 +56,7 @@ const features = [
   },
   {
     icon: Shield,
-    title: 'Enterprise Security',
+    title: 'Advanced Security',
     description: 'OWASP ASVS compliant with end-to-end encryption',
   },
 ];
@@ -159,7 +159,7 @@ export default function LoginPage() {
               <span className="text-white/80">True Intelligence.</span>
             </h1>
             <p className="text-xl text-white/70 max-w-md">
-              Enterprise-grade multi-agent AI platform with real-time coordination,
+              Multi-agent AI platform with real-time coordination,
               multi-modal intelligence, and lightning-fast inference.
             </p>
           </motion.div>

@@ -2,6 +2,7 @@ from django.contrib import admin
 
 from .models import (
     AdaptiveStrategy,
+    AgentLearningPolicy,
     AgentLearningProfile,
     LearningEvent,
     ReinforcementState,
@@ -73,4 +74,20 @@ class SkillMatrixAdmin(admin.ModelAdmin):
     )
     list_filter = ("skill_category", "created_at")
     search_fields = ("skill_name", "learning_profile__agent__name")
+    readonly_fields = ("id", "created_at", "updated_at")
+
+
+@admin.register(AgentLearningPolicy)
+class AgentLearningPolicyAdmin(admin.ModelAdmin):
+    list_display = (
+        "agent_identifier",
+        "algorithm_type",
+        "version",
+        "total_episodes",
+        "average_reward",
+        "is_active",
+        "updated_at",
+    )
+    list_filter = ("algorithm_type", "is_active", "created_at")
+    search_fields = ("agent_identifier", "agent__name")
     readonly_fields = ("id", "created_at", "updated_at")

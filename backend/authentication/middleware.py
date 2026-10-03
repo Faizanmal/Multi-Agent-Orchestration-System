@@ -121,6 +121,6 @@ class RateLimitMiddleware:
             return 100  # Anonymous users
 
         # Based on subscription tier
-        tier_limits = {"free": 1000, "pro": 10000, "enterprise": 100000}
+        tier_limits = {"free": 1000, "pro": 10000, "premium": 100000}
 
         return tier_limits.get(getattr(user, "subscription_tier", "free"), 1000)

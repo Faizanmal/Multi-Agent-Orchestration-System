@@ -1,7 +1,7 @@
 from datetime import timezone
 
 """
-Data Export/Import Service for Enterprise Applications
+Data Export/Import Service for Applications
 Supports CSV, JSON, Excel, PDF exports
 """
 import csv

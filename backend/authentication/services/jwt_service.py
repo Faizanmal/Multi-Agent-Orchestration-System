@@ -1,5 +1,5 @@
 """
-Enterprise JWT Service – single source of truth for all JWT operations.
+Advanced JWT Service – single source of truth for all JWT operations.
 
 Access token:  15-minute lifespan, signed HS256, full OIDC-style claims.
 Refresh token: opaque 64-byte random, SHA-256 hashed in DB, rotated on use.
@@ -137,11 +137,11 @@ def issue_token_pair(
         access_token, refresh_token, token_type, expires_in,
         user (serialized lightweight profile)
     """
-    from authentication.models import EnterpriseRefreshToken
+    from authentication.models import RefreshToken
     from authentication.services.session_service import parse_device_info
 
     if revoke_existing:
-        EnterpriseRefreshToken.objects.filter(user=user, is_active=True).update(
+        RefreshToken.objects.filter(user=user, is_active=True).update(
             is_active=False,
             revoked_at=timezone.now(),
             revoke_reason="new_login_revoke_all",
@@ -156,7 +156,7 @@ def issue_token_pair(
     raw_refresh = generate_raw_refresh_token()
     hashed = hash_refresh_token(raw_refresh)
 
-    EnterpriseRefreshToken.objects.create(
+    RefreshToken.objects.create(
         user=user,
         hashed_token=hashed,
         family=family,
@@ -187,21 +187,21 @@ def rotate_refresh_token(raw_token: str, request=None) -> dict:
     Implements the "refresh token family" theft-detection pattern:
     if the token was already revoked, the entire family is revoked.
     """
-    from authentication.models import EnterpriseRefreshToken
+    from authentication.models import RefreshToken
     from authentication.services.session_service import parse_device_info
 
     hashed = hash_refresh_token(raw_token)
 
     try:
-        record = EnterpriseRefreshToken.objects.select_related("user").get(
+        record = RefreshToken.objects.select_related("user").get(
             hashed_token=hashed
         )
-    except EnterpriseRefreshToken.DoesNotExist:
+    except RefreshToken.DoesNotExist:
         raise exceptions.AuthenticationFailed("Refresh token not found.")
 
     if not record.is_active:
         # Possible token theft – revoke entire family
-        EnterpriseRefreshToken.objects.filter(
+        RefreshToken.objects.filter(
             family=record.family, is_active=True
         ).update(
             is_active=False,
@@ -234,7 +234,7 @@ def rotate_refresh_token(raw_token: str, request=None) -> dict:
     new_raw = generate_raw_refresh_token()
     new_hashed = hash_refresh_token(new_raw)
 
-    EnterpriseRefreshToken.objects.create(
+    RefreshToken.objects.create(
         user=user,
         hashed_token=new_hashed,
         family=family,
@@ -260,10 +260,10 @@ def rotate_refresh_token(raw_token: str, request=None) -> dict:
 
 def revoke_refresh_token(raw_token: str, reason: str = "logout") -> bool:
     """Revoke a single refresh token. Returns True if found and revoked."""
-    from authentication.models import EnterpriseRefreshToken
+    from authentication.models import RefreshToken
 
     hashed = hash_refresh_token(raw_token)
-    updated = EnterpriseRefreshToken.objects.filter(
+    updated = RefreshToken.objects.filter(
         hashed_token=hashed, is_active=True
     ).update(
         is_active=False,
@@ -275,9 +275,9 @@ def revoke_refresh_token(raw_token: str, reason: str = "logout") -> bool:
 
 def revoke_all_user_tokens(user, reason: str = "logout_all") -> int:
     """Revoke every active refresh token for a user. Returns count revoked."""
-    from authentication.models import EnterpriseRefreshToken
+    from authentication.models import RefreshToken
 
-    updated = EnterpriseRefreshToken.objects.filter(user=user, is_active=True).update(
+    updated = RefreshToken.objects.filter(user=user, is_active=True).update(
         is_active=False,
         revoked_at=timezone.now(),
         revoke_reason=reason,

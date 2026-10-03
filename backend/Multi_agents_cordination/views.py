@@ -1,12 +1,13 @@
 import logging
 
-from agents.models import Agent
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+
+from agents.models import Agent
 
 from .models import AgentCoordinationSession, CoordinationStrategy
 from .services import CoordinationService

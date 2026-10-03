@@ -1,5 +1,5 @@
 """
-Enterprise monitoring and metrics system using Prometheus
+Advanced monitoring and metrics system using Prometheus
 """
 
 import logging

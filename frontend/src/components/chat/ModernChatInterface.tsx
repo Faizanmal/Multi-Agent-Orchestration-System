@@ -1,6 +1,6 @@
 /**
  * Modern Enhanced Chat Interface
- * Enterprise-grade chat with animations and effects
+ * Chat with animations and effects
  */
 
 'use client';

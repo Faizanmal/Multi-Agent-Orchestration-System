@@ -1,6 +1,6 @@
 /**
  * Advanced Animation Utilities & Variants
- * Enterprise-grade animation configurations
+ * Animation configurations
  */
 
 import { Variants } from 'framer-motion';

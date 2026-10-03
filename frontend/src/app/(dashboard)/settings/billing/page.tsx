@@ -200,7 +200,7 @@ export default function BillingSettingsPage() {
 
           <Card className="border-slate-200 dark:border-slate-800">
             <CardHeader>
-              <CardTitle>Enterprise</CardTitle>
+              <CardTitle>Premium</CardTitle>
               <div className="text-3xl font-bold mt-2">Custom</div>
               <CardDescription className="pt-2">For large-scale, custom infrastructure.</CardDescription>
             </CardHeader>

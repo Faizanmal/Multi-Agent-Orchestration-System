@@ -135,11 +135,11 @@ class AgentPlugin(models.Model):
     last_reviewed_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
-        ordering = [
+        ordering = [  # noqa: RUF012
             "-is_featured",
             "-average_rating",
             "-downloads_count",
-        ]  # noqa: RUF012
+        ]
         indexes = [  # noqa: RUF012
             models.Index(fields=["slug"]),
             models.Index(fields=["category", "-downloads_count"]),

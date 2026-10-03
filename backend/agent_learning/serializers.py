@@ -2,6 +2,7 @@ from rest_framework import serializers
 
 from .models import (
     AdaptiveStrategy,
+    AgentLearningPolicy,
     AgentLearningProfile,
     LearningEvent,
     ReinforcementState,
@@ -62,3 +63,9 @@ class AdaptiveStrategySerializer(serializers.ModelSerializer):
 
     def get_sessions_count(self, obj):
         return obj.learned_from_sessions.count()
+
+
+class AgentLearningPolicySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AgentLearningPolicy
+        fields = "__all__"

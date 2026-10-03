@@ -381,7 +381,7 @@ class AudioService:
         # Signal-to-noise ratio estimation
         signal_power = np.mean(samples**2)
         noise_estimate = (
-            np.min(samples**2[samples**2 > 0])
+            np.min((samples**2)[samples**2 > 0])
             if np.any(samples**2 > 0)
             else signal_power
         )

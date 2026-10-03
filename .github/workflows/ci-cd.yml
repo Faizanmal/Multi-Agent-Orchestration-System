@@ -155,7 +155,7 @@ jobs:
         python manage.py migrate
         python manage.py runserver &
         sleep 5
-        pytest tests/test_enterprise_features.py -v
+        pytest tests/test_advanced_features.py -v
   
   # Docker Build
   docker-build:
@@ -215,9 +215,17 @@ jobs:
     - uses: actions/checkout@v7
     
     - name: Deploy to staging
-      run: |
-        echo "Deploying to staging environment..."
-        # Add your deployment commands here
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.STAGING_HOST }}
+        username: ${{ secrets.STAGING_USERNAME }}
+        key: ${{ secrets.STAGING_SSH_KEY }}
+        script: |
+          cd /opt/multi-agent-orch-system
+          git fetch origin develop
+          git reset --hard origin/develop
+          docker-compose -f docker-compose.prod.yml pull
+          docker-compose -f docker-compose.prod.yml up -d --build
   
   # Deploy to Production
   deploy-production:
@@ -229,6 +237,14 @@ jobs:
     - uses: actions/checkout@v7
     
     - name: Deploy to production
-      run: |
-        echo "Deploying to production environment..."
-        # Add your deployment commands here
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.PROD_HOST }}
+        username: ${{ secrets.PROD_USERNAME }}
+        key: ${{ secrets.PROD_SSH_KEY }}
+        script: |
+          cd /opt/multi-agent-orch-system
+          git fetch origin master
+          git reset --hard origin/master
+          docker-compose -f docker-compose.prod.yml pull
+          docker-compose -f docker-compose.prod.yml up -d --build

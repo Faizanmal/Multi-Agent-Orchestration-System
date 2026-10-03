@@ -189,7 +189,7 @@ class NotificationRule(models.Model):
 
 class Notification(models.Model):
     """Individual notifications"""
-
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     NOTIFICATION_TYPES = [  # noqa: RUF012
         ("info", "Info"),
         ("success", "Success"),
@@ -206,7 +206,6 @@ class Notification(models.Model):
         ("failed", "Failed"),
     ]
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="notifications"
     )

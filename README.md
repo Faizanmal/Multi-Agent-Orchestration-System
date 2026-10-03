@@ -285,7 +285,7 @@ ws.send(JSON.stringify({
 }));
 ```
 
-Quota semantics: backend enforcement is currently monthly **messages** per workspace (free: 100, pro: 10,000, enterprise: 1,000,000).
+Quota semantics: backend enforcement is currently monthly **messages** per workspace (free: 100, pro: 10,000, premium: 1,000,000).
 
 ## 🧪 Use Cases
 
@@ -429,7 +429,7 @@ We welcome contributions! This is a development project and we're actively looki
 - [ ] Advanced monitoring dashboard
 - [ ] Multi-tenant support
 - [ ] Cloud deployment options
-- [ ] Enterprise features
+- [ ] More Features
 
 ## 📞 Support & Contact
 

@@ -57,10 +57,10 @@ def get_active_sessions(user) -> list:
     """Return serialised list of active refresh token records as session view."""
     from django.utils import timezone
 
-    from authentication.models import EnterpriseRefreshToken
+    from authentication.models import RefreshToken
 
     tokens = (
-        EnterpriseRefreshToken.objects.filter(user=user, is_active=True)
+        RefreshToken.objects.filter(user=user, is_active=True)
         .exclude(expires_at__lt=timezone.now())
         .order_by("-created_at")
     )
@@ -87,13 +87,13 @@ def revoke_session_by_id(user, session_record_id: str) -> bool:
     """Revoke a specific refresh token record belonging to the user."""
     import uuid
 
-    from authentication.models import EnterpriseRefreshToken
+    from authentication.models import RefreshToken
 
     try:
-        token = EnterpriseRefreshToken.objects.get(
+        token = RefreshToken.objects.get(
             id=uuid.UUID(session_record_id), user=user, is_active=True
         )
         token.revoke("session_revoked_by_user")
         return True
-    except (EnterpriseRefreshToken.DoesNotExist, ValueError):
+    except (RefreshToken.DoesNotExist, ValueError):
         return False

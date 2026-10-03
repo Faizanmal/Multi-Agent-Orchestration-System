@@ -32,7 +32,7 @@ export interface User {
   display_name?: string;
   avatar?: string;
   role: 'admin' | 'user' | 'viewer';
-  subscription_tier: 'free' | 'pro' | 'enterprise';
+  subscription_tier: 'free' | 'pro' | 'premium';
   is_email_verified?: boolean;
   date_joined: string;
   providers?: AuthProvider[];

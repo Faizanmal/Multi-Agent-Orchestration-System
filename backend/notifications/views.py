@@ -133,9 +133,9 @@ class NotificationPreferenceView(generics.RetrieveUpdateAPIView):
     permission_classes = [IsAuthenticated]  # noqa: RUF012
 
     def get_object(self):
-        prefs, created = NotificationPreference.objects.get_or_create(
+        prefs, _created = NotificationPreference.objects.get_or_create(
             user=self.request.user
-        )  # noqa: RUF059
+        )
         return prefs
 
 
