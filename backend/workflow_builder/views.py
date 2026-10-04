@@ -164,7 +164,10 @@ class VisualWorkflowViewSet(viewsets.ModelViewSet):
             )
 
             # Update execution record with results
-            execution.status = "completed" if result["success"] else "failed"
+            if result.get("suspended"):
+                execution.status = "suspended"
+            else:
+                execution.status = "completed" if result["success"] else "failed"
             execution.completed_at = timezone.now()
             execution.output_data = result.get("results", {})
             execution.error_message = result.get("error", "")

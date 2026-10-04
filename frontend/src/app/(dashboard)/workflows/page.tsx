@@ -57,6 +57,14 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
   Tabs,
   TabsContent,
   TabsList,
@@ -405,6 +413,9 @@ export default function WorkflowsPage() {
     }
   };
 
+  const [humanInput, setHumanInput] = useState('');
+  const [showHumanInputDialog, setShowHumanInputDialog] = useState(false);
+
   const handleExecute = async () => {
     setIsExecuting(true);
     try {
@@ -421,15 +432,45 @@ export default function WorkflowsPage() {
       }
       const execRes = await apiClient.executeWorkflow(id!, { input_data: {} });
       const exec = execRes.data as { status?: string; error_message?: string };
-      toast({
-        title: exec.status === 'completed' ? 'Workflow completed' : 'Workflow finished',
-        description: exec.error_message || `Status: ${exec.status}`,
-        variant: exec.status === 'failed' ? 'destructive' : 'default',
-      });
+      
+      if (exec.status === 'suspended') {
+        toast({
+          title: 'Workflow Suspended',
+          description: 'A node is waiting for human input.',
+          variant: 'default',
+        });
+        setShowHumanInputDialog(true);
+      } else {
+        toast({
+          title: exec.status === 'completed' ? 'Workflow completed' : 'Workflow finished',
+          description: exec.error_message || `Status: ${exec.status}`,
+          variant: exec.status === 'failed' ? 'destructive' : 'default',
+        });
+      }
     } catch (e: unknown) {
       toast({ title: 'Workflow execution failed', description: axiosErrorDetail(e) || errorMessage(e), variant: 'destructive' });
     } finally {
       setIsExecuting(false);
+    }
+  };
+
+  const handleSubmitHumanInput = async () => {
+    if (!workflowId) return;
+    setShowHumanInputDialog(false);
+    toast({ title: 'Input submitted', description: 'Resuming workflow...' });
+    
+    // In a real app, this would hit a resume endpoint. For this demo, we'll re-execute with input.
+    try {
+      const execRes = await apiClient.executeWorkflow(workflowId, { input_data: { human_input: humanInput } });
+      const exec = execRes.data as { status?: string; error_message?: string };
+      toast({
+        title: exec.status === 'completed' ? 'Workflow Resumed & Completed' : 'Workflow finished',
+        description: exec.error_message || `Status: ${exec.status}`,
+        variant: exec.status === 'failed' ? 'destructive' : 'default',
+      });
+      setHumanInput('');
+    } catch (e: unknown) {
+      toast({ title: 'Failed to resume workflow', description: axiosErrorDetail(e) || errorMessage(e), variant: 'destructive' });
     }
   };
 
@@ -767,6 +808,34 @@ export default function WorkflowsPage() {
             </SheetContent>
           </Sheet>
         </div>
+        
+        {/* Human in the loop dialog */}
+        <Dialog open={showHumanInputDialog} onOpenChange={setShowHumanInputDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Human Input Required</DialogTitle>
+              <DialogDescription>
+                This workflow has paused and is waiting for your review or input.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-4 space-y-4">
+              <Label>Provide Input to Resume</Label>
+              <Textarea 
+                placeholder="Type your approval, correction, or additional data..." 
+                value={humanInput}
+                onChange={(e) => setHumanInput(e.target.value)}
+                rows={4}
+              />
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowHumanInputDialog(false)}>Cancel</Button>
+              <Button onClick={handleSubmitHumanInput} className="gap-2">
+                <Play className="h-4 w-4" />
+                Resume Workflow
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </AppLayout>
   );

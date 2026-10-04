@@ -193,17 +193,13 @@ def rotate_refresh_token(raw_token: str, request=None) -> dict:
     hashed = hash_refresh_token(raw_token)
 
     try:
-        record = RefreshToken.objects.select_related("user").get(
-            hashed_token=hashed
-        )
+        record = RefreshToken.objects.select_related("user").get(hashed_token=hashed)
     except RefreshToken.DoesNotExist:
         raise exceptions.AuthenticationFailed("Refresh token not found.")
 
     if not record.is_active:
         # Possible token theft – revoke entire family
-        RefreshToken.objects.filter(
-            family=record.family, is_active=True
-        ).update(
+        RefreshToken.objects.filter(family=record.family, is_active=True).update(
             is_active=False,
             revoked_at=timezone.now(),
             revoke_reason="theft_detected",
@@ -263,9 +259,7 @@ def revoke_refresh_token(raw_token: str, reason: str = "logout") -> bool:
     from authentication.models import RefreshToken
 
     hashed = hash_refresh_token(raw_token)
-    updated = RefreshToken.objects.filter(
-        hashed_token=hashed, is_active=True
-    ).update(
+    updated = RefreshToken.objects.filter(hashed_token=hashed, is_active=True).update(
         is_active=False,
         revoked_at=timezone.now(),
         revoke_reason=reason,

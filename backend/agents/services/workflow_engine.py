@@ -99,7 +99,10 @@ class WorkflowEngine:
             result = await self._execute_workflow_steps(context)
 
             # Update final status
-            context["status"] = "completed" if result["success"] else "failed"
+            if result.get("suspended"):
+                context["status"] = "suspended"
+            else:
+                context["status"] = "completed" if result["success"] else "failed"
             context["end_time"] = timezone.now()
 
             logger.info(f"Workflow {workflow_id} completed: {context['status']}")
@@ -107,6 +110,7 @@ class WorkflowEngine:
             return {
                 "workflow_id": workflow_id,
                 "success": result["success"],
+                "suspended": result.get("suspended", False),
                 "results": context["results"],
                 "execution_time": (
                     context["end_time"] - context["start_time"]
@@ -186,6 +190,14 @@ class WorkflowEngine:
                         step.status = "completed"
                         step.result = step_result["result"]
                         results[step_id] = step.result
+                    elif step_result.get("suspended"):
+                        step.status = "suspended"
+                        step.error = step_result.get("error")
+                        return {
+                            "success": False,
+                            "suspended": True,
+                            "error": f"Step {step_id} suspended: {step.error}",
+                        }
                     else:
                         step.status = "failed"
                         step.error = step_result["error"]
@@ -232,6 +244,12 @@ class WorkflowEngine:
 
         try:
             result = await executor(step, context)
+            if isinstance(result, dict) and result.get("suspended"):
+                return {
+                    "success": False,
+                    "suspended": True,
+                    "error": "Waiting for human input",
+                }
             return {"success": True, "result": result}
         except Exception as e:  # noqa: BLE001
             return {"success": False, "error": str(e)}
@@ -248,6 +266,7 @@ class WorkflowEngine:
             "integration_call": self._execute_integration_call,
             "delay": self._execute_delay,
             "notification": self._execute_notification,
+            "human_input": self._execute_human_input,
         }
 
     async def _execute_agent_task(self, step: WorkflowStep, context: dict) -> Any:
@@ -507,6 +526,14 @@ class WorkflowEngine:
             "channels": channels,
             "sent_at": timezone.now().isoformat(),
         }
+
+    async def _execute_human_input(self, step: WorkflowStep, context: dict) -> Any:
+        """Execute a human input node. If no human input is provided yet, suspend."""
+        input_data = context.get("input_data", {})
+        human_input = input_data.get("human_input")
+        if not human_input:
+            return {"suspended": True}
+        return {"human_input_received": human_input}
 
     def _prepare_step_input(self, step: WorkflowStep, context: dict) -> dict:
         """Prepare input data for a step based on its configuration."""

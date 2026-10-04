@@ -276,8 +276,37 @@ class MCPService:
             precision = parameters.get("precision", 6)
 
             try:
-                # Safe evaluation (in production, use more secure evaluation)
-                result = eval(expression)  # WARNING: This is unsafe in production
+                import ast
+                import operator
+
+                def safe_eval(expr):
+                    ops = {
+                        ast.Add: operator.add,
+                        ast.Sub: operator.sub,
+                        ast.Mult: operator.mul,
+                        ast.Div: operator.truediv,
+                        ast.Pow: operator.pow,
+                        ast.USub: operator.neg,
+                    }
+
+                    def _eval(node):
+                        if isinstance(node, ast.Constant) and isinstance(
+                            node.value, (int, float)
+                        ):
+                            return node.value
+                        elif isinstance(node, ast.Num):
+                            return node.n  # For older python versions
+                        elif isinstance(node, ast.BinOp):
+                            return ops[type(node.op)](
+                                _eval(node.left), _eval(node.right)
+                            )
+                        elif isinstance(node, ast.UnaryOp):
+                            return ops[type(node.op)](_eval(node.operand))
+                        raise TypeError("Unsupported node")
+
+                    return _eval(ast.parse(expr, mode="eval").body)
+
+                result = safe_eval(expression)
                 return {
                     "result": round(float(result), precision),
                     "expression": expression,
@@ -297,67 +326,70 @@ class MCPService:
                     return {"files": files, "path": path}
                 except Exception as e:  # noqa: BLE001
                     return {"error": f"File system error: {e!s}"}
+            elif operation == "read":
+                try:
+                    with open(path, "r", encoding="utf-8") as f:
+                        return {"content": f.read(), "path": path}
+                except Exception as e:  # noqa: BLE001
+                    return {"error": f"File system error: {e!s}"}
+            elif operation == "write":
+                try:
+                    content = parameters.get("content", "")
+                    with open(path, "w", encoding="utf-8") as f:
+                        f.write(content)
+                    return {"message": "File written successfully", "path": path}
+                except Exception as e:  # noqa: BLE001
+                    return {"error": f"File system error: {e!s}"}
 
-            return {
-                "message": f"File system operation {operation} simulated",
-                "path": path,
-            }
+            return {"error": f"Unsupported file system operation: {operation}"}
 
         elif tool_name == "web_search":
             query = parameters.get("query", "")
-            max_results = parameters.get("max_results", 10)
+            try:
+                import json
+                import urllib.parse
+                import urllib.request
 
-            # Simulated search results
-            return {
-                "query": query,
-                "results": [
-                    {
-                        "title": f"Result {i+1} for: {query}",
-                        "url": f"https://example.com/result-{i+1}",
-                    }
-                    for i in range(min(max_results, 3))
-                ],
-            }
+                # Use Wikipedia API as a reliable, keyless search alternative
+                url = f"https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch={urllib.parse.quote(query)}&utf8=&format=json"
+                req = urllib.request.Request(
+                    url,
+                    headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"},
+                )
+
+                with urllib.request.urlopen(req, timeout=10) as response:
+                    data = json.loads(response.read().decode())
+
+                results = []
+                for item in data.get("query", {}).get("search", [])[
+                    : parameters.get("max_results", 5)
+                ]:
+                    # Clean simple HTML tags from snippets
+                    import re
+
+                    clean_snippet = re.sub(r"<[^>]+>", "", item.get("snippet", ""))
+                    results.append(
+                        {"title": item.get("title"), "snippet": clean_snippet}
+                    )
+
+                return {"query": query, "results": results}
+            except Exception as e:  # noqa: BLE001
+                return {"error": f"Search failed: {e!s}"}
 
         elif tool_name == "database":
-            operation = parameters.get("operation")
-            table = parameters.get("table", "")
-
             return {
-                "message": f"Database operation {operation} on table {table} simulated",
-                "operation": operation,
-                "table": table,
+                "error": "Database MCP tool requires connection string and credentials configuration. Use Supabase integration instead if available."
             }
 
         elif tool_name == "email":
-            operation = parameters.get("operation")
-
-            if operation == "send":
-                to = parameters.get("to", "")
-                subject = parameters.get("subject", "")
-
-                return {
-                    "message": f"Email sent to {to}",
-                    "subject": subject,
-                    "status": "sent",
-                }
-
-            return {"message": f"Email operation {operation} simulated"}
+            return {
+                "error": "Email MCP tool requires active Gmail or Outlook integration. Please use 'gmail.send' native tool instead."
+            }
 
         elif tool_name == "calendar":
-            operation = parameters.get("operation")
-
-            if operation == "create_event":
-                title = parameters.get("title", "")
-                start_time = parameters.get("start_time", "")
-
-                return {
-                    "message": f'Event "{title}" created',
-                    "event_id": f"event_{int(time.time())}",
-                    "start_time": start_time,
-                }
-
-            return {"message": f"Calendar operation {operation} simulated"}
+            return {
+                "error": "Calendar MCP tool requires active Google Calendar or Outlook integration. Please use native tools."
+            }
 
         else:
             return {

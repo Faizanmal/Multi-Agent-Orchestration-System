@@ -189,6 +189,7 @@ class NotificationRule(models.Model):
 
 class Notification(models.Model):
     """Individual notifications"""
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     NOTIFICATION_TYPES = [  # noqa: RUF012
         ("info", "Info"),

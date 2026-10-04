@@ -63,7 +63,7 @@ import { axiosErrorDetail, errorMessage as getErrorMessage, isQuotaLimitError } 
 import { dispatchQuotaLimit } from '@/components/billing/QuotaUpgradeDialog';
 import { trackEvent, trackOnce } from '@/lib/analytics';
 import Link from 'next/link';
-
+import { useWebSocket } from '@/hooks/useWebSocket';
 export default function ChatPage() {
   const [messages, setMessages] = useState<any[]>([]);
   const [input, setInput] = useState('');
@@ -138,6 +138,80 @@ export default function ChatPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- reload when conversation changes
   }, [selectedConversation?.id]);
 
+  const wsUrl = selectedConversation?.id 
+    ? `${process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:8000'}/ws/session/${selectedConversation.id}/` 
+    : '';
+
+  const { sendMessage: wsSendMessage, connectionStatus } = useWebSocket({
+    url: wsUrl,
+    onMessage: (msg) => {
+      console.log("WS Msg:", msg);
+      if (msg.type === 'chat_message') {
+        const payload = msg.message as any;
+        setMessages(prev => {
+          if (prev.some(m => m.id === payload.id)) return prev;
+          return [...prev, {
+            id: payload.id,
+            role: payload.sender === 'Anonymous' || payload.sender === 'websocket_user' ? 'user' : 'user', // Simplified
+            content: payload.content,
+            timestamp: payload.timestamp ? new Date(payload.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : new Date().toLocaleTimeString(),
+            agent: undefined
+          }];
+        });
+      }
+      else if (msg.type === 'agent_response') {
+        const payload = msg.response as any;
+        setIsTyping(false);
+        setMessages(prev => {
+          // If we already have a streaming message with same ID or a placeholder, update it. For now just append.
+          return [...prev, {
+            id: msg.original_message_id || Date.now().toString(),
+            role: 'assistant',
+            content: payload.content,
+            timestamp: msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : new Date().toLocaleTimeString(),
+            agent: payload.orchestrator || 'Agent'
+          }];
+        });
+        setApiConversations(prev => prev.map(c => c.id === selectedConversation?.id ? { ...c, lastMessage: payload.content } : c));
+      }
+      else if (msg.type === 'stream_start') {
+        setIsTyping(false); // We have actual stream now
+        setMessages(prev => [...prev, {
+          id: 'stream-current',
+          role: 'assistant',
+          content: '',
+          timestamp: new Date().toLocaleTimeString(),
+          agent: selectedAgent?.name || 'Agent',
+          isStreaming: true
+        }]);
+      }
+      else if (msg.type === 'stream_chunk') {
+        setMessages(prev => {
+          const newMsgs = [...prev];
+          const streamIdx = newMsgs.findIndex(m => m.id === 'stream-current' || m.isStreaming);
+          if (streamIdx >= 0) {
+            newMsgs[streamIdx].content = (msg.full_content as string) || newMsgs[streamIdx].content + (msg.chunk as string);
+          }
+          return newMsgs;
+        });
+      }
+      else if (msg.type === 'stream_end') {
+        setMessages(prev => {
+          const newMsgs = [...prev];
+          const streamIdx = newMsgs.findIndex(m => m.id === 'stream-current' || m.isStreaming);
+          if (streamIdx >= 0) {
+            newMsgs[streamIdx].isStreaming = false;
+            newMsgs[streamIdx].id = Date.now().toString();
+            if (msg.full_content) {
+              newMsgs[streamIdx].content = msg.full_content as string;
+            }
+          }
+          return newMsgs;
+        });
+      }
+    }
+  });
+
   const handleSend = async () => {
     if (!input.trim()) return;
     
@@ -165,55 +239,66 @@ export default function ChatPage() {
         };
         setApiConversations(prev => [activeSession, ...prev]);
         setSelectedConversation(activeSession);
+        
+        // Small delay to allow WS to connect to new session
+        await new Promise(r => setTimeout(r, 500));
       } catch (err) {
         console.error('Failed to create session:', err);
         return;
       }
     }
 
-    const userMessage = {
-      id: Date.now().toString(),
-      role: 'user',
-      content: input,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    };
-
-    setMessages(prev => [...prev, userMessage]);
     const messageContent = input;
     setInput('');
+    
+    // Add user message optimistically
+    const tempId = Date.now().toString();
+    setMessages(prev => [...prev, {
+      id: tempId,
+      role: 'user',
+      content: messageContent,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    }]);
+    
     setIsTyping(true);
 
     try {
-      // Link selected agent to session so the backend routes to the right specialist
       if (selectedAgent?.id) {
-        try {
-          await addAgentToSession(activeSession.id, selectedAgent.id);
-        } catch {
-          // Agent may already be linked to this session
-        }
+        try { await addAgentToSession(activeSession.id, selectedAgent.id); } catch { /* ignore */ }
       }
+      
+      // If websocket is connected, use it for real-time
+      if (connectionStatus === 'connected') {
+        wsSendMessage({
+          type: 'chat_message',
+          content: messageContent,
+          message_type: 'text',
+          metadata: { agent_id: selectedAgent?.id }
+        });
+      } else {
+        // Fallback to HTTP POST
+        const responseMsg = await sendMessage(activeSession.id, {
+          content: messageContent,
+          message_type: 'text',
+          metadata: { agent_id: selectedAgent?.id },
+        });
 
-      const responseMsg = await sendMessage(activeSession.id, {
-        content: messageContent,
-        message_type: 'text',
-        metadata: { agent_id: selectedAgent?.id },
-      });
-
+        const aiMessage = {
+          id: responseMsg.id || (Date.now() + 1).toString(),
+          role: 'assistant',
+          content: responseMsg.content || responseMsg.metadata?.content || responseMsg.metadata?.response || 'Done.',
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          agent: selectedAgent?.name || 'Agent',
+        };
+        setMessages(prev => [...prev, aiMessage]);
+        setApiConversations(prev => prev.map(c => c.id === activeSession.id ? { ...c, lastMessage: responseMsg.content } : c));
+        setIsTyping(false);
+      }
       trackEvent('message_sent', { session_id: activeSession.id });
       trackOnce('first_message_sent', { session_id: activeSession.id });
-      
-      const aiMessage = {
-        id: responseMsg.id || (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: responseMsg.content || responseMsg.metadata?.content || responseMsg.metadata?.response || 'Done.',
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        agent: selectedAgent?.name || 'Agent',
-      };
-      
-      setMessages(prev => [...prev, aiMessage]);
-      setApiConversations(prev => prev.map(c => c.id === activeSession.id ? { ...c, lastMessage: responseMsg.content } : c));
     } catch (err: unknown) {
       console.error('Failed to send message:', err);
+      setIsTyping(false);
       if (isQuotaLimitError(err)) {
         const data = (err as { response?: { data?: { message?: string; usage?: { used?: number; limit?: number; tier?: string } } } }).response?.data;
         dispatchQuotaLimit({
@@ -236,8 +321,6 @@ export default function ChatPage() {
         agent: 'System',
       };
       setMessages(prev => [...prev, assistantError]);
-    } finally {
-      setIsTyping(false);
     }
   };
 

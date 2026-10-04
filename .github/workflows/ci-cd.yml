@@ -47,9 +47,10 @@ jobs:
     - name: Run linting
       run: |
         cd backend
-        pip install flake8 black mypy
+        pip install flake8 black mypy ruff
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
         black --check .
+        ruff check .
     
     - name: Run tests with coverage
       env:

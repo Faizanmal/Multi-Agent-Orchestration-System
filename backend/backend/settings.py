@@ -349,22 +349,18 @@ REST_FRAMEWORK = {
 # Channels Configuration
 ASGI_APPLICATION = "backend.asgi.application"
 
-# Use in-memory channel layer for development (no Redis required)
+# Use Redis channel layer for stable multi-worker communication
+_REDIS_URL = os.getenv("REDIS_URL", "redis://127.0.0.1:6379/0")
 CHANNEL_LAYERS = {
     "default": {
-        "BACKEND": "channels.layers.InMemoryChannelLayer",
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [_REDIS_URL],
+            # Add keepalive config for stability
+            "health_check_interval": 10,
+        },
     },
 }
-
-# For production, uncomment below and ensure Redis is running:
-# CHANNEL_LAYERS = {
-#     'default': {
-#         'BACKEND': 'channels_redis.core.RedisChannelLayer',
-#         'CONFIG': {
-#             "hosts": [('127.0.0.1', 6379)],
-#         },
-#     },
-# }
 
 # Redis Configuration
 REDIS_URL = "redis://localhost:6379/0"
@@ -430,8 +426,8 @@ FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
 BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8000")
 
 # File Upload Settings
-FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB
-DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB
+FILE_UPLOAD_MAX_MEMORY_SIZE = 100 * 1024 * 1024  # 100MB
+DATA_UPLOAD_MAX_MEMORY_SIZE = 100 * 1024 * 1024  # 100MB
 
 # Logging Configuration
 LOGGING = {

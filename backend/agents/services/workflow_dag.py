@@ -29,6 +29,8 @@ class NodeStatus(Enum):
     FAILED = "failed"
     SKIPPED = "skipped"
     RETRYING = "retrying"
+    WAITING_FOR_HUMAN = "waiting_for_human"
+    ESCALATED = "escalated"
 
 
 class NodeType(Enum):
@@ -80,6 +82,8 @@ class WorkflowNode:
             NodeStatus.SUCCESS,
             NodeStatus.FAILED,
             NodeStatus.SKIPPED,
+            NodeStatus.WAITING_FOR_HUMAN,
+            NodeStatus.ESCALATED,
         ]
 
     def to_dict(self) -> dict:
@@ -230,7 +234,11 @@ class WorkflowEngine:
                         completed_nodes.add(node.id)
                         node.status = NodeStatus.SUCCESS
                     else:
-                        node.status = NodeStatus.SKIPPED
+                        if node.status not in [
+                            NodeStatus.WAITING_FOR_HUMAN,
+                            NodeStatus.ESCALATED,
+                        ]:
+                            node.status = NodeStatus.SKIPPED
 
                 # Get next executable nodes
                 executable_nodes = dag.get_executable_nodes(completed_nodes)
@@ -245,8 +253,16 @@ class WorkflowEngine:
 
             # Determine overall status
             all_nodes = set(dag.nodes.keys())
+            waiting_nodes = {
+                n.id
+                for n in dag.nodes.values()
+                if n.status in [NodeStatus.WAITING_FOR_HUMAN, NodeStatus.ESCALATED]
+            }
+
             if completed_nodes == all_nodes:
                 status = "completed"
+            elif waiting_nodes:
+                status = "suspended"
             elif failed_nodes:
                 status = "failed"
             else:
@@ -299,6 +315,10 @@ class WorkflowEngine:
                 result = await self._execute_task_node(dag, node)
             elif node.type == NodeType.AGENT:
                 result = await self._execute_agent_node(dag, node)
+            elif node.type == NodeType.HUMAN_INPUT:
+                node.status = NodeStatus.WAITING_FOR_HUMAN
+                logger.info(f"Node {node.id} is waiting for human input")
+                result = False
             else:
                 result = await self._execute_generic_node(dag, node)
 
@@ -323,6 +343,16 @@ class WorkflowEngine:
                 await asyncio.sleep(2**node.retry_count)  # Exponential backoff
                 return await self._execute_node(dag, node)
             else:
+                fallback_strategy = node.metadata.get(
+                    "fallback_strategy"
+                ) or dag.context.get("fallback_strategy")
+                if fallback_strategy in ["escalate_to_human", "escalate_to_senior"]:
+                    logger.info(
+                        f"Escalating node {node.id} to human due to fallback strategy: {fallback_strategy}"
+                    )
+                    node.status = NodeStatus.ESCALATED
+                    node.error = f"Escalated to human. Original error: {e!s}"
+                    return False
                 raise
 
     async def _execute_task_node(self, dag: WorkflowDAG, node: WorkflowNode) -> bool:

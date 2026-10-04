@@ -197,6 +197,7 @@ class IntegrationAlert(models.Model):
 
 class ScheduledAutomation(models.Model):
     """Scheduled automation jobs — inbox digest, Slack alerts, workflow runs."""
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     AUTOMATION_TYPES = [  # noqa: RUF012

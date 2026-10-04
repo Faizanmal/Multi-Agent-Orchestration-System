@@ -119,107 +119,30 @@ class AgentViewSet(viewsets.ModelViewSet):
         return Agent.objects.filter(owner=self.request.user)
 
     def get_object(self):
-        """Custom object retrieval with verbose diagnostics in DEBUG.
-
-        We are seeing a 404 despite the UUID appearing in the list endpoint. This override
-        bypasses any potential queryset filtering quirks and surfaces detailed context.
-        """
-        # DRF will populate kwargs with lookup_url_kwarg ('id') so fetch that first, fallback to pk
+        """Robust object retrieval handling string-to-UUID coercion safely."""
         pk = (
             self.kwargs.get(self.lookup_url_kwarg)
             or self.kwargs.get("pk")
             or self.kwargs.get("id")
         )
-        debug_mode = settings.DEBUG
-        if debug_mode:
-            print("[AgentViewSet.get_object] Incoming lookup:")
-            print(f"  lookup_field attr: {self.lookup_field}")
-            print(f"  kwargs keys: {list(self.kwargs.keys())}")
-            print(f"  raw pk value: {pk}")
-            print(f"  pk repr: {pk!r} length={len(str(pk))} type={type(pk)}")
         if not pk:
             raise NotFound("No primary key provided")
-        base_qs = Agent.objects.all()
-        if debug_mode:
-            try:
-                total = base_qs.count()
-                sample_ids = list(base_qs.values_list("id", flat=True)[:5])
-            except Exception as e:  # noqa: BLE001
-                total = f"error: {e}"
-                sample_ids = []
-            print(f"  Total agents in DB: {total}")
-            print(f"  Sample first 5 IDs: {sample_ids}")
-            # Direct existence via any() materialization to surface anomalies
-            materialized = list(base_qs.values_list("id", flat=True))
-            direct_membership = pk in [str(x) for x in materialized]
-            print(
-                f"  Direct membership check (materialized list) => {direct_membership}"
-            )
-        # Try direct string filter and UUID cast filter
-        exists_global = base_qs.filter(id=pk).exists()
-        if debug_mode:
-            print(f"  ORM filter existence check: {exists_global}")
-            if not exists_global:
-                # Try coercing to UUID explicitly
-                import uuid as _uuid
 
-                try:
-                    uuid_obj = _uuid.UUID(str(pk))
-                    exists_uuid = base_qs.filter(id=uuid_obj).exists()
-                except Exception as e:  # noqa: BLE001
-                    exists_uuid = f"error converting to UUID: {e}"
-                print(f"  Existence with coerced UUID object: {exists_uuid}")
-                # Extra diagnostics: show filter values fetched via IN query
-                try:
-                    probe = list(
-                        base_qs.filter(id__in=[pk]).values_list("id", flat=True)
-                    )
-                    print(f"  Probe filter(id__in=[pk]) returned: {probe}")
-                except Exception as e:  # noqa: BLE001
-                    print(f"  Probe filter error: {e}")
-                # Manual fallback if membership is True
-                if "direct_membership" in locals() and direct_membership:
-                    print(
-                        "  Anomaly detected: membership True but ORM filter False. Using manual scan fallback."
-                    )
-                    for obj in base_qs:
-                        if str(obj.id) == str(pk):
-                            print(
-                                "  Manual scan located agent; returning fallback instance."
-                            )
-                            return obj
-        if not exists_global:
-            if debug_mode:
-                raise NotFound(
-                    detail={
-                        "detail": "Agent not found in global queryset",
-                        "id": pk,
-                        "debug": {
-                            "global_exists": exists_global,
-                            "query_example": f"Agent.objects.filter(id='{pk}')",
-                        },
-                    }
-                )
-            raise NotFound("No Agent matches the given query.")
-        # Ownership filter only if not debug
-        if not debug_mode:
-            owned_qs = base_qs.filter(id=pk, owner=self.request.user)
-            if not owned_qs.exists():
-                raise NotFound("No Agent matches the given query for this user.")
-            return owned_qs.first()
-        if debug_mode:
-            print("  Fetching instance via get(id=pk)...")
+        base_qs = self.get_queryset()
+
+        # Safely coerce string to UUID to fix DB consistency quirks
+        import uuid
+
         try:
-            return base_qs.get(id=pk)
-        except Exception as e:
-            if debug_mode:
-                print(f"  Direct get(id=pk) failed: {e}")
-                # Manual fallback scan (already materialized earlier)
-                for obj in base_qs:
-                    if str(obj.id) == str(pk):
-                        print("  Fallback linear scan matched object.")
-                        return obj
-            raise
+            uuid_obj = uuid.UUID(str(pk))
+        except ValueError:
+            raise NotFound(f"Invalid UUID format: {pk}")
+
+        obj = base_qs.filter(id=uuid_obj).first()
+        if not obj:
+            raise NotFound("No Agent matches the given query.")
+
+        return obj
 
     # Diagnostic override to understand why detail lookup returns 404
     def retrieve(self, request, *args, **kwargs):
@@ -314,8 +237,8 @@ class SessionViewSet(viewsets.ModelViewSet):
         if self.request.user.is_anonymous:
             return Session.objects.none()
         if settings.DEBUG:
-            return Session.objects.all()
-        return Session.objects.filter(user=self.request.user)
+            return Session.objects.all().prefetch_related("agents")
+        return Session.objects.filter(user=self.request.user).prefetch_related("agents")
 
     def perform_create(self, serializer):
         # Always ensure we have a valid user
@@ -506,7 +429,9 @@ class TaskViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         if self.request.user.is_anonymous:
             return Task.objects.none()
-        return Task.objects.filter(session__user=self.request.user)
+        return Task.objects.filter(session__user=self.request.user).select_related(
+            "session", "agent"
+        )
 
     @action(detail=True, methods=["post"])
     def execute(self, request, pk=None):
@@ -559,10 +484,13 @@ class MessageViewSet(viewsets.ModelViewSet):
         if settings.DEBUG:
             # In debug mode, allow filtering by session parameter
             session_id = self.request.query_params.get("session")
+            qs = Message.objects.select_related("session", "sender")
             if session_id:
-                return Message.objects.filter(session_id=session_id)
-            return Message.objects.all()
-        return Message.objects.filter(session__user=self.request.user)
+                return qs.filter(session_id=session_id)
+            return qs.all()
+        return Message.objects.filter(session__user=self.request.user).select_related(
+            "session", "sender"
+        )
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
