@@ -190,9 +190,10 @@ def performance_metrics(request):
 
 
 @api_view(["GET"])
+@permission_classes([AllowAny])
 def readiness_check(request):
     """
-    Kubernetes readiness probe
+    Kubernetes / Cloud Run readiness probe
     Checks if service is ready to accept traffic
     """
     try:

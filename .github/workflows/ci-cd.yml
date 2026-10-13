@@ -101,6 +101,11 @@ jobs:
         cd frontend
         npm ci
     
+    - name: Run unit tests (vitest)
+      run: |
+        cd frontend
+        npm test
+    
     - name: Run linting
       run: |
         cd frontend

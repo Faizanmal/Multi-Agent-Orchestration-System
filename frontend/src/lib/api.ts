@@ -6,12 +6,20 @@
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
 
 // Types for API responses
+export interface AgentConfiguration {
+  description?: string;
+  system_prompt?: string;
+  enabled_tools?: string[];
+  [key: string]: unknown;
+}
+
 export interface Agent {
   id: string;
   name: string;
-  type: 'orchestrator' | 'vision' | 'reasoning' | 'action' | 'memory';
+  type: 'orchestrator' | 'vision' | 'reasoning' | 'action' | 'memory' | 'custom';
   status: 'idle' | 'active' | 'processing' | 'error';
   capabilities: string[];
+  configuration?: AgentConfiguration;
   created_at: string;
   updated_at: string;
   performance_metrics?: {

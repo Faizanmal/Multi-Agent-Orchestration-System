@@ -58,6 +58,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import Link from 'next/link';
 
 // Agent types configuration
 const agentTypes = {
@@ -131,6 +132,11 @@ export default function AgentsPage() {
         type: newType as Agent['type'],
         status: autoActivate ? 'active' : 'idle',
         capabilities: newCapabilities,
+        configuration: {
+          description: newDescription,
+          system_prompt: undefined,
+          enabled_tools: newCapabilities,
+        },
       });
       
       await loadAgents();
@@ -211,6 +217,12 @@ export default function AgentsPage() {
             <Button variant="outline" className="gap-2" onClick={loadAgents}>
               <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
               Refresh
+            </Button>
+            <Button variant="outline" className="gap-2" asChild>
+              <Link href="/agents/builder">
+                <Settings className="h-4 w-4" />
+                Template Builder
+              </Link>
             </Button>
             <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
               <DialogTrigger asChild>

@@ -14,6 +14,7 @@ import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { toast } from 'sonner';
+import { AgentThinkingIndicator } from './chat/AgentThinkingIndicator';
 
 interface WsMessage {
   id: string;
@@ -22,6 +23,7 @@ interface WsMessage {
   provider?: string;
   model?: string;
   timestamp: Date;
+  isStreaming?: boolean;
 }
 
 interface ChatInterfaceProps {
@@ -32,41 +34,111 @@ interface ChatInterfaceProps {
 export function ChatInterface({ sessionId, agentId }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<WsMessage[]>([]);
   const [input, setInput] = useState('');
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [thinkingStatus, setThinkingStatus] = useState<string | null>(null);
   const { chat, loading } = useMultiModel();
-  const { connectionStatus, lastMessage } = useWebSocket({
+  const { connectionStatus, sendMessage: wsSend } = useWebSocket({
     url: `${process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:8000'}/ws/session/${sessionId}/`,
+    onMessage: (msg) => {
+      if (msg.type === 'stream_start') {
+        setIsStreaming(true);
+        setThinkingStatus(
+          typeof msg.message === 'string' ? msg.message : 'Generating response...'
+        );
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: 'stream-current',
+            role: 'assistant',
+            content: '',
+            timestamp: new Date(),
+            isStreaming: true,
+          },
+        ]);
+        return;
+      }
+      if (msg.type === 'stream_chunk') {
+        setThinkingStatus(null);
+        setMessages((prev) => {
+          const next = [...prev];
+          const idx = next.findIndex((m) => m.id === 'stream-current' || m.isStreaming);
+          if (idx >= 0) {
+            next[idx] = {
+              ...next[idx],
+              content:
+                (typeof msg.full_content === 'string' && msg.full_content) ||
+                next[idx].content + String(msg.chunk ?? ''),
+            };
+          }
+          return next;
+        });
+        return;
+      }
+      if (msg.type === 'stream_end') {
+        setIsStreaming(false);
+        setThinkingStatus(null);
+        setMessages((prev) => {
+          const next = [...prev];
+          const idx = next.findIndex((m) => m.id === 'stream-current' || m.isStreaming);
+          if (idx >= 0) {
+            next[idx] = {
+              ...next[idx],
+              id: `assistant-${Date.now()}`,
+              isStreaming: false,
+              content:
+                (typeof msg.full_content === 'string' && msg.full_content) ||
+                next[idx].content,
+            };
+          }
+          return next;
+        });
+        return;
+      }
+      if (msg.type === 'agent_status_update' || msg.type === 'agent_thinking') {
+        const status =
+          (typeof msg.status === 'string' && msg.status) ||
+          (typeof msg.message === 'string' && msg.message) ||
+          'Agent working...';
+        setThinkingStatus(status);
+        return;
+      }
+      if (msg.type === 'agent_response') {
+        setIsStreaming(false);
+        setThinkingStatus(null);
+        const payload = msg.response as { content?: string; provider?: string; model?: string } | undefined;
+        const content = payload?.content || String(msg.content ?? '');
+        if (content) {
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: `assistant-${Date.now()}`,
+              role: 'assistant',
+              content,
+              provider: payload?.provider,
+              model: payload?.model,
+              timestamp: new Date(),
+            },
+          ]);
+        }
+      }
+    },
   });
   const isConnected = connectionStatus === 'connected';
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const busy = loading || isStreaming;
 
-  // Auto-scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
-
-  // Handle WebSocket messages
-  useEffect(() => {
-    if (lastMessage) {
-      const wsMessage = lastMessage as unknown as WsMessage;
-      setTimeout(() => { setMessages((prev) => [
-                ...prev,
-                {
-                  id: wsMessage.id,
-                  role: 'assistant',
-                  content: wsMessage.content,
-                  timestamp: new Date(wsMessage.timestamp),
-                },
-              ]); }, 0)
-    }
-  }, [lastMessage]);
+  }, [messages, thinkingStatus]);
 
   const handleSend = async () => {
-    if (!input.trim() || loading) return;
+    if (!input.trim() || busy) return;
 
+    const content = input.trim();
     const userMessage: WsMessage = {
       id: `user-${Date.now()}`,
       role: 'user',
-      content: input,
+      content,
       timestamp: new Date(),
     };
 
@@ -74,10 +146,23 @@ export function ChatInterface({ sessionId, agentId }: ChatInterfaceProps) {
     setInput('');
 
     try {
+      if (isConnected) {
+        setIsStreaming(true);
+        setThinkingStatus('Connecting to agent...');
+        wsSend({
+          type: 'stream_request',
+          content,
+          message: content,
+          metadata: { agent_id: agentId },
+          agent_id: agentId,
+        });
+        return;
+      }
+
       const response = await chat(
         [
           ...messages.map((m) => ({ role: m.role, content: m.content })),
-          { role: 'user', content: input },
+          { role: 'user', content },
         ],
         agentId ? { model_preference: agentId } : undefined
       );
@@ -96,6 +181,8 @@ export function ChatInterface({ sessionId, agentId }: ChatInterfaceProps) {
         ]);
       }
     } catch (error) {
+      setIsStreaming(false);
+      setThinkingStatus(null);
       toast.error('Failed to send message');
       console.error('Chat error:', error);
     }
@@ -103,7 +190,6 @@ export function ChatInterface({ sessionId, agentId }: ChatInterfaceProps) {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Connection Status */}
       <div className="flex items-center justify-between p-4 border-b">
         <h2 className="text-lg font-semibold">AI Chat</h2>
         <Badge variant={isConnected ? 'default' : 'secondary'}>
@@ -111,7 +197,6 @@ export function ChatInterface({ sessionId, agentId }: ChatInterfaceProps) {
         </Badge>
       </div>
 
-      {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.map((message) => (
           <Card key={message.id} className={message.role === 'user' ? 'ml-12' : 'mr-12'}>
@@ -131,7 +216,7 @@ export function ChatInterface({ sessionId, agentId }: ChatInterfaceProps) {
                 <div className="flex-1 space-y-2">
                   <div className="prose max-w-none prose-sm dark:prose-invert">
                     {message.role === 'assistant' ? (
-                      <ReactMarkdown 
+                      <ReactMarkdown
                         remarkPlugins={[remarkGfm]}
                         components={{
                           code: ({ className, children, ...props }) => {
@@ -163,30 +248,30 @@ export function ChatInterface({ sessionId, agentId }: ChatInterfaceProps) {
                           li: ({ children }) => <li className="ml-4">{children}</li>,
                           strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
                           em: ({ children }) => <em className="italic">{children}</em>,
-                          blockquote: ({ children }) => <blockquote className="border-l-4 border-muted-foreground/30 pl-4 italic my-2">{children}</blockquote>
+                          blockquote: ({ children }) => (
+                            <blockquote className="border-l-4 border-muted-foreground/30 pl-4 italic my-2">
+                              {children}
+                            </blockquote>
+                          ),
                         }}
                       >
-                        {message.content}
+                        {message.content || (message.isStreaming ? '…' : '')}
                       </ReactMarkdown>
                     ) : (
                       <p className="whitespace-pre-wrap">{message.content}</p>
                     )}
                   </div>
-                  
-                  {/* Model Badge */}
+
                   {message.provider && (
                     <div className="flex items-center space-x-2 text-xs text-muted-foreground">
                       <Badge variant="outline" className="text-xs">
                         {message.provider}
                       </Badge>
-                      {message.model && (
-                        <span>{message.model}</span>
-                      )}
+                      {message.model && <span>{message.model}</span>}
                     </div>
                   )}
 
-                  {/* Feedback Widget for assistant messages */}
-                  {message.role === 'assistant' && (
+                  {message.role === 'assistant' && !message.isStreaming && (
                     <FeedbackWidget
                       messageId={message.id}
                       agentId={agentId}
@@ -198,10 +283,12 @@ export function ChatInterface({ sessionId, agentId }: ChatInterfaceProps) {
             </CardContent>
           </Card>
         ))}
+        {busy && !messages.some((m) => m.isStreaming && m.content) && (
+          <AgentThinkingIndicator status={thinkingStatus} />
+        )}
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input */}
       <div className="border-t p-4">
         <div className="flex space-x-2">
           <Textarea
@@ -219,15 +306,11 @@ export function ChatInterface({ sessionId, agentId }: ChatInterfaceProps) {
           />
           <Button
             onClick={handleSend}
-            disabled={loading || !input.trim()}
+            disabled={busy || !input.trim()}
             size="icon"
             className="h-auto"
           >
-            {loading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Send className="h-4 w-4" />
-            )}
+            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
           </Button>
         </div>
       </div>

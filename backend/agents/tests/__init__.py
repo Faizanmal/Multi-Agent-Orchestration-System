@@ -1,3 +1,0 @@
-"""
-Agents Tests Package
-"""

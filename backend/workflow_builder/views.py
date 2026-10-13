@@ -77,6 +77,55 @@ class WorkflowTemplateViewSet(viewsets.ModelViewSet):
 
         return Response({"rating": template.rating})
 
+    @action(detail=True, methods=["post"])
+    def execute(self, request, pk=None):
+        """Execute a template's workflow_definition via VisualWorkflowExecutor."""
+        from agents.services.workflow_executor import (
+            VisualWorkflowExecutor,
+            WorkflowExecutionError,
+        )
+
+        template = self.get_object()
+        definition = template.workflow_definition or {}
+        input_data = request.data.get("input_data") or request.data.get("trigger") or {}
+        if not isinstance(input_data, dict):
+            input_data = {"trigger": input_data}
+
+        # Ensure ReactFlow-shaped nodes/edges
+        nodes = definition.get("nodes") or []
+        edges = definition.get("edges") or []
+        if not nodes and definition.get("workflow_definition"):
+            nested = definition["workflow_definition"]
+            nodes = nested.get("nodes", [])
+            edges = nested.get("edges", [])
+
+        try:
+            executor = VisualWorkflowExecutor(
+                {"nodes": nodes, "edges": edges},
+                context={"input_data": input_data, "template_id": str(template.id)},
+            )
+            result = executor.execute()
+        except WorkflowExecutionError as e:
+            return Response(
+                {"error": str(e)}, status=status.HTTP_400_BAD_REQUEST
+            )
+        except Exception as e:  # noqa: BLE001
+            return Response(
+                {"error": f"Execution failed: {e}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+        template.usage_count += 1
+        template.save(update_fields=["usage_count"])
+
+        return Response(
+            {
+                "status": result.get("status"),
+                "result": result,
+                "template_id": str(template.id),
+            }
+        )
+
 
 class VisualWorkflowViewSet(viewsets.ModelViewSet):
     """ViewSet for visual workflows"""
@@ -113,9 +162,7 @@ class VisualWorkflowViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["post"])
     def execute(self, request, pk=None):
         """Execute a workflow"""
-        import asyncio
-
-        from agents.services.workflow_engine import WorkflowEngine
+        from agents.services.workflow_executor import VisualWorkflowExecutor
 
         workflow = self.get_object()
         input_data = request.data.get("input_data", {})
@@ -131,52 +178,69 @@ class VisualWorkflowViewSet(viewsets.ModelViewSet):
         workflow.save()
 
         try:
-            # Execute workflow using the workflow engine
+            # Execute workflow using the visual workflow executor
             execution.status = "running"
             execution.started_at = timezone.now()
             execution.save()
 
-            engine = WorkflowEngine()
-
             # Build workflow definition from visual workflow
             workflow_definition = {
-                "id": str(workflow.id),
-                "name": workflow.name,
-                "steps": self._convert_nodes_to_steps(workflow.nodes, workflow.edges),
-                "variables": workflow.variables,
-                "settings": workflow.settings,
+                "nodes": workflow.nodes,
+                "edges": workflow.edges,
             }
 
-            user_id = (
-                str(request.user.id)
-                if getattr(request.user, "is_authenticated", False)
-                else str(workflow.user_id)
+            # Initial context for execution
+            context = {"input_data": input_data}
+
+            executor = VisualWorkflowExecutor(
+                workflow_definition=workflow_definition, context=context
             )
 
-            # Execute the workflow
-            result = asyncio.run(
-                engine.execute_workflow(
-                    workflow_definition=workflow_definition,
-                    input_data=input_data,
-                    user_id=user_id,
-                    session_id=None,
-                )
-            )
+            result = executor.execute()
 
-            # Update execution record with results
-            if result.get("suspended"):
-                execution.status = "suspended"
-            else:
-                execution.status = "completed" if result["success"] else "failed"
+            execution.status = (
+                "completed" if result.get("status") == "completed" else "failed"
+            )
             execution.completed_at = timezone.now()
-            execution.output_data = result.get("results", {})
-            execution.error_message = result.get("error", "")
+            execution.output_data = result.get("context", {})
+            execution.error_message = (
+                "" if result.get("status") == "completed" else "Partial execution"
+            )
+
+            # Record analytics-friendly execution metrics when possible
+            try:
+                from agents.models import Agent, PerformanceMetric
+
+                duration_ms = 0.0
+                if execution.started_at and execution.completed_at:
+                    duration_ms = (
+                        execution.completed_at - execution.started_at
+                    ).total_seconds() * 1000
+                agent = (
+                    Agent.objects.filter(owner=request.user).order_by("-created_at").first()
+                    if getattr(request.user, "is_authenticated", False)
+                    else None
+                )
+                if agent:
+                    PerformanceMetric.objects.create(
+                        agent=agent,
+                        metric_name="workflow_execution_ms",
+                        metric_value=duration_ms,
+                        metadata={
+                            "workflow_id": str(workflow.id),
+                            "execution_id": str(execution.id),
+                            "status": execution.status,
+                            "nodes_executed": result.get("nodes_executed", 0),
+                        },
+                    )
+            except Exception:  # noqa: BLE001
+                pass
             execution.save()
 
             serializer = WorkflowExecutionSerializer(execution)
             return Response(serializer.data, status=status.HTTP_200_OK)
 
-        except Exception as e:  # noqa: BLE001  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001
             execution.status = "failed"
             execution.completed_at = timezone.now()
             execution.error_message = str(e)

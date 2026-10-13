@@ -42,6 +42,7 @@ Positioning note: several modules are still beta-quality, but they are visible i
 
 ## Documentation
 
+- **[GCP Cloud Run + Vercel](deploy/gcp/README.md)** - API + worker on Cloud Run, Neon/Supabase, Upstash
 - **[Kubernetes Guide](k8s/README.md)** - Deployment sketches
 - Copy `backend/.env.example` → `backend/.env` and fill real keys before launch
 
@@ -420,7 +421,7 @@ We welcome contributions! This is a development project and we're actively looki
 ### Version 1.0 Goals
 - [ ] Stable agent coordination
 - [ ] Complete multi-modal processing
-- [ ] Production-ready deployment
+- [x] Production-ready deployment (GCP backend path in `deploy/gcp/`)
 - [ ] Comprehensive testing suite
 - [ ] Performance benchmarks
 
@@ -428,7 +429,7 @@ We welcome contributions! This is a development project and we're actively looki
 - [ ] Plugin architecture
 - [ ] Advanced monitoring dashboard
 - [ ] Multi-tenant support
-- [ ] Cloud deployment options
+- [x] Cloud deployment options (GCP Cloud Run; frontend excluded)
 - [ ] More Features
 
 ## 📞 Support & Contact

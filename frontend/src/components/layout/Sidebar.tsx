@@ -64,6 +64,11 @@ const navigationItems: NavItem[] = [
     icon: Bot,
   },
   {
+    title: 'Agent Builder',
+    href: '/agents/builder',
+    icon: Sparkles,
+  },
+  {
     title: 'Chat',
     href: '/chat',
     icon: MessageSquare,

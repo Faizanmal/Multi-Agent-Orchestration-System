@@ -58,17 +58,36 @@ ALLOWED_HOSTS = [
     if h.strip()
 ]
 
-# Security settings for deployment
-SECURE_SSL_REDIRECT = os.getenv("SECURE_SSL_REDIRECT", str(not DEBUG)).lower() in (
+# Detect managed platforms (Cloud Run sets K_SERVICE)
+_IS_CLOUD_RUN = bool(os.getenv("K_SERVICE") or os.getenv("CLOUD_RUN_SERVICE"))
+
+# Security settings for deployment (LB terminates TLS on Cloud Run / GCLB)
+_default_ssl_redirect = "False" if _IS_CLOUD_RUN else str(not DEBUG)
+SECURE_SSL_REDIRECT = os.getenv("SECURE_SSL_REDIRECT", _default_ssl_redirect).lower() in (
     "true",
     "1",
     "yes",
 )
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+USE_X_FORWARDED_HOST = True
 SECURE_HSTS_SECONDS = 31536000 if not DEBUG else 0
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True
 SESSION_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SECURE = not DEBUG
+
+_csrf_trusted = [
+    o.strip()
+    for o in os.getenv("CSRF_TRUSTED_ORIGINS", "").split(",")
+    if o.strip()
+]
+if not _csrf_trusted and not DEBUG:
+    _csrf_trusted = [
+        o.strip()
+        for o in os.getenv("CORS_ALLOWED_ORIGINS", "").split(",")
+        if o.strip().startswith("https://")
+    ]
+CSRF_TRUSTED_ORIGINS = _csrf_trusted
 
 
 # Application definition
@@ -113,6 +132,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -165,6 +185,37 @@ WSGI_APPLICATION = "backend.wsgi.application"
 # Prefer DATABASE_URL (postgresql://...), then POSTGRES_* vars, else SQLite.
 
 
+def _postgres_options(host: str, query: str = "") -> dict:
+    """Build Django OPTIONS; Cloud SQL unix sockets skip TCP connect_timeout."""
+    if host.startswith("/"):
+        return {}
+    options: dict = {"connect_timeout": int(os.getenv("DB_CONNECT_TIMEOUT", "10"))}
+    # Neon / Supabase require TLS — honor ?sslmode= from DATABASE_URL
+    from urllib.parse import parse_qs
+
+    params = parse_qs(query or "")
+    sslmode = (params.get("sslmode") or [None])[0] or os.getenv("DB_SSLMODE", "")
+    if sslmode:
+        options["sslmode"] = sslmode
+    elif any(
+        tip in (host or "")
+        for tip in ("neon.tech", "supabase.co", "pooler.supabase.com")
+    ):
+        options["sslmode"] = "require"
+    return options
+
+
+def _cloud_sql_host() -> str:
+    """Unix socket path for Cloud SQL Auth on Cloud Run / GCE."""
+    instance = (os.getenv("CLOUD_SQL_CONNECTION_NAME") or "").strip()
+    if instance:
+        return f"/cloudsql/{instance}"
+    host = (os.getenv("POSTGRES_HOST") or "").strip()
+    if host.startswith("/cloudsql/"):
+        return host
+    return ""
+
+
 def _build_databases():
     database_url = (os.getenv("DATABASE_URL") or "").strip()
     if database_url.startswith("sqlite://"):
@@ -179,36 +230,44 @@ def _build_databases():
             }
         }
 
+    cloudsql_host = _cloud_sql_host()
+
+    # Cloud Run + Neon/Supabase: prefer short-lived connections (pooled URL recommended)
+    _default_conn_max_age = "0" if _IS_CLOUD_RUN else "60"
+    _conn_max_age = int(os.getenv("DB_CONN_MAX_AGE", _default_conn_max_age))
+
     if database_url.startswith(("postgres://", "postgresql://")):
         parsed = urlparse(database_url)
+        # Strip query from path (e.g. /dbname?sslmode=require)
+        db_name = unquote((parsed.path or "/").lstrip("/").split("?")[0]) or "multi_agent_db"
+        host = cloudsql_host or parsed.hostname or "localhost"
+        port = "" if host.startswith("/") else str(parsed.port or 5432)
         return {
             "default": {
                 "ENGINE": "django.db.backends.postgresql",
-                "NAME": unquote(parsed.path.lstrip("/")) or "multi_agent_db",
+                "NAME": db_name,
                 "USER": unquote(parsed.username or "postgres"),
                 "PASSWORD": unquote(parsed.password or ""),
-                "HOST": parsed.hostname or "localhost",
-                "PORT": str(parsed.port or 5432),
-                "CONN_MAX_AGE": int(os.getenv("DB_CONN_MAX_AGE", "60")),
-                "OPTIONS": {
-                    "connect_timeout": int(os.getenv("DB_CONNECT_TIMEOUT", "10")),
-                },
+                "HOST": host,
+                "PORT": port,
+                "CONN_MAX_AGE": _conn_max_age,
+                "OPTIONS": _postgres_options(host, parsed.query),
             }
         }
 
-    if os.getenv("POSTGRES_DB") or os.getenv("POSTGRES_HOST"):
+    if os.getenv("POSTGRES_DB") or os.getenv("POSTGRES_HOST") or cloudsql_host:
+        host = cloudsql_host or os.getenv("POSTGRES_HOST", "localhost")
+        port = "" if host.startswith("/") else os.getenv("POSTGRES_PORT", "5432")
         return {
             "default": {
                 "ENGINE": "django.db.backends.postgresql",
                 "NAME": os.getenv("POSTGRES_DB", "multi_agent_db"),
                 "USER": os.getenv("POSTGRES_USER", "postgres"),
                 "PASSWORD": os.getenv("POSTGRES_PASSWORD", ""),
-                "HOST": os.getenv("POSTGRES_HOST", "localhost"),
-                "PORT": os.getenv("POSTGRES_PORT", "5432"),
-                "CONN_MAX_AGE": int(os.getenv("DB_CONN_MAX_AGE", "60")),
-                "OPTIONS": {
-                    "connect_timeout": int(os.getenv("DB_CONNECT_TIMEOUT", "10")),
-                },
+                "HOST": host,
+                "PORT": port,
+                "CONN_MAX_AGE": _conn_max_age,
+                "OPTIONS": _postgres_options(host),
             }
         }
 
@@ -262,9 +321,34 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
+    },
+}
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
+
+# Optional Google Cloud Storage for media (set GS_BUCKET_NAME)
+_GS_BUCKET = (os.getenv("GS_BUCKET_NAME") or "").strip()
+if _GS_BUCKET:
+    STORAGES["default"] = {
+        "BACKEND": "storages.backends.gcloud.GoogleCloudStorage",
+        "OPTIONS": {
+            "bucket_name": _GS_BUCKET,
+            "default_acl": None,
+            "querystring_auth": True,
+            "file_overwrite": False,
+        },
+    }
+    GS_PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT") or os.getenv(
+        "GOOGLE_CLOUD_PROJECT_ID", ""
+    )
+    MEDIA_URL = f"https://storage.googleapis.com/{_GS_BUCKET}/"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
@@ -291,14 +375,16 @@ if DEBUG:
     CORS_ALLOW_ALL_ORIGINS = True  # Allow all origins in development
 else:
     # Production: Use environment variable for allowed origins
-    import os
-
-    CORS_ALLOWED_ORIGINS = (
-        os.getenv("CORS_ALLOWED_ORIGINS", "").split(",")
-        if os.getenv("CORS_ALLOWED_ORIGINS")
-        else []
+    CORS_ALLOWED_ORIGINS = [
+        o.strip()
+        for o in os.getenv("CORS_ALLOWED_ORIGINS", "").split(",")
+        if o.strip()
+    ]
+    CORS_ALLOW_ALL_ORIGINS = os.getenv("CORS_ALLOW_ALL_ORIGINS", "False").lower() in (
+        "true",
+        "1",
+        "yes",
     )
-    CORS_ALLOW_ALL_ORIGINS = False  # Always disable wildcard in production
 
 CORS_ALLOW_HEADERS = [
     "accept",
@@ -349,29 +435,41 @@ REST_FRAMEWORK = {
 # Channels Configuration
 ASGI_APPLICATION = "backend.asgi.application"
 
-# Use Redis channel layer for stable multi-worker communication
+# Use Redis channel layer (local redis:// or Upstash rediss://)
 _REDIS_URL = os.getenv("REDIS_URL", "redis://127.0.0.1:6379/0")
+_IS_UPSTASH = "upstash.io" in _REDIS_URL or _REDIS_URL.startswith("rediss://")
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
             "hosts": [_REDIS_URL],
-            # Add keepalive config for stability
             "health_check_interval": 10,
         },
     },
 }
 
 # Redis Configuration
-REDIS_URL = "redis://localhost:6379/0"
+REDIS_URL = _REDIS_URL
 
-# Celery Configuration
-CELERY_BROKER_URL = "redis://localhost:6379/1"
-CELERY_RESULT_BACKEND = "redis://localhost:6379/1"
+# Celery — Upstash typically only exposes DB 0; reuse same URL for broker + results
+_celery_default = _REDIS_URL
+if (
+    not _IS_UPSTASH
+    and _REDIS_URL.rstrip("/").endswith("/0")
+    and "CELERY_BROKER_URL" not in os.environ
+):
+    _celery_default = _REDIS_URL.rstrip("0") + "1"
+CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", _celery_default)
+CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND", CELERY_BROKER_URL)
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
 CELERY_TIMEZONE = TIME_ZONE
+# Prefix keys so broker + results can share Upstash DB 0 safely
+CELERY_TASK_DEFAULT_QUEUE = os.getenv("CELERY_TASK_DEFAULT_QUEUE", "celery")
+CELERY_RESULT_BACKEND_TRANSPORT_OPTIONS = {
+    "global_keyprefix": "celery-results:",
+}
 
 # API Keys
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
@@ -429,7 +527,31 @@ BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8000")
 FILE_UPLOAD_MAX_MEMORY_SIZE = 100 * 1024 * 1024  # 100MB
 DATA_UPLOAD_MAX_MEMORY_SIZE = 100 * 1024 * 1024  # 100MB
 
-# Logging Configuration
+# Logging — console-only on Cloud Run / containers (ephemeral FS)
+_log_handlers = ["console"]
+_log_to_file = os.getenv("LOG_TO_FILE", "False" if (_IS_CLOUD_RUN or not DEBUG) else "True").lower() in (
+    "true",
+    "1",
+    "yes",
+)
+_handlers = {
+    "console": {
+        "level": "DEBUG" if DEBUG else "INFO",
+        "class": "logging.StreamHandler",
+        "formatter": "simple",
+    },
+}
+if _log_to_file:
+    _log_dir = BASE_DIR / "logs"
+    _log_dir.mkdir(parents=True, exist_ok=True)
+    _handlers["file"] = {
+        "level": "INFO",
+        "class": "logging.FileHandler",
+        "filename": str(_log_dir / "app.log"),
+        "formatter": "verbose",
+    }
+    _log_handlers.append("file")
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -443,42 +565,35 @@ LOGGING = {
             "style": "{",
         },
     },
-    "handlers": {
-        "file": {
-            "level": "INFO",
-            "class": "logging.FileHandler",
-            "filename": "debug.log",
-            "formatter": "verbose",
-        },
-        "console": {
-            "level": "DEBUG",
-            "class": "logging.StreamHandler",
-            "formatter": "simple",
-        },
-    },
+    "handlers": _handlers,
     "root": {
-        "handlers": ["console", "file"],
+        "handlers": _log_handlers,
         "level": "INFO",
     },
     "loggers": {
         "django": {
-            "handlers": ["console", "file"],
+            "handlers": _log_handlers,
             "level": "INFO",
             "propagate": False,
         },
         "agents": {
-            "handlers": ["console", "file"],
-            "level": "DEBUG",
+            "handlers": _log_handlers,
+            "level": "DEBUG" if DEBUG else "INFO",
             "propagate": False,
         },
     },
 }
 
-# Security Settings (Development)
-if DEBUG:
+# ALLOWED_HOSTS: honor env in production; wildcard only in DEBUG
+if DEBUG and not os.getenv("ALLOWED_HOSTS"):
     ALLOWED_HOSTS = ["*"]
-else:
-    ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
+elif "*" in ALLOWED_HOSTS and not DEBUG:
+    from django.core.exceptions import ImproperlyConfigured
+
+    raise ImproperlyConfigured(
+        "ALLOWED_HOSTS cannot be '*' when DEBUG=False. "
+        "Set comma-separated hosts (include your Cloud Run URL)."
+    )
 
 # Session Configuration
 SESSION_COOKIE_AGE = 86400  # 24 hours
@@ -552,12 +667,12 @@ SIMPLE_JWT = {
 
 # Authentication logging
 LOGGING["loggers"]["authentication"] = {
-    "handlers": ["console", "file"],
+    "handlers": _log_handlers,
     "level": "INFO",
     "propagate": False,
 }
 LOGGING["loggers"]["authentication.audit"] = {
-    "handlers": ["console", "file"],
+    "handlers": _log_handlers,
     "level": "INFO",
     "propagate": False,
 }

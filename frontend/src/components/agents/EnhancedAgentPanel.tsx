@@ -43,7 +43,8 @@ import {
   Target,
   BarChart3,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  Settings,
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
@@ -53,6 +54,7 @@ const agentTypeIcons = {
   reasoning: Cpu,
   action: Zap,
   memory: Database,
+  custom: Settings,
 } as const;
 
 const agentTypeColors = {
@@ -61,6 +63,7 @@ const agentTypeColors = {
   reasoning: 'bg-green-500',
   action: 'bg-orange-500',
   memory: 'bg-indigo-500',
+  custom: 'bg-gray-500',
 } as const;
 
 interface CreateAgentFormData {

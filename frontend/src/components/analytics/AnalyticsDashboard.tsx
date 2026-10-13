@@ -162,10 +162,10 @@ const AnalyticsDashboard: React.FC = () => {
             agent_id: 'system',
             task_type: 'all',
             execution_time: Number(row.avg_response_time || row.value || 0) / 1000,
-            success_rate: Number(row.success_rate || 90),
-            accuracy_score: Number(row.accuracy || 90),
-            memory_usage: Number(row.memory || systemPerf.memory_usage || 0),
-            cpu_usage: Number(row.cpu || systemPerf.cpu_usage || perfMetrics.cpu_usage || 0),
+            success_rate: Number(row.success_rate ?? 0) * (Number(row.success_rate) <= 1 ? 100 : 1),
+            accuracy_score: Number(row.accuracy ?? 0) * (Number(row.accuracy) <= 1 ? 100 : 1),
+            memory_usage: Number(row.memory ?? systemPerf.memory_usage ?? 0),
+            cpu_usage: Number(row.cpu ?? systemPerf.cpu_usage ?? perfMetrics.cpu_usage ?? 0),
           }))
         )
       } else {

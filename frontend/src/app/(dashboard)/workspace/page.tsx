@@ -30,7 +30,7 @@ import { Brain, Eye, Cpu, Zap, Activity, Settings, Globe, BarChart3, Bell, Datab
 interface Agent {
   id: string;
   name: string;
-  type: 'orchestrator' | 'vision' | 'reasoning' | 'action' | 'memory';
+  type: 'orchestrator' | 'vision' | 'reasoning' | 'action' | 'memory' | 'custom';
   status: 'idle' | 'active' | 'processing' | 'error';
   capabilities: string[];
 }
@@ -40,7 +40,8 @@ const agentTypeIcons = {
   vision: Eye,
   reasoning: Cpu,
   action: Zap,
-  memory: Activity
+  memory: Activity,
+  custom: Settings,
 };
 
 export default function WorkspacePage() {

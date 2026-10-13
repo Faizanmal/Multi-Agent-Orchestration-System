@@ -64,10 +64,12 @@ import { dispatchQuotaLimit } from '@/components/billing/QuotaUpgradeDialog';
 import { trackEvent, trackOnce } from '@/lib/analytics';
 import Link from 'next/link';
 import { useWebSocket } from '@/hooks/useWebSocket';
+import { AgentThinkingIndicator } from '@/components/chat/AgentThinkingIndicator';
 export default function ChatPage() {
   const [messages, setMessages] = useState<any[]>([]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [thinkingStatus, setThinkingStatus] = useState<string | null>(null);
   const [apiAgents, setApiAgents] = useState<any[]>([]);
   const [apiConversations, setApiConversations] = useState<any[]>([]);
   const [selectedAgent, setSelectedAgent] = useState<any>(null);
@@ -168,14 +170,17 @@ export default function ChatPage() {
             id: msg.original_message_id || Date.now().toString(),
             role: 'assistant',
             content: payload.content,
-            timestamp: msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : new Date().toLocaleTimeString(),
+            timestamp: msg.timestamp ? new Date(msg.timestamp as string).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : new Date().toLocaleTimeString(),
             agent: payload.orchestrator || 'Agent'
           }];
         });
         setApiConversations(prev => prev.map(c => c.id === selectedConversation?.id ? { ...c, lastMessage: payload.content } : c));
       }
       else if (msg.type === 'stream_start') {
-        setIsTyping(false); // We have actual stream now
+        setIsTyping(true);
+        setThinkingStatus(
+          typeof msg.message === 'string' ? msg.message : 'Generating response...'
+        );
         setMessages(prev => [...prev, {
           id: 'stream-current',
           role: 'assistant',
@@ -186,6 +191,8 @@ export default function ChatPage() {
         }]);
       }
       else if (msg.type === 'stream_chunk') {
+        setThinkingStatus(null);
+        setIsTyping(false);
         setMessages(prev => {
           const newMsgs = [...prev];
           const streamIdx = newMsgs.findIndex(m => m.id === 'stream-current' || m.isStreaming);
@@ -196,6 +203,8 @@ export default function ChatPage() {
         });
       }
       else if (msg.type === 'stream_end') {
+        setIsTyping(false);
+        setThinkingStatus(null);
         setMessages(prev => {
           const newMsgs = [...prev];
           const streamIdx = newMsgs.findIndex(m => m.id === 'stream-current' || m.isStreaming);
@@ -208,6 +217,14 @@ export default function ChatPage() {
           }
           return newMsgs;
         });
+      }
+      else if (msg.type === 'agent_status_update' || msg.type === 'agent_thinking') {
+        setIsTyping(true);
+        setThinkingStatus(
+          (typeof msg.status === 'string' && msg.status) ||
+          (typeof msg.message === 'string' && msg.message) ||
+          'Agent working...'
+        );
       }
     }
   });
@@ -267,13 +284,16 @@ export default function ChatPage() {
         try { await addAgentToSession(activeSession.id, selectedAgent.id); } catch { /* ignore */ }
       }
       
-      // If websocket is connected, use it for real-time
+      // Prefer token streaming over the WebSocket when connected
       if (connectionStatus === 'connected') {
+        setThinkingStatus('Connecting to agent...');
         wsSendMessage({
-          type: 'chat_message',
+          type: 'stream_request',
           content: messageContent,
+          message: messageContent,
           message_type: 'text',
-          metadata: { agent_id: selectedAgent?.id }
+          metadata: { agent_id: selectedAgent?.id },
+          agent_id: selectedAgent?.id,
         });
       } else {
         // Fallback to HTTP POST
@@ -635,39 +655,7 @@ export default function ChatPage() {
                   ))}
                 </AnimatePresence>
 
-                {/* Typing Indicator */}
-                {isTyping && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="flex items-center gap-3"
-                  >
-                    <Avatar className="h-8 w-8">
-                      <AvatarFallback className="text-sm bg-primary/10">
-                        {selectedAgent.avatar}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="bg-muted rounded-2xl px-4 py-3">
-                      <div className="flex gap-1">
-                        <motion.span
-                          animate={{ opacity: [0.4, 1, 0.4] }}
-                          transition={{ duration: 1, repeat: Infinity }}
-                          className="h-2 w-2 rounded-full bg-muted-foreground"
-                        />
-                        <motion.span
-                          animate={{ opacity: [0.4, 1, 0.4] }}
-                          transition={{ duration: 1, repeat: Infinity, delay: 0.2 }}
-                          className="h-2 w-2 rounded-full bg-muted-foreground"
-                        />
-                        <motion.span
-                          animate={{ opacity: [0.4, 1, 0.4] }}
-                          transition={{ duration: 1, repeat: Infinity, delay: 0.4 }}
-                          className="h-2 w-2 rounded-full bg-muted-foreground"
-                        />
-                      </div>
-                    </div>
-                  </motion.div>
-                )}
+                {isTyping && <AgentThinkingIndicator status={thinkingStatus} />}
 
                 <div ref={messagesEndRef} />
               </div>

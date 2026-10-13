@@ -14,19 +14,14 @@ from langchain_groq import ChatGroq
 from .. import models
 from ..models import Message
 from .enhanced_agent_coordinator import EnhancedAgentCoordinator
+from .external_tools import EXTERNAL_TOOLS
 from .groq_service import GroqService
 
 logger = logging.getLogger(__name__)
 
 
-def _invoke_agent_via_groq(agent_type: str, task: str, context: str = "") -> str:
-    """
-    Helper: calls Groq API with the correct agent system prompt and returns the raw text response.
-    This is the real execution that makes agents actually DO something.
-    """
-    from groq import Groq
-
-    agent_prompts = {
+def _default_agent_prompts() -> dict[str, str]:
+    return {
         "orchestrator": (
             "You are an Orchestrator Agent. Your job is to analyse requests, decompose them "
             "into subtasks, coordinate specialist agents, and synthesise their outputs into a "
@@ -50,7 +45,21 @@ def _invoke_agent_via_groq(agent_type: str, task: str, context: str = "") -> str
         ),
     }
 
-    system_prompt = agent_prompts.get(
+
+def _invoke_agent_via_groq(
+    agent_type: str,
+    task: str,
+    context: str = "",
+    system_prompt_override: str | None = None,
+) -> str:
+    """
+    Helper: calls Groq API with the correct agent system prompt and returns the raw text response.
+    This is the real execution that makes agents actually DO something.
+    """
+    from groq import Groq
+
+    agent_prompts = _default_agent_prompts()
+    system_prompt = (system_prompt_override or "").strip() or agent_prompts.get(
         agent_type, "You are a specialised AI assistant. Be helpful and precise."
     )
 
@@ -90,15 +99,25 @@ def send_message_to_agent(
     try:
         from .. import models as agent_models
 
-        # Resolve agent type from DB so we use the right system prompt
+        # Resolve agent type + custom prompt/tools from DB
+        system_prompt_override = None
         try:
             agent = agent_models.Agent.objects.get(id=agent_id)
             agent_type = str(agent.type)
+            cfg = agent.configuration or {}
+            system_prompt_override = cfg.get("system_prompt")
+            enabled_tools = cfg.get("enabled_tools")
+            if enabled_tools is not None:
+                content = (
+                    f"{content}\n\n[Enabled tools for this agent: "
+                    f"{', '.join(enabled_tools) if enabled_tools else 'none'}]"
+                )
         except Exception:  # noqa: BLE001
             agent_type = "orchestrator"
 
-        # Actually invoke the agent
-        agent_response = _invoke_agent_via_groq(agent_type, content)
+        agent_response = _invoke_agent_via_groq(
+            agent_type, content, system_prompt_override=system_prompt_override
+        )
 
         # Persist result to task output_data if task_id provided
         if task_id:
@@ -133,8 +152,20 @@ def execute_agent_task(
     """
     try:
         ctx = json.loads(context_json) if context_json else {}
+        system_prompt_override = ctx.pop("system_prompt", None) if isinstance(ctx, dict) else None
+        enabled_tools = ctx.pop("enabled_tools", None) if isinstance(ctx, dict) else None
+        if enabled_tools is not None:
+            task_description = (
+                f"{task_description}\n\n[Enabled tools: "
+                f"{', '.join(enabled_tools) if enabled_tools else 'none'}]"
+            )
         context_str = json.dumps(ctx, indent=2) if ctx else ""
-        result = _invoke_agent_via_groq(agent_type, task_description, context_str)
+        result = _invoke_agent_via_groq(
+            agent_type,
+            task_description,
+            context_str,
+            system_prompt_override=system_prompt_override,
+        )
         return {
             "status": "success",
             "agent_type": agent_type,
@@ -447,7 +478,7 @@ class LangchainAgentCoordinator:
             get_agent_performance,
             assign_task_to_agent,
             get_task_details,
-        ]
+        ] + EXTERNAL_TOOLS
 
     def process_message(self, message: "models.Message") -> dict[str, Any]:
         """
@@ -684,7 +715,8 @@ class LangchainAgentCoordinator:
             "3. Use search_memory to retrieve relevant prior knowledge before reasoning.\n"
             "4. Use store_insight to persist important intermediate findings.\n"
             "5. Use send_message_to_agent to get a specialist's perspective when needed.\n"
-            "6. Synthesise all results into a coherent final answer for the user."
+            "6. Use external tools (web_search, calculate, fetch_url_content) to interact with the real world when required.\n"
+            "7. Synthesise all results into a coherent final answer for the user."
         )
 
         # Execute the agentic loop
